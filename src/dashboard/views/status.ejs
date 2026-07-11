@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Status — botgod.pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <%- include('partials/nav', { inviteUrl: typeof inviteUrl !== 'undefined' ? inviteUrl : '/login' }) %>
+  <main class="max-w-3xl mx-auto px-6 py-16">
+    <h1 class="text-4xl font-bold mb-8">Status</h1>
+    <% if (client) { %>
+      <div class="flex items-center gap-3 mb-8">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-emerald-400 font-semibold">Online</span>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div class="text-slate-500 text-sm">Servidores</div>
+          <div class="text-2xl font-bold"><%= client.guilds %></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div class="text-slate-500 text-sm">Usuarios (aprox.)</div>
+          <div class="text-2xl font-bold"><%= client.users.toLocaleString('es-ES') %></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div class="text-slate-500 text-sm">Ping WebSocket</div>
+          <div class="text-2xl font-bold"><%= client.ping %>ms</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div class="text-slate-500 text-sm">Uptime</div>
+          <div class="text-2xl font-bold"><%= Math.floor((client.uptime||0)/3600000) %>h <%= Math.floor(((client.uptime||0)%3600000)/60000) %>m</div>
+        </div>
+      </div>
+      <p class="text-slate-500 text-sm mt-6">v<%= client.version %> · API <a class="text-amber-400" href="/health">/health</a></p>
+    <% } else { %>
+      <div class="flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+        <span class="text-red-400 font-semibold">Bot no conectado a esta instancia web</span>
+      </div>
+    <% } %>
+  </main>
+  <%- include('partials/footer') %>
+</body>
+</html>

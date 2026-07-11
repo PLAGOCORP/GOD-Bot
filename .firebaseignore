@@ -1,0 +1,17 @@
+# Nunca empaquetar basura ni secrets en Hosting
+node_modules
+.git
+.env
+.env.*
+secrets
+data
+src
+deploy
+*.md
+Dockerfile
+docker-compose.yml
+package-lock.json
+test-load.js
+cmd-test.txt
+*-firebase-adminsdk-*.json
+serviceAccount*.json

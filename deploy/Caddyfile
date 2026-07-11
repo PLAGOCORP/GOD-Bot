@@ -1,0 +1,23 @@
+# Caddy — HTTPS automático para botgod.pro
+# Instala Caddy, apunta el DNS A de botgod.pro a tu VPS, y:
+#   caddy run --config deploy/Caddyfile
+
+botgod.pro {
+	encode gzip
+	reverse_proxy 127.0.0.1:3847
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	log {
+		output file /var/log/caddy/botgod.pro.log
+	}
+}
+
+# Opcional: www → apex
+www.botgod.pro {
+	redir https://botgod.pro{uri} permanent
+}

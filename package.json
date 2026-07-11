@@ -1,0 +1,51 @@
+{
+  "name": "god-bot",
+  "version": "3.1.0",
+  "description": "God Bot — botgod.pro | Discord todo-en-uno + dashboard web",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "build": "node scripts/write-web-config.js",
+    "deploy": "node src/deploy-commands.js",
+    "deploy:global": "node src/deploy-commands.js --global",
+    "dashboard": "node src/dashboard/server.js",
+    "firebase:deploy": "npm run build && firebase deploy --only hosting,firestore:rules,storage",
+    "firebase:hosting": "npm run build && firebase deploy --only hosting",
+    "firebase:login": "firebase login",
+    "firebase:rules": "firebase deploy --only firestore:rules,storage",
+    "web:config": "node scripts/write-web-config.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@discordjs/opus": "^0.9.0",
+    "@discordjs/voice": "^0.18.0",
+    "better-sqlite3": "^11.7.0",
+    "cookie-parser": "^1.4.7",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.22.2",
+    "express-session": "^1.19.0",
+    "ffmpeg-static": "^5.3.0",
+    "firebase-admin": "^13.10.0",
+    "libsodium-wrappers": "^0.7.15",
+    "ms": "^2.1.3",
+    "node-cron": "^3.0.3",
+    "openai": "^4.77.0",
+    "opusscript": "^0.0.8",
+    "play-dl": "^1.9.7",
+    "session-file-store": "^1.5.0",
+    "sodium-native": "^4.3.1"
+  },
+  "allowScripts": {
+    "better-sqlite3@11.10.0": true,
+    "@discordjs/opus@0.9.0": true,
+    "ffmpeg-static@5.3.0": true,
+    "@firebase/util@1.15.1": true,
+    "protobufjs@7.6.5": true
+  }
+}

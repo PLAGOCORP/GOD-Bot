@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Por defecto: solo el backend (Admin SDK) escribe.
+    // El cliente web NO debe leer datos sensibles de servidores.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Público: stats globales de la landing (solo lectura)
+    match /public/stats {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

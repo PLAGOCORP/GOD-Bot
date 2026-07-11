@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Servidores — botgod.pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <%- include('partials/nav', { inviteUrl: '/' }) %>
+  <main class="max-w-4xl mx-auto px-6 py-10">
+    <h2 class="text-2xl font-semibold mb-2">Hola, <%= user.global_name || user.username %></h2>
+    <p class="text-slate-400 mb-8">Servidores donde eres Admin y God está presente</p>
+    <% if (!guilds.length) { %>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-8 text-slate-400">
+        No hay servidores administrables. Invita el bot y asegúrate de tener permiso Administrator.
+        <a href="/" class="block mt-4 text-amber-400">← Inicio</a>
+      </div>
+    <% } %>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <% guilds.forEach(function(g) { %>
+        <a href="/servers/<%= g.id %>" class="block bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-amber-500/50 transition">
+          <div class="font-semibold text-lg"><%= g.name %></div>
+          <div class="text-slate-500 text-sm mt-1 font-mono"><%= g.id %></div>
+        </a>
+      <% }) %>
+    </div>
+  </main>
+  <%- include('partials/footer') %>
+</body>
+</html>

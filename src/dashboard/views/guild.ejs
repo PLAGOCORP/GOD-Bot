@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= guild.name %> — botgod.pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <%- include('partials/nav', { inviteUrl: '/' }) %>
+  <main class="max-w-4xl mx-auto px-6 py-10 space-y-10">
+    <div>
+      <a href="/servers" class="text-sm text-slate-500 hover:text-amber-400">← Servidores</a>
+      <h1 class="text-3xl font-bold mt-2"><%= guild.name %></h1>
+      <p class="text-slate-500 font-mono text-sm"><%= guild.id %></p>
+      <% if (discordGuild) { %>
+        <p class="mt-2 text-slate-300">Miembros: <%= discordGuild.memberCount %></p>
+      <% } %>
+    </div>
+
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">Estadísticas</h2>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div><div class="text-2xl font-bold text-amber-400"><%= stats.users %></div><div class="text-slate-500 text-sm">Usuarios DB</div></div>
+        <div><div class="text-2xl font-bold text-orange-400"><%= stats.warns %></div><div class="text-slate-500 text-sm">Warns</div></div>
+        <div><div class="text-2xl font-bold text-sky-400"><%= stats.tickets %></div><div class="text-slate-500 text-sm">Tickets abiertos</div></div>
+      </div>
+    </section>
+
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">Módulos</h2>
+      <form method="POST" action="/servers/<%= guild.id %>/modules" class="space-y-2">
+        <input type="hidden" name="_modules" value="<%= modules.map(m => m.name).join(',') %>"/>
+        <div class="grid sm:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2">
+          <% modules.forEach(function(m) { %>
+            <label class="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-slate-800/50">
+              <input type="checkbox" name="mod_<%= m.name %>" <%= m.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+              <span class="font-mono text-sm"><%= m.name %></span>
+            </label>
+          <% }) %>
+        </div>
+        <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">
+          Guardar módulos
+        </button>
+      </form>
+    </section>
+
+    <% if (discordGuild) { %>
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">Gestionar rol</h2>
+      <form method="POST" action="/servers/<%= guild.id %>/roles" class="grid gap-3 sm:grid-cols-2">
+        <input name="userId" placeholder="User ID" required class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"/>
+        <select name="roleId" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+          <% discordGuild.roles.cache.filter(r => r.id !== discordGuild.id).sort((a,b)=>b.position-a.position).first(40).forEach(function(r) { %>
+            <option value="<%= r.id %>"><%= r.name %></option>
+          <% }) %>
+        </select>
+        <select name="action" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+          <option value="add">Añadir rol</option>
+          <option value="remove">Quitar rol</option>
+        </select>
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold">Aplicar</button>
+      </form>
+    </section>
+    <% } %>
+  </main>
+  <%- include('partials/footer') %>
+</body>
+</html>

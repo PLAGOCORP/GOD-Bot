@@ -1,0 +1,17 @@
+services:
+  god-bot:
+    build: .
+    container_name: god-bot
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # Solo localhost: el proxy (Caddy/Nginx) publica 443 como botgod.pro
+      - "127.0.0.1:3847:3847"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - DOMAIN=botgod.pro
+      - DASHBOARD_URL=${DASHBOARD_URL:-https://botgod.pro}
+      - COOKIE_SECURE=true
+

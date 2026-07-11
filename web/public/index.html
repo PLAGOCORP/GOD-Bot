@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>BotGod — El bot Discord todo-en-uno | botgod.pro</title>
+  <meta name="description" content="God Bot: moderación, tickets, niveles, música, IA. Dashboard en botgod.pro. Proyecto Firebase Godbot."/>
+  <meta property="og:title" content="BotGod — botgod.pro"/>
+  <meta property="og:description" content="El bot Discord todo-en-uno. Sin paywalls. En español."/>
+  <meta property="og:url" content="https://botgod.pro"/>
+  <meta property="og:type" content="website"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/config.js"></script>
+  <script type="module" src="/js/firebase-init.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <nav class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+      <a href="/" class="flex items-center gap-2 font-bold text-xl">
+        <span class="text-amber-400">⚡</span>
+        <span>Bot<span class="text-amber-400">God</span></span>
+        <span class="text-xs font-normal text-slate-500">.pro</span>
+      </a>
+      <div class="flex flex-wrap items-center gap-4 text-sm">
+        <a href="#features" class="text-slate-300 hover:text-amber-400 transition">Features</a>
+        <a href="#status" class="text-slate-300 hover:text-amber-400 transition">Status</a>
+        <a id="btn-invite" href="#" target="_blank" rel="noopener" class="text-slate-300 hover:text-amber-400 transition">Invitar</a>
+        <a id="btn-dash" href="#" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg transition">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-purple-900/20 to-slate-950 pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 pt-20 pb-16 relative text-center">
+      <p class="text-amber-400/90 text-sm font-semibold tracking-widest uppercase mb-4">botgod.pro · Firebase Godbot</p>
+      <h1 class="text-5xl sm:text-7xl font-black mb-6">
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500">God</span>
+        <span class="text-white"> Bot</span>
+      </h1>
+      <p class="text-xl text-slate-300 max-w-2xl mx-auto mb-10">
+        El bot Discord todo-en-uno. Moderación, tickets, niveles, música real, NQN, IA y dashboard web.
+        Self-hosted. En español. Sin paywalls.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a id="cta-invite" href="#" target="_blank" rel="noopener"
+           class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-8 py-3.5 rounded-xl transition shadow-lg shadow-amber-500/20">
+          Invitar a Discord
+        </a>
+        <a id="cta-dash" href="#"
+           class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3.5 rounded-xl transition">
+          Abrir Dashboard
+        </a>
+      </div>
+
+      <div id="status" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16 max-w-3xl mx-auto">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <div id="stat-guilds" class="text-2xl font-bold text-amber-400">—</div>
+          <div class="text-slate-500 text-sm mt-1">Servidores</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <div id="stat-users" class="text-2xl font-bold text-amber-400">—</div>
+          <div class="text-slate-500 text-sm mt-1">Usuarios</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <div id="stat-ping" class="text-2xl font-bold text-amber-400">—</div>
+          <div class="text-slate-500 text-sm mt-1">Ping</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <div class="text-2xl font-bold text-amber-400">v3.1</div>
+          <div class="text-slate-500 text-sm mt-1">Versión</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features" class="max-w-6xl mx-auto px-6 py-16">
+    <h2 class="text-3xl font-bold text-center mb-12">Todo lo que necesitas. Un solo bot.</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="feature-grid">
+      <!-- filled by js or static -->
+    </div>
+  </section>
+
+  <section class="max-w-4xl mx-auto px-6 py-12 text-center">
+    <div class="bg-gradient-to-r from-indigo-900/40 to-amber-900/20 border border-slate-800 rounded-3xl p-10">
+      <h2 class="text-2xl font-bold mb-3">¿Listo para dominar tu servidor?</h2>
+      <p class="text-slate-400 mb-6">Invita a God y configura con <code class="text-amber-400">/god setup</code></p>
+      <a id="cta-invite-2" href="#" target="_blank" rel="noopener"
+         class="inline-block bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-8 py-3 rounded-xl transition">
+        Añadir a Discord
+      </a>
+    </div>
+  </section>
+
+  <footer class="border-t border-slate-800 mt-10">
+    <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row justify-between gap-4 text-sm text-slate-500">
+      <div>
+        <span class="text-amber-400 font-semibold">botgod.pro</span>
+        · Firebase project <code class="text-slate-400">godbot-d5aa2</code>
+      </div>
+      <div class="flex gap-4">
+        <a href="mailto:plago1806@gmail.com" class="hover:text-slate-300">Soporte</a>
+        <span class="text-slate-600">Blaze · Hosting + Firestore</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/site.js"></script>
+</body>
+</html>
