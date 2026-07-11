@@ -2,6 +2,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+cloudflared.exe
 data/*.json
 data/*.db
 data/*.db-*
@@ -15,8 +16,6 @@ secrets/
 *-firebase-adminsdk-*.json
 serviceAccount*.json
 .firebase/
-.firebase/
 *.pem
 cmd-test.txt
 test-load.js
-
