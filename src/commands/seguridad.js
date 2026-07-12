@@ -58,8 +58,8 @@ module.exports = {
     if (sub === 'antinuke') {
       const activo = interaction.options.getBoolean('activo');
       const umbral = interaction.options.getInteger('umbral');
-      db.setModuleEnabled(interaction.guild.id, 'antinuke', activo);
-      if (umbral) db.setGuildSettings(interaction.guild.id, { antinukeThreshold: umbral });
+      await db.setModuleEnabled(interaction.guild.id, 'antinuke', activo);
+      if (umbral) await db.setGuildSettings(interaction.guild.id, { antinukeThreshold: umbral });
       return interaction.reply({
         embeds: [
           embeds.success(
@@ -75,12 +75,12 @@ module.exports = {
       const umbral = interaction.options.getInteger('umbral');
       const edad = interaction.options.getInteger('edad_min_horas');
       const kick = interaction.options.getBoolean('kick_nuevas');
-      db.setModuleEnabled(interaction.guild.id, 'antiraid', activo);
+      await db.setModuleEnabled(interaction.guild.id, 'antiraid', activo);
       const patch = {};
       if (umbral) patch.antiraidThreshold = umbral;
       if (edad !== null && edad !== undefined) patch.minAccountAgeHours = edad;
       if (kick !== null && kick !== undefined) patch.kickNewAccounts = kick;
-      db.setGuildSettings(interaction.guild.id, patch);
+      await db.setGuildSettings(interaction.guild.id, patch);
       return interaction.reply({
         embeds: [
           embeds.success(
@@ -95,7 +95,7 @@ module.exports = {
       const rol = interaction.options.getRole('rol');
       const pregunta = interaction.options.getString('pregunta');
       const respuesta = interaction.options.getString('respuesta').trim().toLowerCase();
-      db.setGuildSettings(interaction.guild.id, {
+      await db.setGuildSettings(interaction.guild.id, {
         verifiedRole: rol.id,
         verifyQuiz: { pregunta, respuesta },
       });
@@ -119,14 +119,14 @@ module.exports = {
     }
 
     if (sub === 'status') {
-      const s = db.getGuildSettings(interaction.guild.id);
+      const s = await db.getGuildSettings(interaction.guild.id);
       return interaction.reply({
         embeds: [
           embeds.info(
             'Seguridad',
             [
-              `Anti-nuke: ${db.isModuleEnabled(interaction.guild.id, 'antinuke') ? 'ON' : 'OFF'} (${s.antinukeThreshold || 3})`,
-              `Anti-raid: ${db.isModuleEnabled(interaction.guild.id, 'antiraid') ? 'ON' : 'OFF'} (${s.antiraidThreshold || 8})`,
+              `Anti-nuke: ${await db.isModuleEnabled(interaction.guild.id, 'antinuke') ? 'ON' : 'OFF'} (${s.antinukeThreshold || 3})`,
+              `Anti-raid: ${await db.isModuleEnabled(interaction.guild.id, 'antiraid') ? 'ON' : 'OFF'} (${s.antiraidThreshold || 8})`,
               `Edad mín cuenta: ${s.minAccountAgeHours || 0}h`,
               `Kick nuevas: ${s.kickNewAccounts ? 'sí' : 'no'}`,
               `Rol verificado: ${s.verifiedRole ? `<@&${s.verifiedRole}>` : '—'}`,

@@ -31,7 +31,7 @@ module.exports = {
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     if (sub === 'enviar') {
-      if (!db.isModuleEnabled(interaction.guild.id, 'confessions')) {
+      if (!await db.isModuleEnabled(interaction.guild.id, 'confessions')) {
         return interaction.reply({ embeds: [embeds.error('Confesiones desactivadas')], ephemeral: true });
       }
       return interaction.showModal(conf.confessModal());
@@ -42,11 +42,11 @@ module.exports = {
       }
       const pub = interaction.options.getChannel('publicacion');
       const rev = interaction.options.getChannel('revision');
-      db.setGuildSettings(interaction.guild.id, {
+      await db.setGuildSettings(interaction.guild.id, {
         confessionChannel: pub.id,
         confessionReviewChannel: rev.id,
       });
-      db.setModuleEnabled(interaction.guild.id, 'confessions', true);
+      await db.setModuleEnabled(interaction.guild.id, 'confessions', true);
       return interaction.reply({
         embeds: [embeds.success('Confesiones', `Público: ${pub}\nRevisión: ${rev}`)],
       });

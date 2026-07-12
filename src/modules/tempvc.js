@@ -19,7 +19,7 @@ async function countUserChannels(guildId, userId) {
 
 async function createTempChannel(interaction, name, userLimit) {
   const guild = interaction.guild;
-  const settings = db.getGuildSettings(guild.id);
+  const settings = await db.getGuildSettings(guild.id);
   const limit = settings.tempvcLimit || 3;
   if (await countUserChannels(guild.id, interaction.user.id) >= limit) {
     throw new Error(`Ya tienes el máximo de VCs temporales (${limit}).`);

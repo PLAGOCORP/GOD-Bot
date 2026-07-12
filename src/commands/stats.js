@@ -57,7 +57,7 @@ module.exports = {
 
     if (sub === 'usuario') {
       const user = interaction.options.getUser('usuario') || interaction.user;
-      const u = db.ensureUser(interaction.guild.id, user.id);
+      const u = await db.ensureUser(interaction.guild.id, user.id);
       return interaction.reply({
         embeds: [
           embeds
@@ -80,15 +80,15 @@ module.exports = {
       if (!isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
-      const sc = { ...(db.getGuildSettings(interaction.guild.id).statsChannels || {}) };
+      const sc = { ...(await db.getGuildSettings(interaction.guild.id).statsChannels || {}) };
       const m = interaction.options.getChannel('miembros');
       const o = interaction.options.getChannel('online');
       const b = interaction.options.getChannel('boosts');
       if (m) sc.members = m.id;
       if (o) sc.online = o.id;
       if (b) sc.boosts = b.id;
-      db.setGuildSettings(interaction.guild.id, { statsChannels: sc });
-      db.setModuleEnabled(interaction.guild.id, 'stats', true);
+      await db.setGuildSettings(interaction.guild.id, { statsChannels: sc });
+      await db.setModuleEnabled(interaction.guild.id, 'stats', true);
       await stats.updateGuild(interaction.guild);
       return interaction.reply({ embeds: [embeds.success('Stats channels', 'Configurados y actualizados.')] });
     }

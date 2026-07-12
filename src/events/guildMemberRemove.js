@@ -12,15 +12,15 @@ module.exports = {
     // Guardar sticky antes de irse
     if (member.roles) {
       try {
-        sticky.saveMemberSticky(member);
+        await sticky.saveMemberSticky(member);
       } catch { /* partial member */ }
     }
 
     await invites.trackLeave(member);
 
-    const settings = db.getGuildSettings(member.guild.id);
+    const settings = await db.getGuildSettings(member.guild.id);
 
-    if (settings.leaveChannel && db.isModuleEnabled(member.guild.id, 'welcome')) {
+    if (settings.leaveChannel && await db.isModuleEnabled(member.guild.id, 'welcome')) {
       const ch = member.guild.channels.cache.get(settings.leaveChannel);
       if (ch) {
         const text = formatTemplate(settings.leaveMessage, {

@@ -38,12 +38,10 @@ function countMentions(message) {
   return (message.mentions.users.size || 0) + (message.mentions.roles.size || 0);
 }
 
-function analyze(message) {
+function analyze(message, am) {
   if (!message.guild || message.author.bot) return null;
-  if (!db.isModuleEnabled(message.guild.id, 'automod')) return null;
   if (message.member?.permissions?.has?.('ManageMessages')) return null;
 
-  const { config: am } = db.getModuleConfig(message.guild.id, 'automod');
   const content = message.content || '';
   const antiInvite = am.antiInvite !== false;
   const antiSpam = am.antiSpam !== false;
@@ -93,7 +91,7 @@ function analyze(message) {
  * steps config: ["delete","warn","timeout","kick","ban"]
  */
 async function escalate(message, hit) {
-  const { config: am } = db.getModuleConfig(message.guild.id, 'automod');
+  const { config: am } = await db.getModuleConfig(message.guild.id, 'automod');
   const chain = am.escalation || ['delete', 'warn', 'timeout', 'kick', 'ban'];
   const n = addStrike(message.guild.id, message.author.id);
   // pick action by strike count (severity by severity)
@@ -107,7 +105,7 @@ async function escalate(message, hit) {
   let detail = action;
 
   if (action === 'warn' || (action !== 'delete' && n >= 2)) {
-    db.addWarn(message.guild.id, message.author.id, message.client.user.id, `AutoMod: ${hit.reason}`);
+    await db.addWarn(message.guild.id, message.author.id, message.client.user.id, `AutoMod: ${hit.reason}`);
   }
   if (action === 'timeout' && member?.moderatable) {
     await member.timeout(10 * 60_000, `AutoMod: ${hit.reason}`).catch(() => {});
@@ -145,7 +143,11 @@ async function escalate(message, hit) {
 }
 
 async function handle(message) {
-  const hit = analyze(message);
+  if (!message.guild || message.author.bot) return false;
+  if (!await db.isModuleEnabled(message.guild.id, 'automod')) return false;
+  if (message.member?.permissions?.has?.('ManageMessages')) return false;
+  const { config: am } = await db.getModuleConfig(message.guild.id, 'automod');
+  const hit = analyze(message, am);
   if (!hit) return false;
   return escalate(message, hit);
 }

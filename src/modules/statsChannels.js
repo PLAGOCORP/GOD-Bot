@@ -2,8 +2,8 @@ const db = require('../database/db');
 const logger = require('../utils/logger');
 
 async function updateGuild(guild) {
-  if (!db.isModuleEnabled(guild.id, 'stats')) return;
-  const settings = db.getGuildSettings(guild.id);
+  if (!await db.isModuleEnabled(guild.id, 'stats')) return;
+  const settings = await db.getGuildSettings(guild.id);
   const sc = settings.statsChannels || {};
   if (!sc.members && !sc.online && !sc.boosts) return;
 

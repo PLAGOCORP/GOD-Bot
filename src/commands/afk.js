@@ -9,7 +9,7 @@ module.exports = {
     .addStringOption((o) => o.setName('razon').setDescription('Razón')),
   async execute(interaction) {
     const reason = interaction.options.getString('razon') || 'AFK';
-    db.setAfk(interaction.guild.id, interaction.user.id, reason);
+    await db.setAfk(interaction.guild.id, interaction.user.id, reason);
     await interaction.reply({
       embeds: [embeds.success('AFK', `Ahora estás AFK: **${reason}**`)],
     });

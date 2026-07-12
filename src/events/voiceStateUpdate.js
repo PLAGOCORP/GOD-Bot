@@ -21,7 +21,7 @@ module.exports = {
     if (oldState.channelId && oldState.channelId !== newState.channelId) {
       const row = await db.getTempChannel(oldState.channelId);
       if (row) {
-        setTimeout(() => tempvc.cleanupEmpty(client), 3000);
+        setTimeout(() => tempvc.cleanupEmpty(client).catch(() => {}), 3000);
       }
     }
   },

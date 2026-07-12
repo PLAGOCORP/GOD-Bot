@@ -87,7 +87,7 @@ module.exports = {
       const patch = {};
       if (canal) patch.birthdayChannel = canal.id;
       if (rol) patch.birthdayRole = rol.id;
-      db.setGuildSettings(interaction.guild.id, patch);
+      await db.setGuildSettings(interaction.guild.id, patch);
       return interaction.reply({ embeds: [embeds.success('Cumpleaños config', 'Guardado.')] });
     }
   },

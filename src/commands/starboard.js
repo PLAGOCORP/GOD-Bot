@@ -30,12 +30,12 @@ module.exports = {
       const canal = interaction.options.getChannel('canal');
       const emoji = interaction.options.getString('emoji') || '⭐';
       const min = interaction.options.getInteger('minimo') || 3;
-      db.setGuildSettings(interaction.guild.id, {
+      await db.setGuildSettings(interaction.guild.id, {
         starboardChannel: canal.id,
         starboardEmoji: emoji,
         starboardMin: min,
       });
-      db.setModuleEnabled(interaction.guild.id, 'starboard', true);
+      await db.setModuleEnabled(interaction.guild.id, 'starboard', true);
       return interaction.reply({
         embeds: [
           embeds.success(
@@ -46,7 +46,7 @@ module.exports = {
       });
     }
     if (sub === 'status') {
-      const s = db.getGuildSettings(interaction.guild.id);
+      const s = await db.getGuildSettings(interaction.guild.id);
       return interaction.reply({
         embeds: [
           embeds.info(

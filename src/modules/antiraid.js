@@ -15,9 +15,9 @@ function isLocked(guildId) {
   return Date.now() < until;
 }
 
-function recordJoin(guildId) {
+async function recordJoin(guildId) {
   const now = Date.now();
-  const s = db.getGuildSettings(guildId);
+  const s = await db.getGuildSettings(guildId);
   const windowMs = s.antiraidWindowMs || 15_000;
   const list = (joins.get(guildId) || []).filter((t) => now - t < windowMs);
   list.push(now);
@@ -26,11 +26,11 @@ function recordJoin(guildId) {
 }
 
 async function onMemberJoin(member) {
-  if (!db.isModuleEnabled(member.guild.id, 'antiraid')) return null;
+  if (!await db.isModuleEnabled(member.guild.id, 'antiraid')) return null;
 
-  const settings = db.getGuildSettings(member.guild.id);
+  const settings = await db.getGuildSettings(member.guild.id);
   const threshold = settings.antiraidThreshold || 8;
-  const count = recordJoin(member.guild.id);
+  const count = await recordJoin(member.guild.id);
 
   // Account age check
   const minAge = settings.minAccountAgeHours || 0;

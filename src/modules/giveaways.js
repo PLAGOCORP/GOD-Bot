@@ -50,7 +50,7 @@ async function endGiveaway(client, g) {
     winners.push(pool.splice(idx, 1)[0]);
   }
 
-  db.saveGiveaway({
+  await db.saveGiveaway({
     id: g.id,
     guild_id: g.guild_id,
     channel_id: g.channel_id,
@@ -99,7 +99,7 @@ async function endGiveaway(client, g) {
 function startChecker(client) {
   setInterval(async () => {
     try {
-      const list = db.activeGiveaways();
+      const list = await db.activeGiveaways();
       const now = Date.now();
       for (const g of list) {
         if (g.end_timestamp <= now) {

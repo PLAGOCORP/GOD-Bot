@@ -21,8 +21,8 @@ module.exports = {
 `);
 
     for (const guild of client.guilds.cache.values()) {
-      db.ensureGuild(guild.id);
-      invites.cacheGuildInvites(guild).catch(() => {});
+      await db.ensureGuild(guild.id);
+      await invites.cacheGuildInvites(guild).catch(() => {});
     }
 
     giveaways.startChecker(client);

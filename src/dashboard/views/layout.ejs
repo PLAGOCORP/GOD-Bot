@@ -85,22 +85,6 @@
         showToast('Error de conexión', 'error');
       }
     }
-
-    function channelSelect(name, selected) {
-      const channels = <%- JSON.stringify(channels || []) %>;
-      return `<select name="${name}" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full text-sm">
-        <option value="">Ninguno</option>
-        ${channels.map(c => `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}># ${c.name}</option>`).join('')}
-      </select>`;
-    }
-
-    function roleSelect(name, selected) {
-      const roles = <%- JSON.stringify(roles || []) %>;
-      return `<select name="${name}" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full text-sm">
-        <option value="">Ninguno</option>
-        ${roles.map(r => `<option value="${r.id}" ${r.id === selected ? 'selected' : ''}>@ ${r.name}</option>`).join('')}
-      </select>`;
-    }
   </script>
 </body>
 </html>

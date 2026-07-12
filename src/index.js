@@ -62,12 +62,6 @@ client.config = config;
 loadCommands(client);
 loadEvents(client);
 
-// Seed plantillas built-in en DB
-try {
-  templates.seedBuiltinToDb();
-} catch (e) {
-  logger.warn('Seed templates:', e.message);
-}
 
 // Auto-close tickets inactivos (cada hora)
 setInterval(async () => {
@@ -122,6 +116,9 @@ client.once(require('discord.js').Events.ClientReady, () => {
       };
       publish();
       setInterval(publish, 5 * 60_000);
+
+      // Seed plantillas built-in (requiere Firebase inicializado)
+      templates.seedBuiltinToDb().catch((e) => logger.warn('Seed templates:', e.message));
     }
   } catch {
     /* firebase-admin no instalado o sin credenciales */

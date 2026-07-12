@@ -49,7 +49,7 @@ module.exports = {
     )
     .addSubcommand((s) => s.setName('lista').setDescription('Lista plantillas')),
   async execute(interaction) {
-    if (!isMod(interaction.member)) {
+    if (!await isMod(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Sin permisos')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();

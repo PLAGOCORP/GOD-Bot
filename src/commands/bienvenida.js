@@ -65,28 +65,28 @@ module.exports = {
 
     if (sub === 'canal') {
       const ch = interaction.options.getChannel('canal');
-      db.setGuildSettings(gid, { welcomeChannel: ch.id });
+      await db.setGuildSettings(gid, { welcomeChannel: ch.id });
       return interaction.reply({ embeds: [embeds.success('Bienvenida', `Canal: ${ch}`)] });
     }
     if (sub === 'despedida') {
       const ch = interaction.options.getChannel('canal');
-      db.setGuildSettings(gid, { leaveChannel: ch.id });
+      await db.setGuildSettings(gid, { leaveChannel: ch.id });
       return interaction.reply({ embeds: [embeds.success('Despedida', `Canal: ${ch}`)] });
     }
     if (sub === 'mensaje') {
       const texto = interaction.options.getString('texto');
-      db.setGuildSettings(gid, { welcomeMessage: texto });
+      await db.setGuildSettings(gid, { welcomeMessage: texto });
       return interaction.reply({ embeds: [embeds.success('Mensaje guardado', texto)] });
     }
     if (sub === 'dm') {
       const activo = interaction.options.getBoolean('activo');
-      db.setGuildSettings(gid, { welcomeDm: activo });
+      await db.setGuildSettings(gid, { welcomeDm: activo });
       return interaction.reply({ embeds: [embeds.success('DM bienvenida', activo ? 'ON' : 'OFF')] });
     }
     if (sub === 'verificacion') {
       const verified = interaction.options.getRole('rol_verificado');
       const unverified = interaction.options.getRole('rol_no_verificado');
-      db.setGuildSettings(gid, {
+      await db.setGuildSettings(gid, {
         verifiedRole: verified.id,
         unverifiedRole: unverified?.id || null,
         verificationChannel: interaction.channel.id,
@@ -112,7 +112,7 @@ module.exports = {
 
     if (sub === 'imagen') {
       const activo = interaction.options.getBoolean('activo');
-      db.setModuleConfig(gid, 'welcome', { welcomeImage: activo });
+      await db.setModuleConfig(gid, 'welcome', { welcomeImage: activo });
       return interaction.reply({
         embeds: [embeds.success('Welcome card', activo ? 'PNG activado en joins' : 'Solo embed')],
       });

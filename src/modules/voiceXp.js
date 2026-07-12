@@ -23,8 +23,8 @@ function onLeave(guildId, userId) {
  */
 async function tick(client) {
   for (const guild of client.guilds.cache.values()) {
-    if (!db.isModuleEnabled(guild.id, 'leveling')) continue;
-    const settings = db.getGuildSettings(guild.id);
+    if (!await db.isModuleEnabled(guild.id, 'leveling')) continue;
+    const settings = await db.getGuildSettings(guild.id);
 
     for (const [, channel] of guild.channels.cache.filter((c) => c.isVoiceBased())) {
       if (channel.id === guild.afkChannelId) continue;
@@ -32,7 +32,7 @@ async function tick(client) {
         if (member.user.bot) continue;
         if (member.voice.selfDeaf && member.voice.serverDeaf) continue;
 
-        const user = db.ensureUser(guild.id, member.id);
+        const user = await db.ensureUser(guild.id, member.id);
         const now = Date.now();
         if (now - (user.last_voice_xp || 0) < config.leveling.voiceIntervalMs) continue;
 
@@ -42,7 +42,7 @@ async function tick(client) {
         const after = levelFromXp(xp_voice);
         const minutes = (user.voice_minutes || 0) + 1;
 
-        db.updateUser(guild.id, member.id, {
+        await db.updateUser(guild.id, member.id, {
           xp_voice,
           level_voice: after.level,
           last_voice_xp: now,

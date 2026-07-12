@@ -21,9 +21,9 @@ async function handleReaction(reaction, user, added) {
   }
   const message = reaction.message;
   if (!message.guild || message.author?.bot) return;
-  if (!db.isModuleEnabled(message.guild.id, 'starboard')) return;
+  if (!await db.isModuleEnabled(message.guild.id, 'starboard')) return;
 
-  const settings = db.getGuildSettings(message.guild.id);
+  const settings = await db.getGuildSettings(message.guild.id);
   if (!settings.starboardChannel) return;
   if (!emojiMatch(reaction, settings.starboardEmoji)) return;
 

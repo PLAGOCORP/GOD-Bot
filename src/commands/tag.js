@@ -47,19 +47,19 @@ module.exports = {
     )
     .addSubcommand((s) => s.setName('lista').setDescription('Lista tags')),
   async execute(interaction) {
-    if (!db.isModuleEnabled(interaction.guild.id, 'tags')) {
+    if (!await db.isModuleEnabled(interaction.guild.id, 'tags')) {
       return interaction.reply({ embeds: [embeds.error('Tags desactivados')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();
     const gid = interaction.guild.id;
 
     if (sub === 'crear') {
-      if (!isMod(interaction.member)) {
+      if (!await isMod(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo staff')], ephemeral: true });
       }
       const nombre = interaction.options.getString('nombre');
       const contenido = interaction.options.getString('contenido');
-      db.setTag(gid, nombre, contenido, interaction.user.id);
+      await db.setTag(gid, nombre, contenido, interaction.user.id);
       return interaction.reply({
         embeds: [
           embeds.success(
@@ -72,7 +72,7 @@ module.exports = {
 
     if (sub === 'ver') {
       const nombre = interaction.options.getString('nombre');
-      const tag = db.getTag(gid, nombre);
+      const tag = await db.getTag(gid, nombre);
       if (!tag) {
         return interaction.reply({ embeds: [embeds.error('Tag no existe')], ephemeral: true });
       }
@@ -81,15 +81,15 @@ module.exports = {
     }
 
     if (sub === 'borrar') {
-      if (!isMod(interaction.member)) {
+      if (!await isMod(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo staff')], ephemeral: true });
       }
-      db.deleteTag(gid, interaction.options.getString('nombre'));
+      await db.deleteTag(gid, interaction.options.getString('nombre'));
       return interaction.reply({ embeds: [embeds.success('Tag borrado')] });
     }
 
     if (sub === 'lista') {
-      const list = db.listTags(gid);
+      const list = await db.listTags(gid);
       if (!list.length) {
         return interaction.reply({ embeds: [embeds.info('Tags', 'Ninguno. Usa `/tag crear`.')] });
       }

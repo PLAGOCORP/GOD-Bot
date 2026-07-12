@@ -40,7 +40,7 @@ module.exports = {
         .addStringOption((o) => o.setName('id').setDescription('ID del sorteo').setRequired(true))
     ),
   async execute(interaction, client) {
-    if (!db.isModuleEnabled(interaction.guild.id, 'giveaways')) {
+    if (!await db.isModuleEnabled(interaction.guild.id, 'giveaways')) {
       return interaction.reply({ embeds: [embeds.error('Módulo sorteos desactivado')], ephemeral: true });
     }
     if (!isAdmin(interaction.member) && !interaction.memberPermissions?.has('ManageGuild')) {
@@ -95,13 +95,13 @@ module.exports = {
         fetchReply: true,
       });
       g.message_id = msg.id;
-      db.saveGiveaway(g);
+      await db.saveGiveaway(g);
       return;
     }
 
     if (sub === 'terminar') {
       const id = interaction.options.getString('id');
-      const g = db.getGiveaway(id);
+      const g = await db.getGiveaway(id);
       if (!g || g.guild_id !== interaction.guild.id) {
         return interaction.reply({ embeds: [embeds.error('Sorteo no encontrado')], ephemeral: true });
       }
@@ -114,7 +114,7 @@ module.exports = {
 
     if (sub === 'reroll') {
       const id = interaction.options.getString('id');
-      const g = db.getGiveaway(id);
+      const g = await db.getGiveaway(id);
       if (!g || g.guild_id !== interaction.guild.id) {
         return interaction.reply({ embeds: [embeds.error('Sorteo no encontrado')], ephemeral: true });
       }

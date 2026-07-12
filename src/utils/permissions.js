@@ -15,7 +15,7 @@ function isAdmin(member) {
   );
 }
 
-function isMod(member) {
+async function isMod(member) {
   if (!member) return false;
   if (isOwner(member.id) || isAdmin(member)) return true;
   if (
@@ -27,7 +27,7 @@ function isMod(member) {
     return true;
 
   try {
-    const settings = db.getGuildSettings(member.guild.id);
+    const settings = await db.getGuildSettings(member.guild.id);
     if (settings.modRole && member.roles.cache.has(settings.modRole)) return true;
     if (Array.isArray(settings.staffRoles)) {
       return settings.staffRoles.some((r) => member.roles.cache.has(r));

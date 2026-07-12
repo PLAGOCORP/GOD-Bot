@@ -47,7 +47,7 @@ module.exports = {
       const nombre = interaction.options.getString('nombre').replace(/:/g, '');
       const url = interaction.options.getString('url');
       const animado = interaction.options.getBoolean('animado') || url.endsWith('.gif');
-      nqn.addEmote(interaction.guild.id, nombre, url, animado);
+      await nqn.addEmote(interaction.guild.id, nombre, url, animado);
       return interaction.reply({
         embeds: [embeds.success('Emote añadido', `Usa \`:${nombre}:\` en el chat (NQN).`)],
       });
@@ -84,7 +84,7 @@ module.exports = {
     }
 
     if (sub === 'lista') {
-      const list = nqn.listEmotes(interaction.guild.id);
+      const list = await nqn.listEmotes(interaction.guild.id);
       if (!list.length) {
         return interaction.reply({ embeds: [embeds.info('Emotes', 'Pack vacío. `/emote agregar`')] });
       }
@@ -105,7 +105,7 @@ module.exports = {
         const url = `https://cdn.discordapp.com/emojis/${m[3]}.${m[1] ? 'gif' : 'png'}?size=256`;
         return interaction.reply({ embeds: [embeds.base().setTitle(m[2]).setImage(url)] });
       }
-      const found = nqn.findEmoji(interaction.client, raw.replace(/:/g, ''));
+      const found = await nqn.findEmoji(interaction.client, raw.replace(/:/g, ''));
       if (found?.url || found?.customUrl) {
         return interaction.reply({
           embeds: [embeds.base().setTitle(found.name).setImage(found.url || found.customUrl)],
@@ -119,7 +119,7 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const activo = interaction.options.getBoolean('activo');
-      db.setModuleEnabled(interaction.guild.id, 'emotes', activo);
+      await db.setModuleEnabled(interaction.guild.id, 'emotes', activo);
       return interaction.reply({
         embeds: [
           embeds.success(

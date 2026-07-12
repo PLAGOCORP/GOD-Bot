@@ -7,7 +7,7 @@ module.exports = {
   name: Events.ChannelCreate,
   async execute(channel) {
     if (!channel.guild) return;
-    if (db.isModuleEnabled(channel.guild.id, 'logging')) {
+    if (await db.isModuleEnabled(channel.guild.id, 'logging')) {
       await logging.sendLog(channel.guild, 'role', {
         title: 'Canal creado',
         fields: [{ name: 'Canal', value: `${channel} (\`${channel.name}\`)` }],

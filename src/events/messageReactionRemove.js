@@ -21,7 +21,7 @@ module.exports = {
 
     await starboard.handleReaction(reaction, user, false);
 
-    const rows = db.getReactionRoles(reaction.message.id);
+    const rows = await db.getReactionRoles(reaction.message.id);
     const key = emojiKey(reaction.emoji);
     const alt = reaction.emoji.id || reaction.emoji.name;
     const row = rows.find((r) => r.emoji === key || r.emoji === alt || r.emoji === reaction.emoji.name);

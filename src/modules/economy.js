@@ -2,6 +2,22 @@ const db = require('../database/db');
 const config = require('../config');
 const { randomInt } = require('../utils/helpers');
 
+// Anti-doble-gasto: locks temporales por usuario (100ms)
+const txLocks = new Map(); // "guildId:userId" => release timestamp
+
+function acquireLock(guildId, userId) {
+  const key = `${guildId}:${userId}`;
+  const now = Date.now();
+  const locked = txLocks.get(key);
+  if (locked && now < locked) return false; // aún bloqueado
+  txLocks.set(key, now + 100); // liberar en 100ms
+  return true;
+}
+
+function releaseLock(guildId, userId) {
+  txLocks.delete(`${guildId}:${userId}`);
+}
+
 async function getProfile(guildId, userId) {
   const u = await db.ensureUser(guildId, userId);
   return {
@@ -24,37 +40,58 @@ async function saveMoney(guildId, userId, { balance, bank, lastDaily, lastWork, 
 }
 
 async function claimDaily(guildId, userId) {
-  const p = await getProfile(guildId, userId);
-  const now = Date.now();
-  if (now - (p.lastDaily || 0) < config.economy.dailyCooldown) {
-    return { ok: false, remaining: config.economy.dailyCooldown - (now - p.lastDaily) };
+  if (!acquireLock(guildId, userId)) {
+    return { ok: false, remaining: 1, locked: true };
   }
-  const amount = randomInt(config.economy.dailyMin, config.economy.dailyMax);
-  const balance = p.balance + amount;
-  saveMoney(guildId, userId, { balance, lastDaily: now });
-  return { ok: true, amount, balance };
+  try {
+    const p = await getProfile(guildId, userId);
+    const now = Date.now();
+    if (now - (p.lastDaily || 0) < config.economy.dailyCooldown) {
+      return { ok: false, remaining: config.economy.dailyCooldown - (now - p.lastDaily) };
+    }
+    const amount = randomInt(config.economy.dailyMin, config.economy.dailyMax);
+    const balance = p.balance + amount;
+    await saveMoney(guildId, userId, { balance, lastDaily: now });
+    return { ok: true, amount, balance };
+  } finally {
+    releaseLock(guildId, userId);
+  }
 }
 
 async function claimWork(guildId, userId) {
-  const p = await getProfile(guildId, userId);
-  const now = Date.now();
-  if (now - (p.lastWork || 0) < config.economy.workCooldown) {
-    return { ok: false, remaining: config.economy.workCooldown - (now - p.lastWork) };
+  if (!acquireLock(guildId, userId)) {
+    return { ok: false, remaining: 1, locked: true };
   }
-  const amount = randomInt(config.economy.workMin, config.economy.workMax);
-  const balance = p.balance + amount;
-  saveMoney(guildId, userId, { balance, lastWork: now });
-  return { ok: true, amount, balance };
+  try {
+    const p = await getProfile(guildId, userId);
+    const now = Date.now();
+    if (now - (p.lastWork || 0) < config.economy.workCooldown) {
+      return { ok: false, remaining: config.economy.workCooldown - (now - p.lastWork) };
+    }
+    const amount = randomInt(config.economy.workMin, config.economy.workMax);
+    const balance = p.balance + amount;
+    await saveMoney(guildId, userId, { balance, lastWork: now });
+    return { ok: true, amount, balance };
+  } finally {
+    releaseLock(guildId, userId);
+  }
 }
 
 async function transfer(guildId, fromId, toId, amount) {
-  const from = await getProfile(guildId, fromId);
-  if (from.balance < amount) return { ok: false };
-  await db.ensureUser(guildId, toId);
-  await saveMoney(guildId, fromId, { balance: from.balance - amount });
-  const to = await getProfile(guildId, toId);
-  await saveMoney(guildId, toId, { balance: to.balance + amount });
-  return { ok: true };
+  if (!acquireLock(guildId, fromId)) {
+    return { ok: false, locked: true };
+  }
+  try {
+    const from = await getProfile(guildId, fromId);
+    if (from.balance < amount) return { ok: false };
+    await db.ensureUser(guildId, toId);
+    await saveMoney(guildId, fromId, { balance: from.balance - amount });
+    const to = await getProfile(guildId, toId);
+    await saveMoney(guildId, toId, { balance: to.balance + amount });
+    return { ok: true };
+  } finally {
+    releaseLock(guildId, fromId);
+  }
 }
 
 async function leaderboard(guildId, limit = 10) {

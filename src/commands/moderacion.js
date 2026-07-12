@@ -100,10 +100,10 @@ module.exports = {
     .addSubcommand((s) => s.setName('unlock').setDescription('Desbloquea el canal'))
     .addSubcommand((s) => s.setName('nuke').setDescription('Clona y borra el canal (limpia historial)')),
   async execute(interaction) {
-    if (!db.isModuleEnabled(interaction.guild.id, 'moderation')) {
+    if (!await db.isModuleEnabled(interaction.guild.id, 'moderation')) {
       return interaction.reply({ embeds: [embeds.error('Módulo moderación desactivado')], ephemeral: true });
     }
-    if (!isMod(interaction.member)) {
+    if (!await isMod(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Sin permisos de moderación')], ephemeral: true });
     }
 
@@ -192,7 +192,7 @@ module.exports = {
 
     if (sub === 'warn') {
       const user = interaction.options.getUser('usuario');
-      const { id, total } = db.addWarn(interaction.guild.id, user.id, interaction.user.id, reason);
+      const { id, total } = await db.addWarn(interaction.guild.id, user.id, interaction.user.id, reason);
       await logging.logModAction(interaction.guild, 'warn', {
         moderator: interaction.user,
         target: user,
@@ -221,7 +221,7 @@ module.exports = {
 
     if (sub === 'warnings') {
       const user = interaction.options.getUser('usuario');
-      const list = db.listWarns(interaction.guild.id, user.id);
+      const list = await db.listWarns(interaction.guild.id, user.id);
       if (!list.length) {
         return interaction.reply({ embeds: [embeds.info('Warns', `${user.tag} no tiene advertencias.`)] });
       }
@@ -238,7 +238,7 @@ module.exports = {
 
     if (sub === 'unwarn') {
       const id = interaction.options.getInteger('id');
-      const row = db.removeWarn(interaction.guild.id, id);
+      const row = await db.removeWarn(interaction.guild.id, id);
       if (!row) {
         return interaction.reply({ embeds: [embeds.error('Warn no encontrado')], ephemeral: true });
       }
@@ -247,7 +247,7 @@ module.exports = {
 
     if (sub === 'clearwarns') {
       const user = interaction.options.getUser('usuario');
-      db.clearWarns(interaction.guild.id, user.id);
+      await db.clearWarns(interaction.guild.id, user.id);
       return interaction.reply({
         embeds: [embeds.success('Warns limpiados', `Se borraron las advertencias de ${user.tag}.`)],
       });

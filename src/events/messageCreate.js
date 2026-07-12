@@ -12,9 +12,9 @@ module.exports = {
     if (!message.guild || message.author.bot) return;
 
     // Update ticket activity
-    const ticket = db.getTicketByChannel(message.channel.id);
+    const ticket = await db.getTicketByChannel(message.channel.id);
     if (ticket) {
-      db.updateTicket(ticket.id, { last_activity: Date.now() });
+      await db.updateTicket(ticket.id, { last_activity: Date.now() });
     }
 
     if (await automod.handle(message)) return;
@@ -23,9 +23,9 @@ module.exports = {
     if (await nqn.handleMessage(message)) return;
 
     // AFK
-    const afkSelf = db.getAfk(message.guild.id, message.author.id);
+    const afkSelf = await db.getAfk(message.guild.id, message.author.id);
     if (afkSelf) {
-      db.clearAfk(message.guild.id, message.author.id);
+      await db.clearAfk(message.guild.id, message.author.id);
       message.channel
         .send({ embeds: [embeds.success('AFK', `${message.author}, ya no estás AFK.`)] })
         .then((m) => setTimeout(() => m.delete().catch(() => {}), 4000))
@@ -33,7 +33,7 @@ module.exports = {
     }
     if (message.mentions.users.size) {
       for (const [, user] of message.mentions.users) {
-        const data = db.getAfk(message.guild.id, user.id);
+        const data = await db.getAfk(message.guild.id, user.id);
         if (data) {
           message
             .reply({
@@ -50,10 +50,10 @@ module.exports = {
     }
 
     // Leveling text XP (respeta no-XP channels/roles)
-    const xp = leveling.addTextXp(message.guild.id, message.author.id, message);
+    const xp = await leveling.addTextXp(message.guild.id, message.author.id, message);
     if (xp) await leveling.announceLevelUp(message, xp);
 
-    const settings = db.getGuildSettings(message.guild.id);
+    const settings = await db.getGuildSettings(message.guild.id);
     const prefix = settings.prefix || config.prefix;
     if (!message.content.startsWith(prefix)) return;
 
@@ -74,7 +74,7 @@ module.exports = {
       ((c) => c);
 
     if (name === 'tag' && args[0]) {
-      const tag = db.getTag(message.guild.id, args[0]);
+      const tag = await db.getTag(message.guild.id, args[0]);
       if (tag) {
         const fakeIx = {
           user: message.author,
@@ -85,7 +85,7 @@ module.exports = {
       }
     }
 
-    const tag = db.getTag(message.guild.id, name);
+    const tag = await db.getTag(message.guild.id, name);
     if (tag) {
       await db.incrementTagUses(message.guild.id, name);
       const fakeIx = {

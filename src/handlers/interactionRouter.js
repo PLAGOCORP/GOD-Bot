@@ -58,14 +58,14 @@ async function handleButton(interaction, client) {
 
   if (id.startsWith('giveaway_join:')) {
     const gid = id.split(':')[1];
-    const g = db.getGiveaway(gid);
+    const g = await db.getGiveaway(gid);
     if (!g || g.ended) {
       return interaction.reply({ content: 'Este giveaway ya terminó.', ephemeral: true });
     }
     // Requirements
     const req = g.requirements || {};
     if (req.minLevel) {
-      const u = db.ensureUser(interaction.guild.id, interaction.user.id);
+      const u = await db.ensureUser(interaction.guild.id, interaction.user.id);
       if ((u.level_text || 0) < req.minLevel) {
         return interaction.reply({
           content: `Necesitas nivel **${req.minLevel}** (tienes ${u.level_text || 0}).`,
@@ -89,11 +89,11 @@ async function handleButton(interaction, client) {
     let entrants = g.entrants || [];
     if (entrants.includes(interaction.user.id)) {
       entrants = entrants.filter((x) => x !== interaction.user.id);
-      db.saveGiveaway({ ...serializeG(g), entrants_json: entrants, ended: 0 });
+      await db.saveGiveaway({ ...serializeG(g), entrants_json: entrants, ended: 0 });
       return interaction.reply({ content: 'Has salido del sorteo.', ephemeral: true });
     }
     entrants.push(interaction.user.id);
-    db.saveGiveaway({ ...serializeG(g), entrants_json: entrants, ended: 0 });
+    await db.saveGiveaway({ ...serializeG(g), entrants_json: entrants, ended: 0 });
     try {
       const emb = giveawayMod.buildEmbed({ ...g, entrants }, client.user);
       await interaction.message.edit({ embeds: [emb], components: giveawayMod.buildComponents(gid) });
@@ -106,7 +106,7 @@ async function handleButton(interaction, client) {
 
   if (id.startsWith('ticket_rate:')) {
     const [, ticketId, score] = id.split(':');
-    db.updateTicket(Number(ticketId), { rating: Number(score) });
+    await db.updateTicket(Number(ticketId), { rating: Number(score) });
     return interaction.reply({
       content: `¡Gracias! Valoraste el ticket #${ticketId} con **${score}/5** ⭐`,
       ephemeral: true,
@@ -145,7 +145,7 @@ async function handleButton(interaction, client) {
   }
 
   if (id === 'verify_quiz_start') {
-    const s = db.getGuildSettings(interaction.guild.id);
+    const s = await db.getGuildSettings(interaction.guild.id);
     const quiz = s.verifyQuiz;
     if (!quiz) {
       return interaction.reply({ content: 'Quiz no configurado.', ephemeral: true });
@@ -196,12 +196,12 @@ async function handleButton(interaction, client) {
 
   if (id === 'ticket_close') return tickets.closeTicket(interaction);
   if (id === 'ticket_claim') {
-    const ticket = db.getTicketByChannel(interaction.channel.id);
+    const ticket = await db.getTicketByChannel(interaction.channel.id);
     if (!ticket) return interaction.reply({ content: 'No es un ticket.', ephemeral: true });
     if (ticket.claimed_by) {
       return interaction.reply({ content: `Ya reclamado por <@${ticket.claimed_by}>`, ephemeral: true });
     }
-    db.updateTicket(ticket.id, { claimed_by: interaction.user.id, status: 'claimed' });
+    await db.updateTicket(ticket.id, { claimed_by: interaction.user.id, status: 'claimed' });
     await interaction.reply({ content: `✋ Ticket reclamado por ${interaction.user}` });
     await interaction.message.edit({ components: tickets.ticketButtons(true) }).catch(() => {});
     return;
@@ -212,7 +212,7 @@ async function handleButton(interaction, client) {
   }
 
   if (id.startsWith('brole:')) {
-    const row = db.getButtonRole(id);
+    const row = await db.getButtonRole(id);
     if (!row) return interaction.reply({ content: 'Rol no configurado.', ephemeral: true });
     const role = interaction.guild.roles.cache.get(row.role_id);
     if (!role) return interaction.reply({ content: 'El rol ya no existe.', ephemeral: true });
@@ -229,7 +229,7 @@ async function handleButton(interaction, client) {
   }
 
   if (id === 'verify_me') {
-    const s = db.getGuildSettings(interaction.guild.id);
+    const s = await db.getGuildSettings(interaction.guild.id);
     if (s.verifiedRole) await interaction.member.roles.add(s.verifiedRole).catch(() => {});
     if (s.unverifiedRole) await interaction.member.roles.remove(s.unverifiedRole).catch(() => {});
     return interaction.reply({
@@ -239,16 +239,16 @@ async function handleButton(interaction, client) {
   }
 
   if (id.startsWith('app_approve:') || id.startsWith('app_reject:')) {
-    if (!isMod(interaction.member)) {
+    if (!await isMod(interaction.member)) {
       return interaction.reply({ content: 'Solo staff.', ephemeral: true });
     }
     const appId = id.split(':')[1];
     const approve = id.startsWith('app_approve:');
-    const app = apps.getApp(appId);
+    const app = await apps.getApp(appId);
     if (!app) return interaction.reply({ content: 'Aplicación no encontrada.', ephemeral: true });
-    apps.setStatus(appId, approve ? 'approved' : 'rejected', interaction.user.id);
+    await apps.setStatus(appId, approve ? 'approved' : 'rejected', interaction.user.id);
     if (approve) {
-      const typeRow = apps.getType(app.guild_id, app.type);
+      const typeRow = await apps.getType(app.guild_id, app.type);
       if (typeRow?.approve_role_id) {
         const member = await interaction.guild.members.fetch(app.user_id).catch(() => null);
         if (member) await member.roles.add(typeRow.approve_role_id).catch(() => {});
@@ -274,17 +274,17 @@ async function handleButton(interaction, client) {
   }
 
   if (id.startsWith('confess_approve:') || id.startsWith('confess_reject:')) {
-    if (!isMod(interaction.member)) {
+    if (!await isMod(interaction.member)) {
       return interaction.reply({ content: 'Solo staff.', ephemeral: true });
     }
     const cid = id.split(':')[1];
-    const row = confessions.get(cid);
+    const row = await confessions.get(cid);
     if (!row) return interaction.reply({ content: 'No encontrada.', ephemeral: true });
     if (id.startsWith('confess_reject:')) {
-      confessions.setStatus(cid, 'rejected', interaction.user.id);
+      await confessions.setStatus(cid, 'rejected', interaction.user.id, null, interaction.user.username);
       return interaction.update({ content: `Rechazada por ${interaction.user}`, components: [], embeds: [] });
     }
-    const settings = db.getGuildSettings(interaction.guild.id);
+    const settings = await db.getGuildSettings(interaction.guild.id);
     const pub = settings.confessionChannel
       ? interaction.guild.channels.cache.get(settings.confessionChannel)
       : null;
@@ -296,7 +296,7 @@ async function handleButton(interaction, client) {
         embeds.god(`💭 Confesión #${cid}`, row.content).setFooter({ text: 'Anónima · moderada por God' }),
       ],
     });
-    confessions.setStatus(cid, 'published', interaction.user.id, msg.id);
+    await confessions.setStatus(cid, 'published', interaction.user.id, msg.id, interaction.user.username);
     return interaction.update({
       content: `Publicada por ${interaction.user}`,
       components: [],
@@ -304,7 +304,7 @@ async function handleButton(interaction, client) {
   }
 
   if (id.startsWith('sug_approve:') || id.startsWith('sug_deny:')) {
-    if (!isMod(interaction.member)) {
+    if (!await isMod(interaction.member)) {
       return interaction.reply({ content: 'Solo staff.', ephemeral: true });
     }
     const sid = id.split(':')[1];
@@ -320,9 +320,12 @@ async function handleButton(interaction, client) {
     const step = id.replace('setup_', '');
     if (step === 'modules') {
       const mods = Object.keys(db.DEFAULT_MODULES);
-      const body = mods
-        .map((m) => `• **${m}**: ${db.isModuleEnabled(interaction.guild.id, m) ? '✅' : '❌'}`)
-        .join('\n');
+      const lines = [];
+      for (const m of mods) {
+        const on = await db.isModuleEnabled(interaction.guild.id, m);
+        lines.push(`• **${m}**: ${on ? '✅' : '❌'}`);
+      }
+      const body = lines.join('\n');
       return interaction.reply({
         embeds: [embeds.god('Módulos', body)],
         ephemeral: true,
@@ -385,8 +388,8 @@ async function handleSelect(interaction, client) {
 
   if (interaction.customId === 'god_module_toggle') {
     const mod = interaction.values[0];
-    const cur = db.isModuleEnabled(interaction.guild.id, mod);
-    db.setModuleEnabled(interaction.guild.id, mod, !cur);
+    const cur = await db.isModuleEnabled(interaction.guild.id, mod);
+    await db.setModuleEnabled(interaction.guild.id, mod, !cur);
     return interaction.reply({
       embeds: [embeds.success('Módulo', `**${mod}** → ${!cur ? '✅ ON' : '❌ OFF'}`)],
       ephemeral: true,
@@ -426,7 +429,7 @@ async function handleModal(interaction, client) {
     const result = await tickets.createTicketChannel(interaction, category, `[${prioridad}] ${asunto}`);
     if (result.error) return interaction.editReply({ content: result.error });
     if (result.ticketId) {
-      db.updateTicket(result.ticketId, { priority: prioridad, last_activity: Date.now() });
+      await db.updateTicket(result.ticketId, { priority: prioridad, last_activity: Date.now() });
     }
     return interaction.editReply({
       embeds: [embeds.success('Ticket creado', `${result.channel}`)],
@@ -467,7 +470,7 @@ async function handleModal(interaction, client) {
 
   if (id.startsWith('app_modal:')) {
     const type = id.split(':')[1];
-    const typeRow = apps.getType(interaction.guild.id, type);
+    const typeRow = await apps.getType(interaction.guild.id, type);
     if (!typeRow) {
       return interaction.reply({ content: 'Tipo no existe.', ephemeral: true });
     }
@@ -478,7 +481,7 @@ async function handleModal(interaction, client) {
         answers[questions[i]] = interaction.fields.getTextInputValue(`q${i}`);
       } catch { /* */ }
     }
-    const appId = apps.submit(interaction.guild.id, interaction.user.id, type, answers);
+    const appId = await apps.submit(interaction.guild.id, interaction.user.id, type, answers);
     await apps.postToReview(interaction.guild, appId, typeRow, interaction.user, answers);
     return interaction.reply({
       embeds: [embeds.success('Aplicación enviada', `ID #${appId}. El staff la revisará.`)],
@@ -488,14 +491,14 @@ async function handleModal(interaction, client) {
 
   if (id === 'confess_modal') {
     const content = interaction.fields.getTextInputValue('content');
-    const settings = db.getGuildSettings(interaction.guild.id);
+    const settings = await db.getGuildSettings(interaction.guild.id);
     if (!settings.confessionReviewChannel) {
       return interaction.reply({
         content: 'Confesiones no configuradas (`/confesar config`).',
         ephemeral: true,
       });
     }
-    const cid = confessions.submit(interaction.guild.id, interaction.user.id, content);
+    const cid = await confessions.submit(interaction.guild.id, interaction.user.id, content);
     const rev = interaction.guild.channels.cache.get(settings.confessionReviewChannel);
     if (rev) {
       await rev.send({
@@ -515,7 +518,7 @@ async function handleModal(interaction, client) {
   }
 
   if (id === 'verify_quiz_modal') {
-    const s = db.getGuildSettings(interaction.guild.id);
+    const s = await db.getGuildSettings(interaction.guild.id);
     const quiz = s.verifyQuiz;
     const ans = interaction.fields.getTextInputValue('answer').trim().toLowerCase();
     if (!quiz || ans !== String(quiz.respuesta).toLowerCase()) {
@@ -527,7 +530,7 @@ async function handleModal(interaction, client) {
     if (s.verifiedRole) await interaction.member.roles.add(s.verifiedRole).catch(() => {});
     if (s.unverifiedRole) await interaction.member.roles.remove(s.unverifiedRole).catch(() => {});
     // apply autoroles after verify
-    const { config: wr } = db.getModuleConfig(interaction.guild.id, 'welcome');
+    const { config: wr } = await db.getModuleConfig(interaction.guild.id, 'welcome');
     for (const rid of wr.autoroles || []) {
       const role = interaction.guild.roles.cache.get(rid);
       if (role) await interaction.member.roles.add(role).catch(() => {});

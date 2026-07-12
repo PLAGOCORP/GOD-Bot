@@ -48,7 +48,7 @@ module.exports = {
         )
     ),
   async execute(interaction, client) {
-    if (!db.isModuleEnabled(interaction.guild.id, 'tickets')) {
+    if (!await db.isModuleEnabled(interaction.guild.id, 'tickets')) {
       return interaction.reply({ embeds: [embeds.error('Módulo tickets desactivado')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();
@@ -79,7 +79,7 @@ module.exports = {
     }
 
     if (sub === 'cerrar') {
-      if (!isMod(interaction.member) && !interaction.channel?.topic?.includes(interaction.user.id)) {
+      if (!await isMod(interaction.member) && !interaction.channel?.topic?.includes(interaction.user.id)) {
         return interaction.reply({ embeds: [embeds.error('Sin permiso')], ephemeral: true });
       }
       return tickets.closeTicket(interaction);
@@ -90,7 +90,7 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const cat = interaction.options.getChannel('categoria');
-      db.setGuildSettings(interaction.guild.id, { ticketCategory: cat.id });
+      await db.setGuildSettings(interaction.guild.id, { ticketCategory: cat.id });
       return interaction.reply({
         embeds: [embeds.success('Categoría de tickets', `Tickets se crearán bajo **${cat.name}**.`)],
       });
@@ -101,7 +101,7 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const ch = interaction.options.getChannel('canal');
-      db.setGuildSettings(interaction.guild.id, { ticketLog: ch.id });
+      await db.setGuildSettings(interaction.guild.id, { ticketLog: ch.id });
       return interaction.reply({ embeds: [embeds.success('Ticket logs', `Transcripts → ${ch}`)] });
     }
   },

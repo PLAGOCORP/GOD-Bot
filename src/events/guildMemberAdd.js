@@ -11,9 +11,9 @@ const { welcomeCard } = require('../utils/canvas');
 module.exports = {
   name: Events.GuildMemberAdd,
   async execute(member) {
-    db.ensureGuild(member.guild.id);
-    db.ensureUser(member.guild.id, member.id);
-    db.updateUser(member.guild.id, member.id, { joined_at: Date.now() });
+    await db.ensureGuild(member.guild.id);
+    await db.ensureUser(member.guild.id, member.id);
+    await db.updateUser(member.guild.id, member.id, { joined_at: Date.now() });
 
     // Anti-raid + account age
     await antiraid.onMemberJoin(member);
@@ -22,15 +22,15 @@ module.exports = {
     await sticky.restoreOnJoin(member);
 
     const used = await invites.trackJoin(member);
-    const settings = db.getGuildSettings(member.guild.id);
+    const settings = await db.getGuildSettings(member.guild.id);
 
     if (settings.unverifiedRole) {
       await member.roles.add(settings.unverifiedRole).catch(() => {});
     }
 
     // Autoroles (skip if must verify first)
-    if (db.isModuleEnabled(member.guild.id, 'welcome') && !settings.unverifiedRole) {
-      const { config: wr } = db.getModuleConfig(member.guild.id, 'welcome');
+    if (await db.isModuleEnabled(member.guild.id, 'welcome') && !settings.unverifiedRole) {
+      const { config: wr } = await db.getModuleConfig(member.guild.id, 'welcome');
       const roles = wr.autoroles || [];
       const delay = wr.autoroleDelayMs || 0;
       const apply = async () => {
@@ -43,7 +43,7 @@ module.exports = {
       else await apply();
     }
 
-    if (settings.welcomeChannel && db.isModuleEnabled(member.guild.id, 'welcome')) {
+    if (settings.welcomeChannel && await db.isModuleEnabled(member.guild.id, 'welcome')) {
       const ch = member.guild.channels.cache.get(settings.welcomeChannel);
       if (ch) {
         const text = formatTemplate(settings.welcomeMessage, {
@@ -54,7 +54,7 @@ module.exports = {
         });
 
         let files = [];
-        const { config: wr } = db.getModuleConfig(member.guild.id, 'welcome');
+        const { config: wr } = await db.getModuleConfig(member.guild.id, 'welcome');
         if (wr.welcomeImage !== false) {
           try {
             const png = await welcomeCard({

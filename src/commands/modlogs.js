@@ -22,7 +22,7 @@ module.exports = {
         .addIntegerOption((o) => o.setName('limite').setDescription('1-25').setMinValue(1).setMaxValue(25))
     ),
   async execute(interaction) {
-    if (!isMod(interaction.member)) {
+    if (!await isMod(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Sin permisos')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();
@@ -30,7 +30,7 @@ module.exports = {
 
     if (sub === 'ver') {
       const user = interaction.options.getUser('usuario');
-      const warns = db.listWarns(interaction.guild.id, user.id);
+      const warns = await db.listWarns(interaction.guild.id, user.id);
       const logs = db
         .recentLogs(interaction.guild.id, 50)
         .filter((l) => l.target_id === user.id || l.user_id === user.id)
@@ -54,7 +54,7 @@ module.exports = {
     }
 
     if (sub === 'recientes') {
-      const logs = db.recentLogs(interaction.guild.id, limit);
+      const logs = await db.recentLogs(interaction.guild.id, limit);
       if (!logs.length) {
         return interaction.reply({ embeds: [embeds.info('Logs', 'Sin registros aún.')], ephemeral: true });
       }

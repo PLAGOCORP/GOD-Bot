@@ -22,8 +22,9 @@ async function get(id) {
   return db.getConfession(id);
 }
 
-async function setStatus(id, status, modId, messageId = null) {
-  const fields = { status, approved_by: modId };
+async function setStatus(id, status, modId, messageId = null, reviewerName = null) {
+  const fields = { status, approved_by: modId, approved_at: Date.now() };
+  if (reviewerName) fields.reviewer_name = reviewerName;
   if (messageId) fields.published_message_id = messageId;
   await db.updateConfession(id, fields);
 }

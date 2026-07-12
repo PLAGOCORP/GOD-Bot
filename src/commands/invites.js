@@ -25,14 +25,14 @@ module.exports = {
         .addRoleOption((o) => o.setName('rol').setDescription('Rol recompensa').setRequired(true))
     ),
   async execute(interaction) {
-    if (!db.isModuleEnabled(interaction.guild.id, 'invites')) {
+    if (!await db.isModuleEnabled(interaction.guild.id, 'invites')) {
       return interaction.reply({ embeds: [embeds.error('Módulo invites desactivado')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();
     if (sub === 'ver') {
       const user = interaction.options.getUser('usuario') || interaction.user;
-      const count = invites.getUserInvites(interaction.guild.id, user.id);
-      const fakes = invites.fakeCount(interaction.guild.id, user.id);
+      const count = await invites.getUserInvites(interaction.guild.id, user.id);
+      const fakes = await invites.fakeCount(interaction.guild.id, user.id);
       return interaction.reply({
         embeds: [
           embeds.god(
@@ -43,7 +43,7 @@ module.exports = {
       });
     }
     if (sub === 'top') {
-      const board = invites.topInvites(interaction.guild.id, 10);
+      const board = await invites.topInvites(interaction.guild.id, 10);
       if (!board.length) {
         return interaction.reply({ embeds: [embeds.info('Top invites', 'Sin datos aún.')] });
       }
@@ -59,9 +59,9 @@ module.exports = {
       }
       const n = interaction.options.getInteger('cantidad');
       const rol = interaction.options.getRole('rol');
-      const cur = db.getModuleConfig(interaction.guild.id, 'invites');
+      const cur = await db.getModuleConfig(interaction.guild.id, 'invites');
       const rewards = { ...(cur.config.rewards || {}), [String(n)]: rol.id };
-      db.setModuleConfig(interaction.guild.id, 'invites', { rewards });
+      await db.setModuleConfig(interaction.guild.id, 'invites', { rewards });
       return interaction.reply({
         embeds: [embeds.success('Recompensa invites', `Al llegar a **${n}** → ${rol}`)],
       });

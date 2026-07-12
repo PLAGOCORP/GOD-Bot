@@ -23,8 +23,8 @@ module.exports = {
     await starboard.handleReaction(reaction, user, true);
 
     // Reaction roles
-    if (!db.isModuleEnabled(reaction.message.guild.id, 'reaction_roles')) return;
-    const rows = db.getReactionRoles(reaction.message.id);
+    if (!await db.isModuleEnabled(reaction.message.guild.id, 'reaction_roles')) return;
+    const rows = await db.getReactionRoles(reaction.message.id);
     if (!rows.length) return;
 
     const key = emojiKey(reaction.emoji);

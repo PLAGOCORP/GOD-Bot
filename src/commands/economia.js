@@ -52,7 +52,7 @@ module.exports = {
     .addSubcommand((s) => s.setName('top').setDescription('Ranking de ricos'))
     .addSubcommand((s) => s.setName('crime').setDescription('Crimen arriesgado')),
   async execute(interaction) {
-    if (!db.isModuleEnabled(interaction.guild.id, 'economy')) {
+    if (!await db.isModuleEnabled(interaction.guild.id, 'economy')) {
       return interaction.reply({ embeds: [embeds.error('Economía desactivada')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();
@@ -62,7 +62,7 @@ module.exports = {
 
     if (sub === 'balance') {
       const user = interaction.options.getUser('usuario') || interaction.user;
-      const p = econ.getProfile(gid, user.id);
+      const p = await econ.getProfile(gid, user.id);
       return interaction.reply({
         embeds: [
           embeds
@@ -78,10 +78,11 @@ module.exports = {
     }
 
     if (sub === 'daily') {
-      const r = econ.claimDaily(gid, uid);
+      const r = await econ.claimDaily(gid, uid);
       if (!r.ok) {
+        const msg = r.locked ? 'Demasiado rápido. Espera un momento.' : `Vuelve en **${formatDuration(r.remaining)}**.`;
         return interaction.reply({
-          embeds: [embeds.warning('Cooldown', `Vuelve en **${formatDuration(r.remaining)}**.`)],
+          embeds: [embeds.warning('Cooldown', msg)],
           ephemeral: true,
         });
       }
@@ -96,10 +97,11 @@ module.exports = {
     }
 
     if (sub === 'work') {
-      const r = econ.claimWork(gid, uid);
+      const r = await econ.claimWork(gid, uid);
       if (!r.ok) {
+        const msg = r.locked ? 'Demasiado rápido. Espera un momento.' : `En **${formatDuration(r.remaining)}**.`;
         return interaction.reply({
-          embeds: [embeds.warning('Descansa', `En **${formatDuration(r.remaining)}**.`)],
+          embeds: [embeds.warning('Descansa', msg)],
           ephemeral: true,
         });
       }
@@ -119,9 +121,10 @@ module.exports = {
       if (target.bot || target.id === uid) {
         return interaction.reply({ embeds: [embeds.error('Usuario inválido')], ephemeral: true });
       }
-      const r = econ.transfer(gid, uid, target.id, amount);
+      const r = await econ.transfer(gid, uid, target.id, amount);
       if (!r.ok) {
-        return interaction.reply({ embeds: [embeds.error('Fondos insuficientes')], ephemeral: true });
+        const msg = r.locked ? 'Demasiado rápido. Espera un momento.' : 'Fondos insuficientes';
+        return interaction.reply({ embeds: [embeds.error(msg)], ephemeral: true });
       }
       return interaction.reply({
         embeds: [embeds.success('Pago', `Enviaste **${formatNumber(amount)}** ${sym} a ${target}.`)],
@@ -130,7 +133,7 @@ module.exports = {
 
     if (sub === 'deposit' || sub === 'withdraw') {
       const raw = interaction.options.getString('cantidad');
-      const p = econ.getProfile(gid, uid);
+      const p = await econ.getProfile(gid, uid);
       const fromBank = sub === 'withdraw';
       let amount = raw.toLowerCase() === 'all' ? (fromBank ? p.bank : p.balance) : parseInt(raw, 10);
       if (!Number.isFinite(amount) || amount <= 0) {
@@ -140,7 +143,7 @@ module.exports = {
         if (p.bank < amount) {
           return interaction.reply({ embeds: [embeds.error('No hay tanto en el banco')], ephemeral: true });
         }
-        econ.saveMoney(gid, uid, { bank: p.bank - amount, balance: p.balance + amount });
+        await econ.saveMoney(gid, uid, { bank: p.bank - amount, balance: p.balance + amount });
         return interaction.reply({
           embeds: [embeds.success('Retiro', `**${formatNumber(amount)}** ${sym}`)],
         });
@@ -148,7 +151,7 @@ module.exports = {
       if (p.balance < amount) {
         return interaction.reply({ embeds: [embeds.error('No hay tanto en la cartera')], ephemeral: true });
       }
-      econ.saveMoney(gid, uid, { balance: p.balance - amount, bank: p.bank + amount });
+      await econ.saveMoney(gid, uid, { balance: p.balance - amount, bank: p.bank + amount });
       return interaction.reply({
         embeds: [embeds.success('Depósito', `**${formatNumber(amount)}** ${sym}`)],
       });
@@ -164,7 +167,7 @@ module.exports = {
     if (sub === 'buy') {
       const id = interaction.options.getString('item');
       const item = econ.SHOP.find((i) => i.id === id);
-      const p = econ.getProfile(gid, uid);
+      const p = await econ.getProfile(gid, uid);
       if (p.balance < item.price) {
         return interaction.reply({ embeds: [embeds.error('Fondos insuficientes')], ephemeral: true });
       }
@@ -178,7 +181,7 @@ module.exports = {
         if (inv.crate <= 0) delete inv.crate;
         extra = `\n¡Caja abierta! +**${formatNumber(reward)}** ${sym}`;
       }
-      econ.saveMoney(gid, uid, { balance, inventory: inv });
+      await econ.saveMoney(gid, uid, { balance, inventory: inv });
       return interaction.reply({
         embeds: [
           embeds.success(
@@ -190,7 +193,7 @@ module.exports = {
     }
 
     if (sub === 'top') {
-      const board = econ.leaderboard(gid, 10);
+      const board = await econ.leaderboard(gid, 10);
       if (!board.length) {
         return interaction.reply({ embeds: [embeds.info('Top', 'Sin datos.')] });
       }
@@ -202,10 +205,10 @@ module.exports = {
     }
 
     if (sub === 'crime') {
-      const p = econ.getProfile(gid, uid);
+      const p = await econ.getProfile(gid, uid);
       if (Math.random() > 0.45) {
         const amount = randomInt(50, 400);
-        econ.saveMoney(gid, uid, { balance: p.balance + amount });
+        await econ.saveMoney(gid, uid, { balance: p.balance + amount });
         return interaction.reply({
           embeds: [
             embeds.success(
@@ -216,7 +219,7 @@ module.exports = {
         });
       }
       const fine = Math.min(p.balance, randomInt(30, 200));
-      econ.saveMoney(gid, uid, { balance: p.balance - fine });
+      await econ.saveMoney(gid, uid, { balance: p.balance - fine });
       return interaction.reply({
         embeds: [embeds.error('Te atraparon', `Multa: **${formatNumber(fine)}** ${sym}`)],
       });

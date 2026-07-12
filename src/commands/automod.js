@@ -45,7 +45,7 @@ module.exports = {
     }
     const sub = interaction.options.getSubcommand();
     const gid = interaction.guild.id;
-    const cur = db.getModuleConfig(gid, 'automod');
+    const cur = await db.getModuleConfig(gid, 'automod');
 
     if (sub === 'status') {
       return interaction.reply({
@@ -66,26 +66,26 @@ module.exports = {
     }
     if (sub === 'toggle') {
       const activo = interaction.options.getBoolean('activo');
-      db.setModuleEnabled(gid, 'automod', activo);
+      await db.setModuleEnabled(gid, 'automod', activo);
       return interaction.reply({ embeds: [embeds.success('AutoMod', activo ? 'Activado' : 'Desactivado')] });
     }
     if (sub === 'invites') {
-      db.setModuleConfig(gid, 'automod', { antiInvite: interaction.options.getBoolean('activo') });
+      await db.setModuleConfig(gid, 'automod', { antiInvite: interaction.options.getBoolean('activo') });
       return interaction.reply({ embeds: [embeds.success('Anti-invites actualizado')] });
     }
     if (sub === 'spam') {
-      db.setModuleConfig(gid, 'automod', { antiSpam: interaction.options.getBoolean('activo') });
+      await db.setModuleConfig(gid, 'automod', { antiSpam: interaction.options.getBoolean('activo') });
       return interaction.reply({ embeds: [embeds.success('Anti-spam actualizado')] });
     }
     if (sub === 'caps') {
-      db.setModuleConfig(gid, 'automod', { antiCaps: interaction.options.getBoolean('activo') });
+      await db.setModuleConfig(gid, 'automod', { antiCaps: interaction.options.getBoolean('activo') });
       return interaction.reply({ embeds: [embeds.success('Anti-caps actualizado')] });
     }
     if (sub === 'badword') {
       const palabra = interaction.options.getString('palabra').toLowerCase();
       const list = [...(cur.config.badWords || [])];
       if (!list.includes(palabra)) list.push(palabra);
-      db.setModuleConfig(gid, 'automod', { badWords: list });
+      await db.setModuleConfig(gid, 'automod', { badWords: list });
       return interaction.reply({
         embeds: [embeds.success('Bad word', `Añadida: \`${palabra}\``)],
         ephemeral: true,

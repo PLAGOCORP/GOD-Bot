@@ -6,7 +6,7 @@ const db = require('../database/db');
 module.exports = {
   name: Events.GuildMemberUpdate,
   async execute(oldMember, newMember) {
-    if (!db.isModuleEnabled(newMember.guild.id, 'logging')) return;
+    if (!await db.isModuleEnabled(newMember.guild.id, 'logging')) return;
 
     // Nickname
     if (oldMember.nickname !== newMember.nickname) {
@@ -25,7 +25,7 @@ module.exports = {
     const added = newMember.roles.cache.filter((r) => !oldMember.roles.cache.has(r.id));
     const removed = oldMember.roles.cache.filter((r) => !newMember.roles.cache.has(r.id));
     if (added.size || removed.size) {
-      sticky.saveMemberSticky(newMember);
+      await sticky.saveMemberSticky(newMember);
       await logging.sendLog(newMember.guild, 'role', {
         title: 'Roles actualizados',
         user: newMember.user,

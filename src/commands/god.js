@@ -213,7 +213,7 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
       const lang = interaction.options.getString('lang');
-      db.ensureGuild(interaction.guild.id);
+      await db.ensureGuild(interaction.guild.id);
       await db.setGuildSettings(interaction.guild.id, { language: lang });
       return interaction.reply({
         embeds: [embeds.success('Idioma', lang === 'es' ? 'Español' : 'English')],

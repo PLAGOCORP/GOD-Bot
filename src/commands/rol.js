@@ -151,7 +151,7 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Mensaje no encontrado')], ephemeral: true });
       }
       await msg.react(emoji).catch(() => {});
-      db.addReactionRole({
+      await db.addReactionRole({
         guildId: interaction.guild.id,
         messageId,
         channelId: channel.id,
@@ -176,7 +176,7 @@ module.exports = {
         embeds: [embeds.god('Roles', `Pulsa para **${role.name}**.`)],
         components: [row],
       });
-      db.addButtonRole({
+      await db.addButtonRole({
         guildId: interaction.guild.id,
         messageId: msg.id,
         channelId: interaction.channel.id,
@@ -190,21 +190,21 @@ module.exports = {
 
     if (sub === 'auto') {
       const role = interaction.options.getRole('rol');
-      const cur = db.getModuleConfig(interaction.guild.id, 'welcome');
+      const cur = await db.getModuleConfig(interaction.guild.id, 'welcome');
       const autoroles = [...new Set([...(cur.config.autoroles || []), role.id])];
-      db.setModuleConfig(interaction.guild.id, 'welcome', { autoroles });
+      await db.setModuleConfig(interaction.guild.id, 'welcome', { autoroles });
       return interaction.reply({ embeds: [embeds.success('Autorole', `${role}`)] });
     }
 
     if (sub === 'auto_clear') {
-      db.setModuleConfig(interaction.guild.id, 'welcome', { autoroles: [] });
+      await db.setModuleConfig(interaction.guild.id, 'welcome', { autoroles: [] });
       return interaction.reply({ embeds: [embeds.success('Autoroles limpiados')] });
     }
 
     if (sub === 'lista') {
-      const cur = db.getModuleConfig(interaction.guild.id, 'welcome');
+      const cur = await db.getModuleConfig(interaction.guild.id, 'welcome');
       const roles = (cur.config.autoroles || []).map((id) => `<@&${id}>`).join(', ') || 'Ninguno';
-      const s = db.getGuildSettings(interaction.guild.id);
+      const s = await db.getGuildSettings(interaction.guild.id);
       const sticky = (s.stickyRoleIds || []).map((id) => `<@&${id}>`).join(', ') || 'Ninguno';
       return interaction.reply({
         embeds: [embeds.info('Roles', `Autoroles: ${roles}\nSticky: ${sticky}`)],
@@ -245,16 +245,16 @@ module.exports = {
 
     if (sub === 'sticky') {
       const role = interaction.options.getRole('rol');
-      const s = db.getGuildSettings(interaction.guild.id);
+      const s = await db.getGuildSettings(interaction.guild.id);
       const list = [...(s.stickyRoleIds || [])];
       if (list.includes(role.id)) {
-        db.setGuildSettings(interaction.guild.id, {
+        await db.setGuildSettings(interaction.guild.id, {
           stickyRoleIds: list.filter((id) => id !== role.id),
         });
         return interaction.reply({ embeds: [embeds.success('Sticky', `${role} ya no es sticky.`)] });
       }
       list.push(role.id);
-      db.setGuildSettings(interaction.guild.id, { stickyRoleIds: list });
+      await db.setGuildSettings(interaction.guild.id, { stickyRoleIds: list });
       return interaction.reply({
         embeds: [embeds.success('Sticky', `${role} se re-aplicará al rejoin.`)],
       });

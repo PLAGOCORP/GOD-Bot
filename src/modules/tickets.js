@@ -109,7 +109,7 @@ async function createTicketChannel(interaction, category, subject) {
     permissionOverwrites: overwrites,
   });
 
-  const ticketId = db.createTicket({
+  const ticketId = await db.createTicket({
     guild_id: guild.id,
     creator_id: interaction.user.id,
     channel_id: channel.id,
@@ -210,7 +210,7 @@ async function closeTicket(interaction) {
   const settings = await db.getGuildSettings(interaction.guild.id);
   const logCh = settings.ticketLog
     ? interaction.guild.channels.cache.get(settings.ticketLog)
-    : logging.resolveLogChannel(interaction.guild, 'ticket');
+    : await logging.resolveLogChannel(interaction.guild, 'ticket');
 
   if (logCh && file) {
     await logCh

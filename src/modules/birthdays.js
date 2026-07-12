@@ -43,11 +43,11 @@ async function runDaily(client) {
 
   for (const row of rows) {
     if (row.last_wished === yearKey) continue;
-    if (!db.isModuleEnabled(row.guild_id, 'birthdays')) continue;
+    if (!await db.isModuleEnabled(row.guild_id, 'birthdays')) continue;
 
     const guild = client.guilds.cache.get(row.guild_id);
     if (!guild) continue;
-    const settings = db.getGuildSettings(row.guild_id);
+    const settings = await db.getGuildSettings(row.guild_id);
     const channel = settings.birthdayChannel
       ? guild.channels.cache.get(settings.birthdayChannel)
       : null;
@@ -76,7 +76,7 @@ async function runDaily(client) {
 
   // Remove yesterday's birthday role
   for (const guild of client.guilds.cache.values()) {
-    const settings = db.getGuildSettings(guild.id);
+    const settings = await db.getGuildSettings(guild.id);
     if (!settings.birthdayRole) continue;
     const y = new Date(Date.now() - 86400000);
     const yDay = y.getDate();

@@ -53,7 +53,7 @@ module.exports = {
       const patch = {};
       if (cat) patch.tempvcCategory = cat.id;
       if (limite) patch.tempvcLimit = limite;
-      db.setGuildSettings(interaction.guild.id, patch);
+      await db.setGuildSettings(interaction.guild.id, patch);
       return interaction.reply({ embeds: [embeds.success('TempVC', 'Configuración guardada.')] });
     }
   },

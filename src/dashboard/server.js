@@ -54,6 +54,27 @@ function createDashboard(client) {
     next();
   });
 
+  // ─── Helpers EJS para el servidor (channelSelect / roleSelect) ──────────
+  // Se generan por guild (ligados a sus canales/roles) y se pasan al render.
+  const escapeHtml = (s) =>
+    String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function makeSelectHelpers(channels, roles) {
+    const build = (name, selected, list, prefix) => {
+      const opts = (list || [])
+        .map((item) => {
+          const sel = item.id === selected ? ' selected' : '';
+          return `<option value="${item.id}"${sel}>${prefix} ${escapeHtml(item.name)}</option>`;
+        })
+        .join('');
+      return `<select name="${escapeHtml(name)}" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full text-sm"><option value="">Ninguno</option>${opts}</select>`;
+    };
+    return {
+      channelSelect: (name, selected) => build(name, selected, channels, '#'),
+      roleSelect: (name, selected) => build(name, selected, roles, '@'),
+    };
+  }
+
   app.use(
     session({
       name: 'god.sid',
@@ -76,9 +97,38 @@ function createDashboard(client) {
     name: config.siteName,
   };
 
+  async function refreshAccessToken(refreshToken) {
+    const body = new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    });
+    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const token = await tokenRes.json();
+    return token.access_token ? { accessToken: token.access_token, expiresAt: Date.now() + (token.expires_in || 604800) * 1000 } : null;
+  }
+
   function requireAuth(req, res, next) {
     if (!req.session.user) return res.redirect('/login');
-    next();
+    // Si el token expira en menos de 5 min, intentar refrescar
+    if (req.session.refreshToken && req.session.expiresAt && Date.now() > req.session.expiresAt - 5 * 60_000) {
+      refreshAccessToken(req.session.refreshToken)
+        .then((renewed) => {
+          if (renewed) {
+            req.session.accessToken = renewed.accessToken;
+            req.session.expiresAt = renewed.expiresAt;
+          }
+          next();
+        })
+        .catch(() => next());
+    } else {
+      next();
+    }
   }
 
   function inviteUrl() {
@@ -99,7 +149,7 @@ function createDashboard(client) {
       site,
       user: null,
       inviteUrl: inviteUrl(),
-      client: client
+      botStats: client
         ? {
             guilds: client.guilds.cache.size,
             users: client.guilds.cache.reduce((a, g) => a + (g.memberCount || 0), 0),
@@ -120,7 +170,7 @@ function createDashboard(client) {
       bot: config.bot,
       site,
       user: req.session.user || null,
-      client: client
+      botStats: client
         ? {
             guilds: client.guilds.cache.size,
             users: client.guilds.cache.reduce((a, g) => a + (g.memberCount || 0), 0),
@@ -226,6 +276,8 @@ function createDashboard(client) {
         guilds: Array.isArray(guilds) ? guilds : [],
       };
       req.session.accessToken = token.access_token;
+      req.session.refreshToken = token.refresh_token;
+      req.session.expiresAt = Date.now() + (token.expires_in || 604800) * 1000;
       res.redirect('/servers');
     } catch (err) {
       logger.error('OAuth botgod.pro:', err.message);
@@ -402,6 +454,7 @@ function createDashboard(client) {
         user: req.session.user,
         botVersion: config.bot.version,
         ...ctx,
+        ...makeSelectHelpers(ctx.channels, ctx.roles),
         automodConfig,
         tags,
       });

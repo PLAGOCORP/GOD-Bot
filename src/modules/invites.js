@@ -10,7 +10,7 @@ async function cacheGuildInvites(guild) {
     const map = new Map();
     for (const [code, inv] of invites) {
       map.set(code, { uses: inv.uses || 0, inviterId: inv.inviter?.id || null });
-      db.upsertInvite(code, guild.id, inv.inviter?.id || null, inv.uses || 0);
+      await db.upsertInvite(code, guild.id, inv.inviter?.id || null, inv.uses || 0);
     }
     cache.set(guild.id, map);
   } catch {
@@ -19,7 +19,7 @@ async function cacheGuildInvites(guild) {
 }
 
 async function trackJoin(member) {
-  if (!db.isModuleEnabled(member.guild.id, 'invites')) return null;
+  if (!await db.isModuleEnabled(member.guild.id, 'invites')) return null;
   let used = null;
   try {
     const newInvites = await member.guild.invites.fetch();
@@ -49,7 +49,7 @@ async function trackJoin(member) {
 }
 
 async function trackLeave(member) {
-  if (!db.isModuleEnabled(member.guild.id, 'invites')) return;
+  if (!await db.isModuleEnabled(member.guild.id, 'invites')) return;
   const admin = require('firebase-admin');
   const fDb = admin.firestore();
   const joinSnap = await fDb.collection('inviteJoins')
@@ -90,7 +90,7 @@ async function trackLeave(member) {
 async function checkInviteRewards(guild, inviterId) {
   const { config: inv } = await db.getModuleConfig(guild.id, 'invites');
   const rewards = inv.rewards || {}; // { "5": "roleId", "10": "roleId" }
-  const count = getUserInvites(guild.id, inviterId);
+  const count = await getUserInvites(guild.id, inviterId);
   const member = await guild.members.fetch(inviterId).catch(() => null);
   if (!member) return;
 

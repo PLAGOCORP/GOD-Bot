@@ -43,7 +43,7 @@ module.exports = {
       const descripcion = interaction.options.getString('descripcion') || '';
       const revision = interaction.options.getChannel('revision');
       const rol = interaction.options.getRole('rol_aprobar');
-      apps.createType(interaction.guild.id, tipo, titulo, descripcion, revision.id, rol?.id, [
+      await apps.createType(interaction.guild.id, tipo, titulo, descripcion, revision.id, rol?.id, [
         '¿Por qué te postulas?',
         '¿Qué experiencia tienes?',
         '¿Cuál es tu disponibilidad?',
@@ -60,7 +60,7 @@ module.exports = {
 
     if (sub === 'aplicar') {
       const tipo = interaction.options.getString('tipo');
-      const typeRow = apps.getType(interaction.guild.id, tipo);
+      const typeRow = await apps.getType(interaction.guild.id, tipo);
       if (!typeRow) {
         return interaction.reply({ embeds: [embeds.error('Tipo no existe')], ephemeral: true });
       }
@@ -69,7 +69,7 @@ module.exports = {
     }
 
     if (sub === 'lista') {
-      const list = apps.listTypes(interaction.guild.id);
+      const list = await apps.listTypes(interaction.guild.id);
       if (!list.length) {
         return interaction.reply({ embeds: [embeds.info('Aplicaciones', 'Ninguna. `/aplicacion crear`')] });
       }

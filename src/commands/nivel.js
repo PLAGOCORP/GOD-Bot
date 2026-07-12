@@ -61,16 +61,16 @@ module.exports = {
         )
     ),
   async execute(interaction) {
-    if (!db.isModuleEnabled(interaction.guild.id, 'leveling')) {
+    if (!await db.isModuleEnabled(interaction.guild.id, 'leveling')) {
       return interaction.reply({ embeds: [embeds.error('Módulo niveles desactivado')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'rango') {
       const user = interaction.options.getUser('usuario') || interaction.user;
-      const p = db.ensureUser(interaction.guild.id, user.id);
+      const p = await db.ensureUser(interaction.guild.id, user.id);
       const info = levelFromXp(p.xp_text);
-      const rank = leveling.rankOf(interaction.guild.id, user.id);
+      const rank = await leveling.rankOf(interaction.guild.id, user.id);
       let files = [];
       try {
         const png = await rankCard({
@@ -105,7 +105,7 @@ module.exports = {
 
     if (sub === 'top') {
       const limit = interaction.options.getInteger('limite') || 10;
-      const board = leveling.leaderboard(interaction.guild.id, limit);
+      const board = await leveling.leaderboard(interaction.guild.id, limit);
       if (!board.length) {
         return interaction.reply({ embeds: [embeds.info('Top', 'Aún no hay XP.')] });
       }
@@ -122,7 +122,7 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const ch = interaction.options.getChannel('canal');
-      db.setGuildSettings(interaction.guild.id, { levelChannel: ch.id });
+      await db.setGuildSettings(interaction.guild.id, { levelChannel: ch.id });
       return interaction.reply({ embeds: [embeds.success('Niveles', `Anuncios en ${ch}`)] });
     }
 
@@ -132,9 +132,9 @@ module.exports = {
       }
       const nivel = interaction.options.getInteger('nivel');
       const rol = interaction.options.getRole('rol');
-      const cur = db.getModuleConfig(interaction.guild.id, 'leveling');
+      const cur = await db.getModuleConfig(interaction.guild.id, 'leveling');
       const rewards = { ...(cur.config.rewards || {}), [String(nivel)]: rol.id };
-      db.setModuleConfig(interaction.guild.id, 'leveling', { rewards });
+      await db.setModuleConfig(interaction.guild.id, 'leveling', { rewards });
       return interaction.reply({ embeds: [embeds.success('Recompensa', `Nivel **${nivel}** → ${rol}`)] });
     }
 
@@ -143,11 +143,11 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const ch = interaction.options.getChannel('canal');
-      const cur = db.getModuleConfig(interaction.guild.id, 'leveling');
+      const cur = await db.getModuleConfig(interaction.guild.id, 'leveling');
       let list = [...(cur.config.noXpChannels || [])];
       if (list.includes(ch.id)) list = list.filter((id) => id !== ch.id);
       else list.push(ch.id);
-      db.setModuleConfig(interaction.guild.id, 'leveling', { noXpChannels: list });
+      await db.setModuleConfig(interaction.guild.id, 'leveling', { noXpChannels: list });
       return interaction.reply({
         embeds: [embeds.success('No-XP canales', list.map((id) => `<#${id}>`).join(', ') || 'Ninguno')],
       });
@@ -158,11 +158,11 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const rol = interaction.options.getRole('rol');
-      const cur = db.getModuleConfig(interaction.guild.id, 'leveling');
+      const cur = await db.getModuleConfig(interaction.guild.id, 'leveling');
       let list = [...(cur.config.noXpRoles || [])];
       if (list.includes(rol.id)) list = list.filter((id) => id !== rol.id);
       else list.push(rol.id);
-      db.setModuleConfig(interaction.guild.id, 'leveling', { noXpRoles: list });
+      await db.setModuleConfig(interaction.guild.id, 'leveling', { noXpRoles: list });
       return interaction.reply({
         embeds: [embeds.success('No-XP roles', list.map((id) => `<@&${id}>`).join(', ') || 'Ninguno')],
       });
@@ -174,9 +174,9 @@ module.exports = {
       }
       const rol = interaction.options.getRole('rol');
       const mult = interaction.options.getNumber('mult');
-      const cur = db.getModuleConfig(interaction.guild.id, 'leveling');
+      const cur = await db.getModuleConfig(interaction.guild.id, 'leveling');
       const roleMultipliers = { ...(cur.config.roleMultipliers || {}), [rol.id]: mult };
-      db.setModuleConfig(interaction.guild.id, 'leveling', { roleMultipliers });
+      await db.setModuleConfig(interaction.guild.id, 'leveling', { roleMultipliers });
       return interaction.reply({
         embeds: [embeds.success('Multiplicador', `${rol} → **x${mult}** XP`)],
       });

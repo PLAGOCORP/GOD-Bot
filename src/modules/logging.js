@@ -19,9 +19,9 @@ const TYPE_COLOR = {
   role: config.colors.primary,
 };
 
-function resolveLogChannel(guild, type) {
-  if (!db.isModuleEnabled(guild.id, 'logging')) return null;
-  const s = db.getGuildSettings(guild.id);
+async function resolveLogChannel(guild, type) {
+  if (!await db.isModuleEnabled(guild.id, 'logging')) return null;
+  const s = await db.getGuildSettings(guild.id);
   const map = {
     ban: 'mod',
     kick: 'mod',
@@ -47,13 +47,13 @@ function resolveLogChannel(guild, type) {
  * Envía un log visual + persiste en DB
  */
 async function sendLog(guild, type, { title, description, fields = [], user, target, moderator, color }) {
-  db.insertLog(guild.id, type, {
+  await db.insertLog(guild.id, type, {
     userId: moderator?.id || user?.id,
     targetId: target?.id || user?.id,
     details: { title, description, fields },
   });
 
-  const channel = resolveLogChannel(guild, type);
+  const channel = await resolveLogChannel(guild, type);
   if (!channel) return;
 
   const embed = new EmbedBuilder()
