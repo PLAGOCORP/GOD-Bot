@@ -37,12 +37,31 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'play') {
-      await interaction.deferReply();
+      try {
+        await interaction.deferReply();
+      } catch (err) {
+        console.error('Defer error:', err.message);
+        return interaction.reply({
+          embeds: [embeds.error('Música', 'Error en respuesta del bot')],
+          ephemeral: true,
+        });
+      }
+
       try {
         const query = interaction.options.getString('cancion');
-        const result = await music.play(interaction.member, query, interaction.channel.id);
+        console.log(`[MUSIC] Play: "${query}" by ${interaction.user.username}`);
+
+        const result = await Promise.race([
+          music.play(interaction.member, query, interaction.channel.id),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Búsqueda de música tardó demasiado (>10s)')), 10000)
+          ),
+        ]);
+
         const track = result.added;
-        return interaction.editReply({
+        console.log(`[MUSIC] Success: "${track.title}"`);
+
+        return await interaction.editReply({
           embeds: [
             embeds.god(
               result.position === 0 ? '▶️ Reproduciendo' : '➕ En cola',
@@ -53,9 +72,14 @@ module.exports = {
           ],
         });
       } catch (err) {
-        return interaction.editReply({
-          embeds: [embeds.error('Música', err.message)],
-        });
+        console.error(`[MUSIC] Error:`, err.message);
+        try {
+          return await interaction.editReply({
+            embeds: [embeds.error('Música', err.message || 'Error desconocido en música')],
+          });
+        } catch (e) {
+          console.error('EditReply error:', e.message);
+        }
       }
     }
 

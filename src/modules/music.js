@@ -140,30 +140,37 @@ async function playNext(guildId) {
   try {
     let stream;
     try {
-      const yt = await withTimeout(playdl.validate(track.url), 3000, 'Validación URL timeout');
-      if (yt === 'yt_video' || track.url.includes('youtube') || track.url.includes('youtu.be')) {
-        stream = await withTimeout(
-          playdl.stream(track.url, { discordPlayerCompatibility: true }),
-          15000,
-          'YouTube stream timeout'
-        );
-      } else if (yt === 'so_track') {
-        stream = await withTimeout(playdl.stream(track.url), 15000, 'SoundCloud stream timeout');
-      } else {
-        stream = await withTimeout(playdl.stream(track.url), 15000, 'Stream URL timeout').catch(async () => {
-          // fallback search by title
-          logger.warn(`playNext fallback: reconectando ${track.title}`);
-          const r = await resolveQuery(track.title);
-          return playdl.stream(r.url, { discordPlayerCompatibility: true });
-        });
-      }
+      // Intentar obtener stream directamente
+      logger.debug(`[playNext] Intentando stream: ${track.url}`);
+
+      stream = await withTimeout(
+        (async () => {
+          try {
+            // Primero intentar con YouTube compatibility
+            return await playdl.stream(track.url, { discordPlayerCompatibility: true });
+          } catch (e1) {
+            logger.warn(`[playNext] YouTube stream failed: ${e1.message}, trying direct`);
+            // Fallback: intentar sin opciones
+            return await playdl.stream(track.url);
+          }
+        })(),
+        15000,
+        'Stream timeout'
+      );
     } catch (err) {
-      // Si falla el stream, intentar saltar a la siguiente canción
-      logger.warn(`playNext skip track: ${err.message}`);
-      return playNext(guildId);
+      // Si falla el stream completamente, saltar
+      logger.error(`[playNext] Stream error: ${err.message} - saltando a siguiente`);
+      if (state.queue.length) {
+        return playNext(guildId);
+      }
+      throw err;
     }
 
     if (!stream?.stream) {
+      logger.error('[playNext] Stream vacío o inválido');
+      if (state.queue.length) {
+        return playNext(guildId);
+      }
       throw new Error('No se pudo obtener el stream de audio');
     }
 
@@ -171,18 +178,25 @@ async function playNext(guildId) {
       inputType: stream.type,
       inlineVolume: true,
     });
+
+    resource.on('error', (err) => {
+      logger.error('[playNext] AudioResource error:', err.message);
+    });
+
     if (resource.volume) resource.volume.setVolume(state.volume);
     state.player.play(resource);
+
+    logger.info(`[playNext] Reproduciendo: ${track.title}`);
 
     try {
       await db.addMusicHistory(guildId, track.requestedBy || null, track.title, track.url);
     } catch (e) {
-      logger.warn('addMusicHistory failed:', e.message);
+      logger.warn('[playNext] History log failed:', e.message);
     }
 
     return track;
   } catch (err) {
-    logger.error('playNext critical:', err.message);
+    logger.error('[playNext] Critical error:', err.message);
     state.current = null;
     // Try next track
     if (state.queue.length) {
