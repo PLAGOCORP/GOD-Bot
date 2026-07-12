@@ -245,43 +245,8 @@ module.exports = {
       if (!isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
-      await db.ensureGuild(interaction.guild.id);
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('setup_modules')
-          .setLabel('Ver módulos')
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji('🧩'),
-        new ButtonBuilder()
-          .setCustomId('setup_done')
-          .setLabel('Listo')
-          .setStyle(ButtonStyle.Success)
-          .setEmoji('⚡')
-      );
-      return interaction.reply({
-        embeds: [
-          embeds.god(
-            'Wizard de Setup — God',
-            [
-              '**¡Por el poder de God, configuremos tu servidor!**',
-              '',
-              '**Checklist recomendado:**',
-              '1️⃣ `/god modrole @Staff` — rol de moderadores',
-              '2️⃣ `/god logs mod:#mod-logs mensajes:#msg-logs miembros:#joins`',
-              '3️⃣ `/bienvenida canal #bienvenidas`',
-              '4️⃣ `/ticket panel` — panel de soporte',
-              '5️⃣ `/automod toggle activo:True`',
-              '6️⃣ `/nivel config` — canal de level-ups',
-              '7️⃣ `/rol auto @Miembro` — autorole',
-              '',
-              'Módulos activos por defecto: moderación, tickets, niveles, giveaways, economía, logging…',
-              'Usa `/god config` para activar/desactivar.',
-            ].join('\n')
-          ),
-        ],
-        components: [row],
-        ephemeral: true,
-      });
+      const setupWizard = require('../modules/setupWizard');
+      return setupWizard.startWizard(interaction);
     }
 
     if (sub === 'config') {

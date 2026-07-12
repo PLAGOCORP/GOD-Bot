@@ -7,7 +7,8 @@ const giveawayMod = require('../modules/giveaways');
 const tempvc = require('../modules/tempvc');
 const apps = require('../modules/applications');
 const confessions = require('../modules/confessions');
-const { isMod } = require('../utils/permissions');
+const { isMod, isAdmin } = require('../utils/permissions');
+const setupWizard = require('../modules/setupWizard');
 
 async function handleCommand(interaction, client) {
   const command = client.commands.get(interaction.commandName);
@@ -55,6 +56,13 @@ function serializeG(g) {
 
 async function handleButton(interaction, client) {
   const id = interaction.customId;
+
+  if (id.startsWith('sw:')) {
+    if (!isAdmin(interaction.member)) {
+      return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
+    }
+    return setupWizard.handleButton(interaction);
+  }
 
   if (id.startsWith('giveaway_join:')) {
     const gid = id.split(':')[1];
@@ -346,6 +354,13 @@ async function handleButton(interaction, client) {
 }
 
 async function handleSelect(interaction, client) {
+  if (interaction.customId.startsWith('sw:')) {
+    if (!isAdmin(interaction.member)) {
+      return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
+    }
+    return setupWizard.handleStringSelect(interaction);
+  }
+
   if (interaction.customId === 'ticket_category') {
     // Open modal for details then create
     const category = interaction.values[0];
@@ -416,6 +431,22 @@ async function handleSelect(interaction, client) {
       ephemeral: true,
     });
   }
+}
+
+async function handleChannelSelect(interaction) {
+  if (!interaction.customId.startsWith('sw:')) return;
+  if (!isAdmin(interaction.member)) {
+    return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
+  }
+  return setupWizard.handleChannelSelect(interaction);
+}
+
+async function handleRoleSelect(interaction) {
+  if (!interaction.customId.startsWith('sw:')) return;
+  if (!isAdmin(interaction.member)) {
+    return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
+  }
+  return setupWizard.handleRoleSelect(interaction);
 }
 
 async function handleModal(interaction, client) {
@@ -562,6 +593,8 @@ async function route(interaction, client) {
     if (interaction.isChatInputCommand()) return await handleCommand(interaction, client);
     if (interaction.isButton()) return await handleButton(interaction, client);
     if (interaction.isStringSelectMenu()) return await handleSelect(interaction, client);
+    if (interaction.isChannelSelectMenu()) return await handleChannelSelect(interaction);
+    if (interaction.isRoleSelectMenu()) return await handleRoleSelect(interaction);
     if (interaction.isModalSubmit()) return await handleModal(interaction, client);
   } catch (error) {
     logger.error('Interaction:', error);
