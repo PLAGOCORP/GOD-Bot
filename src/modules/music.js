@@ -256,7 +256,12 @@ async function ensureConnection(member) {
           '(ej. US Central) o "Automático", y vuelve a intentarlo.'
         );
       }
-      throw new Error('No se pudo conectar al canal de voz a tiempo (el handshake UDP no completó).');
+      throw new Error(
+        'No pude establecer la conexión de audio (el handshake **UDP** no completó). ' +
+        'Esto ocurre cuando el servidor donde está alojado el bot no permite tráfico UDP ' +
+        '(por ejemplo Railway). La música de Discord requiere UDP obligatoriamente. ' +
+        'Solución: alojar el bot en un host que soporte UDP (un VPS o Fly.io).'
+      );
     }
   }
   const state = getState(guild.id);
