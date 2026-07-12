@@ -97,7 +97,18 @@ module.exports = {
 
   music: {
     // Cookie de YouTube (sesión logueada) para evitar HTTP 429 en IPs de datacenter.
-    // Ver .env.example para instrucciones de cómo obtenerla.
+    // Solo aplica al motor Lavalink si usa el plugin youtube-source con cookies.
     youtubeCookie: process.env.YOUTUBE_COOKIE || '',
+  },
+
+  // Servidor Lavalink (para música — corre en un host con soporte UDP).
+  // Ver LAVALINK_SETUP.md para cómo desplegarlo.
+  lavalink: {
+    host: process.env.LAVALINK_HOST || '',
+    port: parseInt(process.env.LAVALINK_PORT || '2333', 10),
+    password: process.env.LAVALINK_PASSWORD || 'youshallnotpass',
+    secure:
+      process.env.LAVALINK_SECURE === '1' ||
+      process.env.LAVALINK_SECURE === 'true',
   },
 };

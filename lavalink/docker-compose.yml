@@ -1,0 +1,16 @@
+# Despliega Lavalink en un host CON soporte UDP (VPS, no Railway).
+# Uso:  docker compose up -d
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    container_name: lavalink
+    restart: unless-stopped
+    environment:
+      - _JAVA_OPTIONS=-Xmx1G          # RAM máxima para la JVM (ajusta a tu VPS)
+      - SERVER_PORT=2333
+    volumes:
+      - ./application.yml:/opt/Lavalink/application.yml
+      - ./plugins:/opt/Lavalink/plugins
+    ports:
+      - "2333:2333"                    # WebSocket/REST (TCP) que consume el bot
+    # El tráfico UDP hacia Discord es SALIENTE, no necesita mapeo de puertos.

@@ -62,10 +62,16 @@ module.exports = {
         const track = result.added;
         console.log(`[MUSIC] Success: "${track.title}"`);
 
+        const titulo = result.playlistCount
+          ? `📃 Playlist añadida (${result.playlistCount} canciones)`
+          : result.position === 0
+            ? '▶️ Reproduciendo'
+            : '➕ En cola';
+
         return await interaction.editReply({
           embeds: [
             embeds.god(
-              result.position === 0 ? '▶️ Reproduciendo' : '➕ En cola',
+              titulo,
               `**${track.title}**\nPedido por ${interaction.user}` +
                 (track.duration ? `\nDuración: \`${formatDuration(track.duration * 1000)}\`` : '') +
                 (result.position ? `\nPosición: **#${result.position}**` : '')
@@ -85,19 +91,19 @@ module.exports = {
     }
 
     if (sub === 'skip') {
-      music.skip(interaction.guild.id);
+      await music.skip(interaction.guild.id);
       return interaction.reply({ embeds: [embeds.success('Skip', 'Canción saltada.')] });
     }
     if (sub === 'stop') {
-      music.stop(interaction.guild.id);
+      await music.stop(interaction.guild.id);
       return interaction.reply({ embeds: [embeds.success('Stop', 'Reproducción detenida y cola vacía.')] });
     }
     if (sub === 'pause') {
-      music.pause(interaction.guild.id);
+      await music.pause(interaction.guild.id);
       return interaction.reply({ embeds: [embeds.info('Pausa', 'Reproducción pausada.')] });
     }
     if (sub === 'resume') {
-      music.resume(interaction.guild.id);
+      await music.resume(interaction.guild.id);
       return interaction.reply({ embeds: [embeds.success('Resume', 'Reproducción reanudada.')] });
     }
     if (sub === 'queue') {
@@ -118,7 +124,7 @@ module.exports = {
     }
     if (sub === 'volumen') {
       const p = interaction.options.getInteger('porcentaje');
-      music.setVolume(interaction.guild.id, p / 100);
+      await music.setVolume(interaction.guild.id, p / 100);
       return interaction.reply({ embeds: [embeds.success('Volumen', `${p}%`)] });
     }
     if (sub === 'nowplaying') {

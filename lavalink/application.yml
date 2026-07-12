@@ -1,0 +1,74 @@
+# ─── Configuración de Lavalink v4 para God Bot ───────────────────────────
+# Este servidor se despliega en un host CON soporte UDP (VPS, Fly.io, etc.),
+# NO en Railway. El bot se conecta aquí por WebSocket/TCP en el puerto 2333.
+
+server:
+  port: 2333
+  address: 0.0.0.0
+
+lavalink:
+  plugins:
+    # Lavalink v4 quitó el soporte nativo de YouTube: se necesita este plugin.
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.13.5"
+      snapshot: false
+  server:
+    password: "youshallnotpass"        # ⚠️ CÁMBIALA y usa la misma en LAVALINK_PASSWORD
+    sources:
+      youtube: false                    # desactivado el nativo; lo maneja el plugin
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: true
+      nico: true
+      http: true
+      local: false
+    filters:
+      volume: true
+      equalizer: true
+      karaoke: true
+      timescale: true
+      tremolo: true
+      vibrato: true
+      distortion: true
+      rotation: true
+      channelMix: true
+      lowPass: true
+    bufferDurationMs: 400
+    frameBufferDurationMs: 5000
+    opusEncodingQuality: 10
+    resamplingQuality: LOW
+    trackStuckThresholdMs: 10000
+    useSeekGhosting: true
+    youtubePlaylistLoadLimit: 6
+    playerUpdateInterval: 5
+    youtubeSearchEnabled: true
+    soundcloudSearchEnabled: true
+
+# Configuración del plugin de YouTube
+plugins:
+  youtube:
+    enabled: true
+    allowSearch: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    # Clientes usados para resolver videos (orden de preferencia).
+    # MUSIC, WEB, ANDROID_MUSIC son los más resistentes a bloqueos.
+    clients:
+      - MUSIC
+      - WEB
+      - WEBEMBEDDED
+      - ANDROID_MUSIC
+      - TVHTML5EMBEDDED
+    # (Opcional) si tienes 429 persistentes, pega aquí el token OAuth de YouTube.
+    # oauth:
+    #   enabled: true
+    #   refreshToken: "TU_REFRESH_TOKEN"
+
+metrics:
+  prometheus:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    lavalink: INFO

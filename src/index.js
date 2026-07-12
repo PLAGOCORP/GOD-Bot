@@ -34,6 +34,7 @@ const templates = require('./modules/templates');
 const tickets = require('./modules/tickets');
 const giveaways = require('./modules/giveaways');
 const { loadPendingReminders } = require('./modules/reminders');
+const lavalink = require('./modules/lavalink');
 const db = require('./database/db');
 
 if (!config.token) {
@@ -66,6 +67,10 @@ const client = new Client({
 client.commands = new Collection();
 client.cooldowns = new Collection();
 client.config = config;
+
+// Lavalink (música) — debe crearse con el client ANTES del login para
+// enganchar los eventos raw del gateway (VOICE_SERVER_UPDATE, etc.).
+client.lavalink = lavalink.init(client);
 
 loadCommands(client);
 loadEvents(client);
