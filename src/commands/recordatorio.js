@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require('discord.js');
 const embeds = require('../utils/embeds');
 const { parseDuration, formatDuration } = require('../utils/helpers');
+const db = require('../database/db');
+const { scheduleReminder } = require('../modules/reminders');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -17,24 +19,25 @@ module.exports = {
         ephemeral: true,
       });
     }
+    const remindAt = Date.now() + msVal;
+    try {
+      db.db.prepare('INSERT INTO reminders (user_id, guild_id, channel_id, content, remind_at) VALUES (?, ?, ?, ?, ?)').run(
+        interaction.user.id,
+        interaction.guild?.id || null,
+        interaction.channel?.id || null,
+        text,
+        remindAt
+      );
+      const row = db.db.prepare('SELECT * FROM reminders WHERE user_id = ? AND remind_at = ? ORDER BY id DESC LIMIT 1').get(interaction.user.id, remindAt);
+      if (row) scheduleReminder(row, interaction.client);
+    } catch { /* */ }
     await interaction.reply({
       embeds: [
         embeds.success(
           'Recordatorio',
-          `Te avisaré en **${formatDuration(msVal)}** (<t:${Math.floor((Date.now() + msVal) / 1000)}:R>):\n${text}`
+          `Te avisaré en **${formatDuration(msVal)}** (<t:${Math.floor(remindAt / 1000)}:R>):\n${text}`
         ),
       ],
     });
-    setTimeout(async () => {
-      try {
-        await interaction.user.send({
-          embeds: [embeds.god('⏰ Recordatorio', text)],
-        });
-      } catch {
-        await interaction.channel
-          ?.send({ content: `${interaction.user} ⏰ **${text}**` })
-          .catch(() => {});
-      }
-    }, msVal);
   },
 };

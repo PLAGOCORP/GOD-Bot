@@ -1,0 +1,105 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Anti-Nuke</h2>
+    <form id="antinukeForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="antinuke_enabled" <%= modules.find(m=>m.name==='antinuke')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Anti-Nuke</span>
+      </label>
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Threshold (acciones)</label>
+          <input type="number" name="antinukeThreshold" value="<%= settings.antinukeThreshold || 3 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Ventana (ms)</label>
+          <input type="number" name="antinukeWindowMs" value="<%= settings.antinukeWindowMs || 10000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+      </div>
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar Anti-Nuke</button>
+    </form>
+  </div>
+
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Anti-Raid</h2>
+    <form id="antiraidForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="antiraid_enabled" <%= modules.find(m=>m.name==='antiraid')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Anti-Raid</span>
+      </label>
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Threshold (joins)</label>
+          <input type="number" name="antiraidThreshold" value="<%= settings.antiraidThreshold || 8 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Ventana (ms)</label>
+          <input type="number" name="antiraidWindowMs" value="<%= settings.antiraidWindowMs || 15000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Lockdown (minutos)</label>
+          <input type="number" name="antiraidLockMinutes" value="<%= settings.antiraidLockMinutes || 10 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Edad mín. cuenta (horas)</label>
+          <input type="number" name="minAccountAgeHours" value="<%= settings.minAccountAgeHours || 0 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+      </div>
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="kickNewAccounts" <%= settings.kickNewAccounts ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="text-sm">Expulsar si no cumple edad mínima</span>
+      </label>
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="antiraidKick" <%= settings.antiraidKick ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="text-sm">Expulsar cuentas nuevas</span>
+      </label>
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar Anti-Raid</button>
+    </form>
+  </div>
+
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Quiz de Verificación</h2>
+    <form id="verifyQuizForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-1">Quiz (JSON)</label>
+        <textarea name="verifyQuiz" rows="4" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full font-mono text-sm"><%= JSON.stringify(settings.verifyQuiz, null, 2) %></textarea>
+        <p class="text-xs text-slate-500 mt-1">Formato: [{"q":"pregunta","a":"respuesta"}]</p>
+      </div>
+      <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar Quiz</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('antinukeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    antinukeThreshold: parseInt(fd.get('antinukeThreshold')) || 3,
+    antinukeWindowMs: parseInt(fd.get('antinukeWindowMs')) || 10000,
+  });
+  const mod = fd.get('antinuke_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { antinuke: mod } });
+});
+document.getElementById('antiraidForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    antiraidThreshold: parseInt(fd.get('antiraidThreshold')) || 8,
+    antiraidWindowMs: parseInt(fd.get('antiraidWindowMs')) || 15000,
+    antiraidLockMinutes: parseInt(fd.get('antiraidLockMinutes')) || 10,
+    minAccountAgeHours: parseInt(fd.get('minAccountAgeHours')) || 0,
+    antiraidKick: fd.get('antiraidKick') === 'on',
+    kickNewAccounts: fd.get('kickNewAccounts') === 'on',
+  });
+  const mod = fd.get('antiraid_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { antiraid: mod } });
+});
+document.getElementById('verifyQuizForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  let quiz = null;
+  try { quiz = JSON.parse(fd.get('verifyQuiz')); } catch { showToast('JSON de quiz inválido', 'error'); return; }
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', { verifyQuiz: quiz });
+});
+</script>

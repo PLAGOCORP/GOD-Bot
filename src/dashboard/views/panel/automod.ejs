@@ -1,0 +1,31 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">AutoMod - Palabras prohibidas</h2>
+    <form id="automodWordsForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="automod_enabled" <%= modules.find(m=>m.name==='automod')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar AutoMod</span>
+      </label>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-1">Lista de palabras prohibidas (una por línea)</label>
+        <textarea name="badWords" rows="8" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full font-mono text-sm"><%= (automodConfig.badWords || []).join('\n') %></textarea>
+        <p class="text-xs text-slate-500 mt-1">Escribe cada palabra prohibida en una línea separada</p>
+      </div>
+
+      <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('automodWordsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const badWords = fd.get('badWords').split('\n').map(w => w.trim()).filter(Boolean);
+  await saveSettings('/api/guilds/<%= guild.id %>/automod', {
+    enabled: fd.get('automod_enabled') === 'on',
+    badWords,
+  });
+});
+</script>

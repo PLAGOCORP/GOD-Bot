@@ -1,0 +1,55 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Canales de Log</h2>
+    <p class="text-sm text-slate-400 mb-4">Configura qué eventos se registran y en qué canal.</p>
+    <form id="loggingForm" class="space-y-4">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Moderación</label>
+          <%- channelSelect('logMod', settings.logChannels?.mod) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Mensajes</label>
+          <%- channelSelect('logMessage', settings.logChannels?.message) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Miembros</label>
+          <%- channelSelect('logMember', settings.logChannels?.member) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Servidor</label>
+          <%- channelSelect('logServer', settings.logChannels?.server) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
+          <%- channelSelect('logTicket', settings.logChannels?.ticket) %>
+        </div>
+      </div>
+
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="logging_enabled" <%= modules.find(m=>m.name==='logging')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Logging</span>
+      </label>
+
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar Logging</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('loggingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    logChannels: {
+      mod: fd.get('logMod') || null,
+      message: fd.get('logMessage') || null,
+      member: fd.get('logMember') || null,
+      server: fd.get('logServer') || null,
+      ticket: fd.get('logTicket') || null,
+    },
+  });
+  const mod = fd.get('logging_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { logging: mod } });
+});
+</script>

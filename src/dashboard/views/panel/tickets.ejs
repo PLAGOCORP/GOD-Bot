@@ -1,0 +1,42 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Tickets</h2>
+    <form id="ticketsForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="tickets_enabled" <%= modules.find(m=>m.name==='tickets')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Tickets</span>
+      </label>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Categoría Tickets</label>
+          <%- channelSelect('ticketCategory', settings.ticketCategory) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
+          <%- channelSelect('ticketLog', settings.ticketLog) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Horas de inactividad</label>
+          <input type="number" name="inactiveHours" value="<%= settings.inactiveHours || 48 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('ticketsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    ticketCategory: fd.get('ticketCategory') || null,
+    ticketLog: fd.get('ticketLog') || null,
+    inactiveHours: parseInt(fd.get('inactiveHours')) || 48,
+  });
+  const mod = fd.get('tickets_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { tickets: mod } });
+});
+</script>

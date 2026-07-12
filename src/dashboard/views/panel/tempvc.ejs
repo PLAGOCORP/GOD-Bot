@@ -1,0 +1,42 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Temp VC</h2>
+    <form id="tempvcForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="tempvc_enabled" <%= modules.find(m=>m.name==='tempvc')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Temp VC</span>
+      </label>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Categoría Temp VC</label>
+          <%- channelSelect('tempvcCategory', settings.tempvcCategory) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Panel</label>
+          <%- channelSelect('tempvcPanelChannel', settings.tempvcPanelChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Límite de usuarios</label>
+          <input type="number" name="tempvcLimit" value="<%= settings.tempvcLimit || 3 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('tempvcForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    tempvcCategory: fd.get('tempvcCategory') || null,
+    tempvcPanelChannel: fd.get('tempvcPanelChannel') || null,
+    tempvcLimit: parseInt(fd.get('tempvcLimit')) || 3,
+  });
+  const mod = fd.get('tempvc_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { tempvc: mod } });
+});
+</script>

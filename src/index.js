@@ -24,6 +24,8 @@ const statsChannels = require('./modules/statsChannels');
 const tempvc = require('./modules/tempvc');
 const templates = require('./modules/templates');
 const tickets = require('./modules/tickets');
+const giveaways = require('./modules/giveaways');
+const { loadPendingReminders } = require('./modules/reminders');
 const db = require('./database/db');
 
 if (!config.token) {
@@ -98,6 +100,8 @@ client.once(require('discord.js').Events.ClientReady, () => {
   birthdays.startCron(client);
   voiceXp.start(client);
   statsChannels.start(client);
+  giveaways.startChecker(client);
+  loadPendingReminders(client);
   startDashboard(client);
 
   // Firebase: stats públicas para la landing (Firestore public/stats)

@@ -1,0 +1,30 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Sorteos</h2>
+    <form id="giveawaysForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="giveaways_enabled" <%= modules.find(m=>m.name==='giveaways')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Sorteos</span>
+      </label>
+
+      <div class="mt-4">
+        <label class="block text-sm font-medium text-slate-400 mb-1">Intervalo de verificación (ms)</label>
+        <input type="number" name="checkIntervalMs" value="<%= settings.checkIntervalMs || 15000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+      </div>
+
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('giveawaysForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    checkIntervalMs: parseInt(fd.get('checkIntervalMs')) || 15000,
+  });
+  const mod = fd.get('giveaways_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { giveaways: mod } });
+});
+</script>

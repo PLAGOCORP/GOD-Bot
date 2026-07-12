@@ -1,0 +1,59 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Configuración General</h2>
+    <form id="generalForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-1">Prefijo (comandos de texto)</label>
+        <input type="text" name="prefix" value="<%= settings.prefix || 'g!' %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-1">Idioma</label>
+        <select name="language" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full">
+          <option value="es" <%= (settings.language || 'es') === 'es' ? 'selected' : '' %>>Español</option>
+          <option value="en" <%= settings.language === 'en' ? 'selected' : '' %>>English</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-1">Owner IDs (separados por coma)</label>
+        <input type="text" name="ownerIds" value="<%= settings.ownerIds || '' %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full" placeholder="777367396230496276"/>
+      </div>
+      <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Módulos</h2>
+    <form id="modulesForm" class="space-y-2">
+      <input type="hidden" name="_modules" value="<%= modules.map(m => m.name).join(',') %>"/>
+      <div class="grid sm:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2">
+        <% modules.forEach(function(m) { %>
+          <label class="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-dark-800/50">
+            <input type="checkbox" name="mod_<%= m.name %>" <%= m.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+            <span class="font-mono text-sm"><%= m.name %></span>
+          </label>
+        <% }) %>
+      </div>
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar módulos</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('generalForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    prefix: fd.get('prefix'),
+    language: fd.get('language'),
+  });
+});
+document.getElementById('modulesForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const modules = {};
+  fd.getAll('_modules').join(',').split(',').forEach(m => {
+    modules[m] = fd.get('mod_' + m) === 'on';
+  });
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules });
+});
+</script>

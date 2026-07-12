@@ -137,7 +137,7 @@ async function createTicketChannel(interaction, category, subject) {
 }
 
 async function generateTranscript(channel, ticket) {
-  const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+  const messages = await channel.messages.fetch({ limit: 500 }).catch(() => null);
   if (!messages) return null;
 
   const sorted = [...messages.values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);

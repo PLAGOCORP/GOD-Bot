@@ -310,3 +310,27 @@ CREATE INDEX IF NOT EXISTS idx_starboard ON starboard(guild_id, star_count DESC)
 CREATE INDEX IF NOT EXISTS idx_birthdays ON birthdays(guild_id, birth_month, birth_day);
 CREATE INDEX IF NOT EXISTS idx_confessions ON confessions(guild_id, status);
 CREATE INDEX IF NOT EXISTS idx_apps ON applications(guild_id, status);
+
+CREATE TABLE IF NOT EXISTS polls (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guild_id TEXT NOT NULL,
+  channel_id TEXT NOT NULL,
+  message_id TEXT,
+  question TEXT NOT NULL,
+  options_json TEXT NOT NULL DEFAULT '[]',
+  author_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+  ends_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS reminders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  guild_id TEXT,
+  channel_id TEXT,
+  content TEXT NOT NULL,
+  remind_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+  fired INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_reminders ON reminders(remind_at, fired);

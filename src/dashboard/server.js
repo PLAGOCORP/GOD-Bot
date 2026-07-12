@@ -11,6 +11,8 @@ const logger = require('../utils/logger');
 const { handleInteractions } = require('./interactions');
 const { handleRoleConnectionsVerification } = require('./roleConnections');
 
+const expressLayouts = require('express-ejs-layouts');
+
 function createDashboard(client) {
   const app = express();
 
@@ -18,6 +20,8 @@ function createDashboard(client) {
   app.set('trust proxy', 1);
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, 'views'));
+  app.set('layout', 'layout');
+  app.use(expressLayouts);
 
   app.use(express.urlencoded({ extended: true }));
 
@@ -299,6 +303,134 @@ function createDashboard(client) {
       res.redirect(`/servers/${guildId}?ok=role`);
     } catch (err) {
       res.status(400).send('Error roles: ' + err.message);
+    }
+  });
+
+  // ─── Panel helpers ──────────────────────────────────────────
+  function getGuildCtx(guildId) {
+    db.ensureGuild(guildId);
+    const settings = db.getGuildSettings(guildId);
+    const modules = Object.keys(db.DEFAULT_MODULES).map((m) => ({
+      name: m,
+      enabled: db.isModuleEnabled(guildId, m),
+    }));
+    const discordGuild = client?.guilds.cache.get(guildId);
+    const channels = discordGuild
+      ? discordGuild.channels.cache
+          .filter((c) => [0, 2, 4, 5].includes(c.type))
+          .sort((a, b) => a.rawPosition - b.rawPosition)
+          .map((c) => ({ id: c.id, name: c.name, type: c.type }))
+      : [];
+    const roles = discordGuild
+      ? discordGuild.roles.cache
+          .filter((r) => r.id !== guildId)
+          .sort((a, b) => b.rawPosition - a.rawPosition)
+          .map((r) => ({ id: r.id, name: r.name }))
+      : [];
+    return { settings, modules, discordGuild, channels, roles };
+  }
+
+  const PANELS = ['general', 'channels', 'roles', 'welcome', 'moderation', 'logging', 'tickets', 'leveling', 'economy', 'giveaways', 'starboard', 'music', 'automod', 'security', 'birthdays', 'tempvc', 'stats', 'tags', 'confessions', 'suggestions', 'invites'];
+  const PANEL_TITLES = { general: 'General', channels: 'Canales', roles: 'Roles', welcome: 'Bienvenida', moderation: 'Moderación', logging: 'Logs', tickets: 'Tickets', leveling: 'Niveles', economy: 'Economía', giveaways: 'Sorteos', starboard: 'Starboard', music: 'Música', automod: 'AutoMod', security: 'Seguridad', birthdays: 'Cumpleaños', tempvc: 'Temp VC', stats: 'Estadísticas', tags: 'Tags', confessions: 'Confesiones', suggestions: 'Sugerencias', invites: 'Invitaciones' };
+
+  for (const panel of PANELS) {
+    app.get(`/servers/:id/panel/${panel}`, requireAuth, (req, res) => {
+      const guildId = req.params.id;
+      const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+      if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).send('Necesitas Administrator');
+      const ctx = getGuildCtx(guildId);
+      const automodConfig = db.getModuleConfig(guildId, 'automod').config;
+      let tags = [];
+      try { tags = db.db.prepare('SELECT * FROM tags WHERE guild_id = ?').all(guildId); } catch { /* */ }
+      res.render(`panel/${panel}`, {
+        layout: 'layout',
+        title: PANEL_TITLES[panel] || panel,
+        section: panel,
+        guild: g,
+        user: req.session.user,
+        botVersion: config.bot.version,
+        ...ctx,
+        automodConfig,
+        tags,
+      });
+    });
+  }
+
+  // ─── API REST ───────────────────────────────────────────────
+  app.post('/api/guilds/:id/settings', requireAuth, (req, res) => {
+    const guildId = req.params.id;
+    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    try {
+      db.setGuildSettings(guildId, req.body);
+      res.json({ ok: true, message: 'Configuración guardada' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/modules', requireAuth, (req, res) => {
+    const guildId = req.params.id;
+    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    try {
+      const { modules } = req.body;
+      if (modules && typeof modules === 'object') {
+        for (const [mod, enabled] of Object.entries(modules)) {
+          db.setModuleEnabled(guildId, mod, !!enabled);
+        }
+      }
+      res.json({ ok: true, message: 'Módulos actualizados' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/automod', requireAuth, (req, res) => {
+    const guildId = req.params.id;
+    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    try {
+      const { enabled, ...cfg } = req.body;
+      db.setModuleConfig(guildId, 'automod', cfg);
+      db.setModuleEnabled(guildId, 'automod', !!enabled);
+      res.json({ ok: true, message: 'AutoMod guardado' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/tags', requireAuth, (req, res) => {
+    const guildId = req.params.id;
+    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    try {
+      const { action, name, content } = req.body;
+      if (action === 'delete') {
+        db.db.prepare('DELETE FROM tags WHERE guild_id = ? AND name = ?').run(guildId, name);
+      } else if (action === 'add' && name && content) {
+        db.db.prepare('INSERT OR REPLACE INTO tags (guild_id, name, content, created_by) VALUES (?, ?, ?, ?)').run(guildId, name, content, req.session.user.id);
+      }
+      res.json({ ok: true, message: 'Tag actualizado' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/guilds/:id/stats', requireAuth, (req, res) => {
+    const guildId = req.params.id;
+    try {
+      const stats = {
+        users: db.db.prepare('SELECT COUNT(*) AS c FROM users WHERE guild_id = ?').get(guildId).c,
+        warns: db.db.prepare('SELECT COUNT(*) AS c FROM warns WHERE guild_id = ? AND active = 1').get(guildId).c,
+        tickets: db.db.prepare("SELECT COUNT(*) AS c FROM tickets WHERE guild_id = ? AND status != 'closed'").get(guildId).c,
+        tags: db.db.prepare('SELECT COUNT(*) AS c FROM tags WHERE guild_id = ?').get(guildId).c,
+        confessions: db.db.prepare("SELECT COUNT(*) AS c FROM confessions WHERE guild_id = ? AND status = 'pending'").get(guildId).c,
+        suggestions: db.db.prepare("SELECT COUNT(*) AS c FROM suggestions WHERE guild_id = ? AND status = 'pending'").get(guildId).c,
+      };
+      res.json({ ok: true, stats });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
     }
   });
 

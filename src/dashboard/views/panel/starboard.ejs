@@ -1,0 +1,42 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Starboard</h2>
+    <form id="starboardForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="starboard_enabled" <%= modules.find(m=>m.name==='starboard')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Starboard</span>
+      </label>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Starboard</label>
+          <%- channelSelect('starboardChannel', settings.starboardChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Emoji</label>
+          <input type="text" name="starboardEmoji" value="<%= settings.starboardEmoji || '⭐' %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Mínimo de stars</label>
+          <input type="number" name="starboardMin" value="<%= settings.starboardMin || 3 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('starboardForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    starboardChannel: fd.get('starboardChannel') || null,
+    starboardEmoji: fd.get('starboardEmoji') || '⭐',
+    starboardMin: parseInt(fd.get('starboardMin')) || 3,
+  });
+  const mod = fd.get('starboard_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { starboard: mod } });
+});
+</script>

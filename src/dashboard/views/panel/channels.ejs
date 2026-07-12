@@ -1,0 +1,133 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Canales del Servidor</h2>
+    <form id="channelsForm" class="space-y-4">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Bienvenida</label>
+          <%- channelSelect('welcomeChannel', settings.welcomeChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Despedida</label>
+          <%- channelSelect('leaveChannel', settings.leaveChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Nivel Up</label>
+          <%- channelSelect('levelChannel', settings.levelChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Starboard</label>
+          <%- channelSelect('starboardChannel', settings.starboardChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Categoría Tickets</label>
+          <%- channelSelect('ticketCategory', settings.ticketCategory) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
+          <%- channelSelect('ticketLog', settings.ticketLog) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Confesiones</label>
+          <%- channelSelect('confessionChannel', settings.confessionChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Revisión Confesiones</label>
+          <%- channelSelect('confessionReviewChannel', settings.confessionReviewChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Sugerencias</label>
+          <%- channelSelect('suggestionChannel', settings.suggestionChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Cumpleaños</label>
+          <%- channelSelect('birthdayChannel', settings.birthdayChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Panel Temp VC</label>
+          <%- channelSelect('tempvcPanelChannel', settings.tempvcPanelChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Categoría Temp VC</label>
+          <%- channelSelect('tempvcCategory', settings.tempvcCategory) %>
+        </div>
+      </div>
+
+      <h3 class="text-lg font-semibold mt-6 pt-4 border-t border-dark-700">Canales de Log</h3>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Moderación</label>
+          <%- channelSelect('logChannels.mod', settings.logChannels?.mod) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Mensajes</label>
+          <%- channelSelect('logChannels.message', settings.logChannels?.message) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Miembros</label>
+          <%- channelSelect('logChannels.member', settings.logChannels?.member) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Servidor</label>
+          <%- channelSelect('logChannels.server', settings.logChannels?.server) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
+          <%- channelSelect('logChannels.ticket', settings.logChannels?.ticket) %>
+        </div>
+      </div>
+
+      <h3 class="text-lg font-semibold mt-6 pt-4 border-t border-dark-700">Canales de Stats Dinámicos</h3>
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Miembros</label>
+          <%- channelSelect('statsChannels.members', settings.statsChannels?.members) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">En línea</label>
+          <%- channelSelect('statsChannels.online', settings.statsChannels?.online) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Boosts</label>
+          <%- channelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-6 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar canales</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('channelsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = {
+    welcomeChannel: fd.get('welcomeChannel') || null,
+    leaveChannel: fd.get('leaveChannel') || null,
+    levelChannel: fd.get('levelChannel') || null,
+    starboardChannel: fd.get('starboardChannel') || null,
+    ticketCategory: fd.get('ticketCategory') || null,
+    ticketLog: fd.get('ticketLog') || null,
+    confessionChannel: fd.get('confessionChannel') || null,
+    confessionReviewChannel: fd.get('confessionReviewChannel') || null,
+    suggestionChannel: fd.get('suggestionChannel') || null,
+    birthdayChannel: fd.get('birthdayChannel') || null,
+    tempvcPanelChannel: fd.get('tempvcPanelChannel') || null,
+    tempvcCategory: fd.get('tempvcCategory') || null,
+    logChannels: {
+      mod: fd.get('logChannels.mod') || null,
+      message: fd.get('logChannels.message') || null,
+      member: fd.get('logChannels.member') || null,
+      server: fd.get('logChannels.server') || null,
+      ticket: fd.get('logChannels.ticket') || null,
+    },
+    statsChannels: {
+      members: fd.get('statsChannels.members') || null,
+      online: fd.get('statsChannels.online') || null,
+      boosts: fd.get('statsChannels.boosts') || null,
+    },
+  };
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', data);
+});
+</script>

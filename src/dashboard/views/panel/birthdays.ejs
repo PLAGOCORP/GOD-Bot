@@ -1,0 +1,37 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Cumpleaños</h2>
+    <form id="birthdaysForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="birthdays_enabled" <%= modules.find(m=>m.name==='birthdays')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Cumpleaños</span>
+      </label>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Cumpleaños</label>
+          <%- channelSelect('birthdayChannel', settings.birthdayChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Rol Cumpleaños</label>
+          <%- roleSelect('birthdayRole', settings.birthdayRole) %>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('birthdaysForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    birthdayChannel: fd.get('birthdayChannel') || null,
+    birthdayRole: fd.get('birthdayRole') || null,
+  });
+  const mod = fd.get('birthdays_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { birthdays: mod } });
+});
+</script>

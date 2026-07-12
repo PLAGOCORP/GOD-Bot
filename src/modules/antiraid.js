@@ -68,11 +68,14 @@ async function onMemberJoin(member) {
     ],
   });
 
-  // Temporarily deny @everyone Connect to verification-only style: deny SendMessages in public if possible
+  // Lockdown: deny SendMessages in text channels for @everyone
   try {
-    await member.guild.roles.everyone.permissionOverwrites?.edit?.(member.guild.id, {
-      // not valid - use channel
-    });
+    const textChannels = member.guild.channels.cache.filter(c => c.type === 0 && c.viewable);
+    for (const [, ch] of textChannels) {
+      await ch.permissionOverwrites.edit(member.guild.roles.everyone, {
+        SendMessages: false,
+      }).catch(() => {});
+    }
   } catch { /* */ }
 
   // Kick the latest wave member optionally

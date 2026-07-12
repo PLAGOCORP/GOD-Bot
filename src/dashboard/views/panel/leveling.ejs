@@ -1,0 +1,52 @@
+<div class="max-w-3xl space-y-6">
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Niveles</h2>
+    <form id="levelingForm" class="space-y-4">
+      <label class="flex items-center gap-3">
+        <input type="checkbox" name="leveling_enabled" <%= modules.find(m=>m.name==='leveling')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <span class="font-medium">Activar Niveles</span>
+      </label>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Nivel Up</label>
+          <%- channelSelect('levelChannel', settings.levelChannel) %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">XP Mínimo</label>
+          <input type="number" name="xpMin" value="<%= settings.xpMin || 15 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">XP Máximo</label>
+          <input type="number" name="xpMax" value="<%= settings.xpMax || 25 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Cooldown (ms)</label>
+          <input type="number" name="cooldown" value="<%= settings.cooldown || 60000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">XP Voz por minuto</label>
+          <input type="number" name="voiceXpPerMinute" value="<%= settings.voiceXpPerMinute || 5 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('levelingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    levelChannel: fd.get('levelChannel') || null,
+    xpMin: parseInt(fd.get('xpMin')) || 15,
+    xpMax: parseInt(fd.get('xpMax')) || 25,
+    cooldown: parseInt(fd.get('cooldown')) || 60000,
+    voiceXpPerMinute: parseInt(fd.get('voiceXpPerMinute')) || 5,
+  });
+  const mod = fd.get('leveling_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { leveling: mod } });
+});
+</script>
