@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>God Bot — El bot Discord todo-en-uno | botgod.pro</title>
-  <meta name="description" content="God Bot: moderación, tickets, niveles, música, IA y dashboard web. Sin paywalls. En español."/>
+  <title>God Bot — El bot Discord más completo | botgod.pro</title>
+  <meta name="description" content="God Bot: moderación, tickets, niveles, música, NQN, IA, economía, sorteos, starboard, cumpleaños, temp VC, aplicaciones, confesiones, sugerencias, anti-raid, anti-nuke. Todo en un solo bot."/>
   <meta property="og:title" content="God Bot — botgod.pro"/>
-  <meta property="og:description" content="El bot Discord todo-en-uno. Moderación, tickets, niveles, música, NQN, IA. Dashboard web."/>
+  <meta property="og:description" content="El bot Discord más completo. 30+ módulos. Sin paywalls."/>
   <meta property="og:image" content="https://botgod.pro/img/logo-square.jpg"/>
   <meta property="og:url" content="https://botgod.pro"/>
   <meta property="og:type" content="website"/>
@@ -19,7 +19,6 @@
         extend: {
           colors: {
             divine: { 50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706',700:'#b45309',800:'#92400e',900:'#78350f' },
-            cosmos: { 900:'#050a18',950:'#020612' }
           }
         }
       }
@@ -28,162 +27,141 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     * { font-family: 'Inter', system-ui, sans-serif; }
-    body { background: #020612; }
+    html { scroll-behavior: smooth; }
+    body { background: #020612; overflow-x: hidden; }
     .glow-text { text-shadow: 0 0 40px rgba(251,191,36,0.4), 0 0 80px rgba(251,191,36,0.15); }
     .glow-border { box-shadow: 0 0 30px rgba(251,191,36,0.08), inset 0 1px 0 rgba(251,191,36,0.1); }
-    .hero-bg { background: radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.08) 0%, rgba(5,10,24,0) 60%), radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%), #020612; }
-    .star { position: absolute; width: 2px; height: 2px; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
-    @keyframes twinkle { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }
-    .fade-up { animation: fadeUp 0.8s ease-out forwards; opacity: 0; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-bg { background: radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%), #020612; }
+    #galaxy-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .content-wrapper { position: relative; z-index: 1; }
     .card-hover { transition: all 0.3s ease; }
     .card-hover:hover { transform: translateY(-4px); box-shadow: 0 0 40px rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); }
     .btn-primary { background: linear-gradient(135deg, #f59e0b, #d97706); transition: all 0.3s; }
     .btn-primary:hover { background: linear-gradient(135deg, #fbbf24, #f59e0b); box-shadow: 0 0 30px rgba(251,191,36,0.3); transform: translateY(-1px); }
-    .btn-secondary { border: 1px solid rgba(251,191,36,0.3); transition: all 0.3s; }
-    .btn-secondary:hover { border-color: #fbbf24; box-shadow: 0 0 20px rgba(251,191,36,0.1); }
+    .btn-secondary { border: 1px solid rgba(251,191,36,0.3); color: #fbbf24; transition: all 0.3s; }
+    .btn-secondary:hover { border-color: #fbbf24; box-shadow: 0 0 20px rgba(251,191,36,0.1); background: rgba(251,191,36,0.05); }
     .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(251,191,36,0.2), transparent); }
-    .diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+    .fade-up { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .cat-badge { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); }
+    .cmd-tag { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.15); }
+    .nebula-1 { position: absolute; width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(circle, rgba(139,92,246,0.04) 0%, transparent 70%); pointer-events: none; }
+    .nebula-2 { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(251,191,36,0.03) 0%, transparent 70%); pointer-events: none; }
   </style>
 </head>
-<body class="text-slate-100 min-h-screen overflow-x-hidden">
+<body class="text-slate-100">
 
-  <!-- Stars background -->
-  <div id="stars" class="fixed inset-0 pointer-events-none z-0"></div>
+  <!-- Galaxy background canvas -->
+  <canvas id="galaxy-canvas"></canvas>
+
+  <div class="content-wrapper">
 
   <!-- Nav -->
-  <nav class="fixed top-0 w-full z-50 border-b border-white/5" style="background: rgba(2,6,18,0.85); backdrop-filter: blur(20px);">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+  <nav class="fixed top-0 w-full z-50 border-b border-white/5" style="background: rgba(2,6,18,0.8); backdrop-filter: blur(20px);">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
       <a href="/" class="flex items-center gap-3">
         <img src="/img/logo-square.jpg" alt="God Bot" class="w-9 h-9 rounded-lg"/>
         <span class="font-bold text-lg">Bot<span class="text-divine-400">God</span><span class="text-slate-500 text-sm font-normal">.pro</span></span>
       </a>
-      <div class="flex items-center gap-6 text-sm">
+      <div class="hidden md:flex items-center gap-6 text-sm">
         <a href="#features" class="text-slate-400 hover:text-divine-400 transition">Features</a>
+        <a href="#commands" class="text-slate-400 hover:text-divine-400 transition">Comandos</a>
         <a href="#stats" class="text-slate-400 hover:text-divine-400 transition">Stats</a>
-        <a href="#cta" class="text-slate-400 hover:text-divine-400 transition">Invitar</a>
         <a id="btn-dash" href="#" class="btn-primary text-slate-950 font-semibold px-5 py-2 rounded-lg">Dashboard</a>
       </div>
+      <button id="mobile-menu-btn" class="md:hidden text-slate-400">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-white/5 px-6 py-4 space-y-3">
+      <a href="#features" class="block text-slate-400 hover:text-divine-400">Features</a>
+      <a href="#commands" class="block text-slate-400 hover:text-divine-400">Comandos</a>
+      <a href="#stats" class="block text-slate-400 hover:text-divine-400">Stats</a>
+      <a id="btn-dash-m" href="#" class="block btn-primary text-slate-950 font-semibold px-5 py-2 rounded-lg text-center">Dashboard</a>
     </div>
   </nav>
 
   <!-- Hero -->
   <section class="hero-bg relative min-h-screen flex items-center justify-center pt-20">
-    <div class="absolute inset-0 overflow-hidden">
-      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-20" style="background: radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%);"></div>
-    </div>
-    <div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
-      <div class="fade-up" style="animation-delay: 0.1s;">
-        <img src="/img/logo-square.jpg" alt="God Bot Logo" class="w-32 h-32 sm:w-40 sm:h-40 mx-auto mb-8 rounded-2xl glow-border"/>
-      </div>
-      <div class="fade-up" style="animation-delay: 0.3s;">
-        <p class="text-divine-400/80 text-sm font-semibold tracking-[0.3em] uppercase mb-4">Bot Discord Todo-en-Uno</p>
-      </div>
-      <h1 class="fade-up text-5xl sm:text-7xl lg:text-8xl font-black mb-6 leading-tight" style="animation-delay: 0.5s;">
+    <div class="nebula-1" style="top: 10%; left: -10%;"></div>
+    <div class="nebula-2" style="bottom: 10%; right: -5%;"></div>
+    <div class="relative z-10 text-center px-6 max-w-5xl mx-auto">
+      <img src="/img/logo-square.jpg" alt="God Bot" class="w-36 h-36 sm:w-44 sm:h-44 mx-auto mb-8 rounded-2xl glow-border"/>
+      <p class="text-divine-400/80 text-sm font-semibold tracking-[0.3em] uppercase mb-4">El bot Discord más completo</p>
+      <h1 class="text-5xl sm:text-7xl lg:text-8xl font-black mb-6 leading-tight">
         <span class="text-transparent bg-clip-text bg-gradient-to-r from-divine-300 via-white to-divine-400 glow-text">God</span>
         <span class="text-white"> Bot</span>
       </h1>
-      <p class="fade-up text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed" style="animation-delay: 0.7s;">
-        Moderación profesional, tickets con panel, niveles con XP, música real en voice, NQN emotes, IA conversacional y un dashboard web completo.
-        <span class="text-divine-400 font-semibold">Sin paywalls. En español.</span>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+        <span class="text-divine-400 font-semibold">30+ módulos.</span> Moderación, tickets, niveles, música, NQN, economía, sorteos, starboard, cumpleaños, temp VC, aplicaciones, confesiones, sugerencias, anti-raid, anti-nuke, IA, embeds, polls, recordatorios y más.
+        <span class="text-white font-semibold">Sin paywalls. En español.</span>
       </p>
-      <div class="fade-up flex flex-wrap justify-center gap-4" style="animation-delay: 0.9s;">
+      <div class="flex flex-wrap justify-center gap-4 mb-16">
         <a id="cta-invite" href="#" target="_blank" rel="noopener" class="btn-primary text-slate-950 font-bold px-8 py-4 rounded-xl text-lg inline-flex items-center gap-2">
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
           Invitar a Discord
         </a>
-        <a id="cta-dash" href="#" class="btn-secondary text-divine-400 font-semibold px-8 py-4 rounded-xl text-lg">
-          Abrir Dashboard
-        </a>
+        <a id="cta-dash" href="#" class="btn-secondary font-semibold px-8 py-4 rounded-xl text-lg">Abrir Dashboard</a>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
+        <div class="text-center p-4 rounded-xl border border-white/5" style="background: rgba(255,255,255,0.02);">
+          <div id="stat-guilds" class="text-2xl sm:text-3xl font-black text-divine-400 glow-text">—</div>
+          <div class="text-slate-500 text-xs mt-1">Servidores</div>
+        </div>
+        <div class="text-center p-4 rounded-xl border border-white/5" style="background: rgba(255,255,255,0.02);">
+          <div id="stat-users" class="text-2xl sm:text-3xl font-black text-divine-400 glow-text">—</div>
+          <div class="text-slate-500 text-xs mt-1">Usuarios</div>
+        </div>
+        <div class="text-center p-4 rounded-xl border border-white/5" style="background: rgba(255,255,255,0.02);">
+          <div id="stat-ping" class="text-2xl sm:text-3xl font-black text-divine-400 glow-text">—</div>
+          <div class="text-slate-500 text-xs mt-1">Ping</div>
+        </div>
+        <div class="text-center p-4 rounded-xl border border-white/5" style="background: rgba(255,255,255,0.02);">
+          <div class="text-2xl sm:text-3xl font-black text-divine-400 glow-text">v3.1</div>
+          <div class="text-slate-500 text-xs mt-1">Versión</div>
+        </div>
       </div>
     </div>
-
-    <!-- Scroll indicator -->
     <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
       <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
     </div>
   </section>
 
-  <!-- Stats -->
-  <section id="stats" class="relative py-20">
-    <div class="section-divider mb-20"></div>
-    <div class="max-w-5xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-4 gap-6">
-      <div class="text-center p-6 rounded-2xl border border-white/5" style="background: rgba(255,255,255,0.02);">
-        <div id="stat-guilds" class="text-3xl sm:text-4xl font-black text-divine-400 glow-text">—</div>
-        <div class="text-slate-500 text-sm mt-2">Servidores</div>
-      </div>
-      <div class="text-center p-6 rounded-2xl border border-white/5" style="background: rgba(255,255,255,0.02);">
-        <div id="stat-users" class="text-3xl sm:text-4xl font-black text-divine-400 glow-text">—</div>
-        <div class="text-slate-500 text-sm mt-2">Usuarios</div>
-      </div>
-      <div class="text-center p-6 rounded-2xl border border-white/5" style="background: rgba(255,255,255,0.02);">
-        <div id="stat-ping" class="text-3xl sm:text-4xl font-black text-divine-400 glow-text">—</div>
-        <div class="text-slate-500 text-sm mt-2">Ping</div>
-      </div>
-      <div class="text-center p-6 rounded-2xl border border-white/5" style="background: rgba(255,255,255,0.02);">
-        <div class="text-3xl sm:text-4xl font-black text-divine-400 glow-text">v3.1</div>
-        <div class="text-slate-500 text-sm mt-2">Versión</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Features -->
+  <!-- ═══════════════ ALL FEATURES ═══════════════ -->
   <section id="features" class="relative py-24">
-    <div class="max-w-6xl mx-auto px-6">
+    <div class="section-divider mb-20"></div>
+    <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-16">
-        <p class="text-divine-400/80 text-sm font-semibold tracking-[0.2em] uppercase mb-3">Funcionalidades</p>
-        <h2 class="text-3xl sm:text-4xl font-black">Todo lo que necesitas.<br/><span class="text-divine-400">Un solo bot.</span></h2>
+        <p class="text-divine-400/80 text-sm font-semibold tracking-[0.2em] uppercase mb-3">30+ Módulos</p>
+        <h2 class="text-3xl sm:text-4xl font-black">Todo lo que tu servidor <span class="text-divine-400">necesita</span></h2>
       </div>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" id="feature-grid"></div>
+      <div id="all-features" class="space-y-6"></div>
     </div>
   </section>
 
-  <!-- Commands preview -->
-  <section class="relative py-24">
-    <div class="section-divider mb-24"></div>
-    <div class="max-w-4xl mx-auto px-6">
+  <!-- ═══════════════ ALL COMMANDS ═══════════════ -->
+  <section id="commands" class="relative py-24">
+    <div class="section-divider mb-20"></div>
+    <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-16">
-        <p class="text-divine-400/80 text-sm font-semibold tracking-[0.2em] uppercase mb-3">Comandos</p>
-        <h2 class="text-3xl sm:text-4xl font-black">Potencia al alcance de <span class="text-divine-400">una lệnh</span></h2>
+        <p class="text-divine-400/80 text-sm font-semibold tracking-[0.2em] uppercase mb-3">31 Comandos Slash</p>
+        <h2 class="text-3xl sm:text-4xl font-black">Potencia al alcance de <span class="text-divine-400">una línea</span></h2>
       </div>
-      <div class="grid sm:grid-cols-2 gap-4" id="commands-grid">
-        <div class="p-4 rounded-xl border border-white/5 flex items-center gap-3" style="background: rgba(255,255,255,0.02);">
-          <span class="text-divine-400 font-mono text-sm bg-divine-400/10 px-2 py-1 rounded">/god setup</span>
-          <span class="text-slate-500 text-sm">Configuración inicial del bot</span>
-        </div>
-        <div class="p-4 rounded-xl border border-white/5 flex items-center gap-3" style="background: rgba(255,255,255,0.02);">
-          <span class="text-divine-400 font-mono text-sm bg-divine-400/10 px-2 py-1 rounded">/ban</span>
-          <span class="text-slate-500 text-sm">Banear usuario con razón</span>
-        </div>
-        <div class="p-4 rounded-xl border border-white/5 flex items-center gap-3" style="background: rgba(255,255,255,0.02);">
-          <span class="text-divine-400 font-mono text-sm bg-divine-400/10 px-2 py-1 rounded">/ticket panel</span>
-          <span class="text-slate-500 text-sm">Crear panel de tickets</span>
-        </div>
-        <div class="p-4 rounded-xl border border-white/5 flex items-center gap-3" style="background: rgba(255,255,255,0.02);">
-          <span class="text-divine-400 font-mono text-sm bg-divine-400/10 px-2 py-1 rounded">/nivel rank</span>
-          <span class="text-slate-500 text-sm">Ver rank y XP</span>
-        </div>
-        <div class="p-4 rounded-xl border border-white/5 flex items-center gap-3" style="background: rgba(255,255,255,0.02);">
-          <span class="text-divine-400 font-mono text-sm bg-divine-400/10 px-2 py-1 rounded">/play</span>
-          <span class="text-slate-500 text-sm">Música en voice channel</span>
-        </div>
-        <div class="p-4 rounded-xl border border-white/5 flex items-center gap-3" style="background: rgba(255,255,255,0.02);">
-          <span class="text-divine-400 font-mono text-sm bg-divine-400/10 px-2 py-1 rounded">/sorteo</span>
-          <span class="text-slate-500 text-sm">Crear sorteo con botones</span>
-        </div>
-      </div>
+      <div id="all-commands" class="space-y-4"></div>
     </div>
   </section>
 
   <!-- CTA -->
   <section id="cta" class="relative py-24">
+    <div class="section-divider mb-20"></div>
     <div class="max-w-3xl mx-auto px-6 text-center">
-      <div class="p-12 rounded-3xl border border-divine-400/20 relative overflow-hidden" style="background: linear-gradient(135deg, rgba(251,191,36,0.05), rgba(139,92,246,0.03));">
+      <div class="p-12 sm:p-16 rounded-3xl border border-divine-400/20 relative overflow-hidden" style="background: linear-gradient(135deg, rgba(251,191,36,0.05), rgba(139,92,246,0.03));">
         <div class="absolute inset-0 overflow-hidden">
           <div class="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-10" style="background: radial-gradient(circle, #fbbf24, transparent);"></div>
           <div class="absolute -bottom-20 -left-20 w-60 h-60 rounded-full opacity-10" style="background: radial-gradient(circle, #8b5cf6, transparent);"></div>
         </div>
         <div class="relative z-10">
+          <img src="/img/logo-square.jpg" alt="" class="w-16 h-16 mx-auto mb-6 rounded-xl"/>
           <h2 class="text-3xl sm:text-4xl font-black mb-4">¿Listo para <span class="text-divine-400">dominar</span> tu servidor?</h2>
           <p class="text-slate-400 mb-8 text-lg">Invita a God y configura todo con <code class="text-divine-400 font-mono">/god setup</code></p>
           <div class="flex flex-wrap justify-center gap-4">
@@ -191,9 +169,7 @@
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
               Añadir a Discord
             </a>
-            <a href="mailto:plago1806@gmail.com" class="btn-secondary text-divine-400 font-semibold px-8 py-4 rounded-xl text-lg">
-              Contacto
-            </a>
+            <a id="cta-dash-2" href="#" class="btn-secondary font-semibold px-8 py-4 rounded-xl text-lg">Dashboard</a>
           </div>
         </div>
       </div>
@@ -202,7 +178,7 @@
 
   <!-- Footer -->
   <footer class="border-t border-white/5 py-12">
-    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-600">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-600">
       <div class="flex items-center gap-2">
         <img src="/img/logo-square.jpg" alt="" class="w-5 h-5 rounded"/>
         <span class="text-divine-400/60 font-semibold">botgod.pro</span>
@@ -215,46 +191,564 @@
     </div>
   </footer>
 
-  <script src="/js/site.js"></script>
-  <script>
-    // Stars
-    (function() {
-      const c = document.getElementById('stars');
-      for (let i = 0; i < 80; i++) {
-        const s = document.createElement('div');
-        s.className = 'star';
-        s.style.left = Math.random() * 100 + '%';
-        s.style.top = Math.random() * 100 + '%';
-        s.style.animationDelay = Math.random() * 3 + 's';
-        s.style.opacity = Math.random() * 0.5 + 0.1;
-        c.appendChild(s);
-      }
-    })();
+  </div><!-- /content-wrapper -->
 
-    // Features
-    (function() {
-      const features = [
-        { icon: '🛡️', title: 'Moderación', desc: 'Ban, warn, purge, automod con escalación, anti-raid y anti-nuke. Protege tu servidor al nivel de Carl-bot.' },
-        { icon: '🎫', title: 'Tickets', desc: 'Panel con botones, claim, transcripts HTML y sistema de valoración CSAT para soporte.' },
-        { icon: '📈', title: 'Niveles', desc: 'XP texto y voz, recompensas automáticas, rank cards, leaderboard y canales de nivel.' },
-        { icon: '🎵', title: 'Música', desc: 'Audio real en voice channels con cola, skip, loop y control de volumen.' },
-        { icon: '😀', title: 'NQN Emotes', desc: 'Usa emojis de otros servidores con :nombre: sin necesidad de Nitro.' },
-        { icon: '💰', title: 'Economía', desc: 'Sistema completo con daily, work, transfer, tienda y leaderboard de monedas.' },
-        { icon: '⭐', title: 'Starboard', desc: 'Destaca los mejores mensajes del servidor con reacciones de estrella.' },
-        { icon: '🎂', title: 'Cumpleaños', desc: 'Registro automático, felicitación diaria y roles de cumpleaños.' },
-        { icon: '🌐', title: 'Dashboard Web', desc: 'Configura absolutamente todo desde panel.botgod.pro con login de Discord.' },
-      ];
-      const grid = document.getElementById('feature-grid');
-      if (grid) {
-        grid.innerHTML = features.map((f, i) => `
-          <div class="card-hover p-6 rounded-2xl border border-white/5" style="background: rgba(255,255,255,0.02); animation-delay: ${i * 0.05}s;">
-            <div class="text-3xl mb-4">${f.icon}</div>
-            <h3 class="font-bold text-lg mb-2 text-white">${f.title}</h3>
-            <p class="text-slate-500 text-sm leading-relaxed">${f.desc}</p>
-          </div>
-        `).join('');
+  <script>
+  // ═══════════════ GALAXY BACKGROUND ═══════════════
+  (function() {
+    const canvas = document.getElementById('galaxy-canvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, stars = [], nebulae = [];
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight * 3;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Create stars
+    for (let i = 0; i < 300; i++) {
+      stars.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 1.5 + 0.3,
+        a: Math.random(),
+        da: (Math.random() - 0.5) * 0.01,
+        color: Math.random() > 0.8 ? `rgba(251,191,36,${0.3 + Math.random() * 0.5})` : `rgba(255,255,255,${0.2 + Math.random() * 0.6})`
+      });
+    }
+
+    // Create nebulae
+    for (let i = 0; i < 5; i++) {
+      nebulae.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: 150 + Math.random() * 300,
+        color: i % 2 === 0 ? 'rgba(139,92,246,0.02)' : 'rgba(251,191,36,0.015)',
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+
+      // Nebulae
+      for (const n of nebulae) {
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        g.addColorStop(0, n.color);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.fillRect(n.x - n.r, n.y - n.r, n.r * 2, n.r * 2);
       }
-    })();
+
+      // Stars
+      for (const s of stars) {
+        s.a += s.da;
+        if (s.a > 1 || s.a < 0.1) s.da *= -1;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = s.color.replace(/[\d.]+\)$/, s.a.toFixed(2) + ')');
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  // ═══════════════ MOBILE MENU ═══════════════
+  document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+  });
+
+  // ═══════════════ SCROLL ANIMATIONS ═══════════════
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+
+  // ═══════════════ ALL FEATURES DATA ═══════════════
+  const categories = [
+    {
+      name: 'Moderación',
+      icon: '🛡️',
+      color: '#ef4444',
+      features: [
+        { title: 'Ban', desc: 'Banear usuarios con razón y duración. Soporte para ban temporal.' },
+        { title: 'Kick', desc: 'Expulsar usuarios del servidor con razón.' },
+        { title: 'Mute / Timeout', desc: 'Silenciar usuarios temporalmente con timeout de Discord.' },
+        { title: 'Warn', desc: 'Sistema de warns con escalación automática. Warns acumulativos.' },
+        { title: 'Purge / Mass-delete', desc: 'Eliminar mensajes por cantidad, por usuario, por contiene texto, por bot, etc.' },
+        { title: 'Mod Logs', desc: 'Registro completo de todas las acciones de moderación en canal dedicado.' },
+        { title: 'Sticky Roles', desc: 'Roles que se re-aplican automáticamente cuando el usuario regresa al servidor.' },
+      ]
+    },
+    {
+      name: 'AutoMod',
+      icon: '🤖',
+      color: '#f97316',
+      features: [
+        { title: 'Filtro de palabras', desc: 'Bloquear palabras prohibidas con listas personalizadas.' },
+        { title: 'Filtro de links', desc: 'Bloquear o allow-list de links permitidos.' },
+        { title: 'Anti-spam', desc: 'Detección de spam por cantidad de mensajes en ventana de tiempo.' },
+        { title: 'Anti-invites', desc: 'Bloquear invites de Discord no autorizados.' },
+        { title: 'Anti-mention raid', desc: 'Detección de menciones masivas.' },
+        { title: 'Escalación automática', desc: 'Primera ofensa = warning, segunda = mute, tercera = kick, etc.' },
+      ]
+    },
+    {
+      name: 'Anti-Raid',
+      icon: '🚨',
+      color: '#dc2626',
+      features: [
+        { title: 'Detección de joins masivos', desc: 'Detecta quando muchos usuarios entran en poco tiempo.' },
+        { title: 'Lockdown automático', desc: 'Bloquea canales de texto temporalmente cuando detecta raid.' },
+        { title: 'Kick de raid', desc: 'Expulsa automáticamente a los usuarios del raid.' },
+        { title: 'Notificación al owner', desc: 'DM al owner del servidor con alerta de raid.' },
+        { title: 'Configurable', desc: 'Umbral, ventana de tiempo, minutos de lockdown, kick o no.' },
+      ]
+    },
+    {
+      name: 'Anti-Nuke',
+      icon: '💣',
+      color: '#b91c1c',
+      features: [
+        { title: 'Protección de canales', desc: 'Detecta eliminación masiva de canales.' },
+        { title: 'Protección de roles', desc: 'Detecta eliminación masiva de roles.' },
+        { title: 'Protección de bans', desc: 'Detecta bans masivos de miembros.' },
+        { title: 'Ventana de tiempo', desc: 'Configurable: cuántas acciones en cuánto tiempo activa la alerta.' },
+        { title: 'Registro de acciones', desc: 'Log de quién hizo qué y cuándo.' },
+      ]
+    },
+    {
+      name: 'Tickets',
+      icon: '🎫',
+      color: '#8b5cf6',
+      features: [
+        { title: 'Panel con botones', desc: 'Crear panel interactivo para abrir tickets.' },
+        { title: 'Categorías', desc: 'Múltiples categorías de tickets (soporte, compras, etc.).' },
+        { title: 'Claim', desc: 'Staff puede reclamar tickets para atenderlos.' },
+        { title: 'Transcript HTML', desc: 'Genera transcript completo del ticket en HTML bonito.' },
+        { title: 'Storage en Firebase', desc: 'Transcripts guardados en Firebase Storage permanentemente.' },
+        { title: 'Valoración CSAT', desc: 'Encuesta de satisfacción al cerrar ticket.' },
+        { title: 'Auto-cierre', desc: 'Cierra tickets inactivos después de X horas configurable.' },
+        { title: 'Prioridad', desc: 'Tickets con prioridad: baja, normal, alta, urgente.' },
+        { title: 'Log de tickets', desc: 'Registro de apertura, cierre y actividad en canal dedicado.' },
+      ]
+    },
+    {
+      name: 'Niveles / XP',
+      icon: '📈',
+      color: '#10b981',
+      features: [
+        { title: 'XP por texto', desc: 'Gana XP al escribir mensajes con cooldown.' },
+        { title: 'XP por voz', desc: 'Gana XP estando en voice channels.' },
+        { title: 'Sistema de niveles', desc: 'Niveles progresivos con curva de experiencia configurable.' },
+        { title: 'Rewards automáticos', desc: 'Asigna roles automáticamente al subir de nivel.' },
+        { title: 'Rank cards', desc: 'Tarjetas de rank personalizadas con avatar y stats.' },
+        { title: 'Leaderboard', desc: 'Ranking de los usuarios con más XP.' },
+        { title: 'Canales sin XP', desc: 'Excluir canales del sistema de XP.' },
+        { title: 'Multipliers', desc: 'Multiplicadores de XP por rol o canal.' },
+      ]
+    },
+    {
+      name: 'Economía',
+      icon: '💰',
+      color: '#eab308',
+      features: [
+        { title: 'Daily', desc: 'Recompensa diaria con rango de monedas aleatorio.' },
+        { title: 'Work', desc: 'Trabaja para ganar monedas con cooldown.' },
+        { title: 'Balance / Bank', desc: 'Sistema de billetera y banco.' },
+        { title: 'Transfer', desc: 'Envía monedas a otros usuarios.' },
+        { title: 'Inventory', desc: 'Inventario de ítems comprables.' },
+        { title: 'Leaderboard', desc: 'Ranking de los más ricos del servidor.' },
+        { title: 'Moneda personalizada', desc: 'Nombre y símbolo de moneda configurable.' },
+      ]
+    },
+    {
+      name: 'Música',
+      icon: '🎵',
+      color: '#06b6d4',
+      features: [
+        { title: 'Play', desc: 'Reproduce música por URL o búsqueda.' },
+        { title: 'Cola de reproducción', desc: 'Sistema de cola con skip, shuffle.' },
+        { title: 'Loop', desc: 'Repetir canción o cola completa.' },
+        { title: 'Volumen', desc: 'Control de volumen.' },
+        { title: 'DJ Role', desc: 'Solo usuarios con rol DJ pueden controlar la música.' },
+        { title: 'Historial', desc: 'Registro de canciones reproducidas.' },
+      ]
+    },
+    {
+      name: 'NQN Emotes',
+      icon: '😀',
+      color: '#a855f7',
+      features: [
+        { title: 'Cross-server emotes', desc: 'Usa emojis de otros servidores con :nombre: sin Nitro.' },
+        { title: 'Emote packs', desc: 'Paquetes de emojis organizados por categoría.' },
+        { title: 'Animated support', desc: 'Soporte para emojis animados.' },
+      ]
+    },
+    {
+      name: 'Starboard',
+      icon: '⭐',
+      color: '#f59e0b',
+      features: [
+        { title: 'Auto-star', desc: 'Mensajes con suficientes stars se publican en starboard.' },
+        { title: 'Emoji configurable', desc: 'Usa ⭐ o cualquier otro emoji.' },
+        { title: 'Mínimo configurable', desc: 'Cuántas reacciones para entrar al starboard.' },
+        { title: 'Canal dedicado', desc: 'Canal específico para el starboard.' },
+      ]
+    },
+    {
+      name: 'Welcome / Leave',
+      icon: '👋',
+      color: '#22c55e',
+      features: [
+        { title: 'Mensaje de bienvenida', desc: 'Mensaje personalizado al entrar al servidor.' },
+        { title: 'Mensaje de salida', desc: 'Mensaje al abandonar el servidor.' },
+        { title: 'DM de bienvenida', desc: 'Enviar DM de bienvenida al usuario.' },
+        { title: 'Variables', desc: '{user}, {server}, {count}, {mention} en mensajes.' },
+        { title: 'Quiz de verificación', desc: 'Quiz automático para nuevos miembros.' },
+      ]
+    },
+    {
+      name: 'Logging',
+      icon: '📋',
+      color: '#64748b',
+      features: [
+        { title: 'Mod logs', desc: 'Registro de bans, kicks, warns, mutes.' },
+        { title: 'Message logs', desc: 'Ediciones y borrados de mensajes.' },
+        { title: 'Member logs', desc: 'Joins, leaves, cambios de nickname, avatar, roles.' },
+        { title: 'Server logs', desc: 'Cambios en el servidor: canales, roles, settings.' },
+        { title: 'Ticket logs', desc: 'Apertura y cierre de tickets.' },
+        { title: 'Canales separados', desc: 'Cada tipo de log en su canal dedicado.' },
+      ]
+    },
+    {
+      name: 'Reaction Roles',
+      icon: '🎨',
+      color: '#ec4899',
+      features: [
+        { title: 'Toggle roles', desc: 'Click en emoji → obtiene/quita el rol.' },
+        { title: 'Button roles', desc: 'Botones interactivos para asignar roles.' },
+        { title: 'Role menus', desc: 'Menús desplegables con múltiples opciones.' },
+        { title: 'Modo toggle/unique', desc: 'Toggle (agita) o unique (solo uno a la vez).' },
+      ]
+    },
+    {
+      name: 'Invitaciones',
+      icon: '🔗',
+      color: '#14b8a6',
+      features: [
+        { title: 'Tracking de invites', desc: 'Rastrea quién invitó a quién.' },
+        { title: 'Detección de fakes', desc: 'Detecta cuentas fake o alternas.' },
+        { title: 'Leaderboard de invites', desc: 'Ranking de mejores invitadores.' },
+        { title: ' Registro de joins/leaves', desc: 'Historial completo de entradas y salidas por invite.' },
+      ]
+    },
+    {
+      name: 'Cumpleaños',
+      icon: '🎂',
+      color: '#f472b6',
+      features: [
+        { title: 'Registro', desc: 'Los usuarios registran su fecha de cumpleaños.' },
+        { title: 'Felicitación diaria', desc: 'Cron diario que felicita a los cumpleañeros.' },
+        { title: 'Rol de cumpleaños', desc: 'Rol especial el día del cumpleaños.' },
+        { title: 'Canal dedicado', desc: 'Canal para felicitaciones.' },
+      ]
+    },
+    {
+      name: 'Temp VC',
+      icon: '🔊',
+      color: '#8b5cf6',
+      features: [
+        { title: 'Canales temporales', desc: 'Crea canales de voz temporales al entrar.' },
+        { title: 'Auto-eliminación', desc: 'Se borran cuando se vacían.' },
+        { title: 'Límite configurable', desc: 'Máximo de canales temporales.' },
+        { title: 'Panel', desc: 'Canal panel para crear temp VCs.' },
+      ]
+    },
+    {
+      name: 'Stats Channels',
+      icon: '📊',
+      color: '#3b82f6',
+      features: [
+        { title: 'Canales auto-actualizables', desc: 'Canales de voz que muestran stats del servidor.' },
+        { title: 'Miembros totales', desc: 'Conteo de miembros.' },
+        { title: 'Miembros online', desc: 'Conteo de usuarios en línea.' },
+        { title: 'Boosts', desc: 'Conteo de boosts del servidor.' },
+      ]
+    },
+    {
+      name: 'Tags',
+      icon: '🏷️',
+      color: '#a78bfa',
+      features: [
+        { title: 'Custom commands', desc: 'Crea comandos personalizados con respuesta fija.' },
+        { title: 'Conteo de uso', desc: 'Rastrea cuántas veces se usa cada tag.' },
+        { title: 'Uso con prefijo', desc: '!tagname para ejecutar.' },
+      ]
+    },
+    {
+      name: 'Polls / Encuestas',
+      icon: '📊',
+      color: '#6366f1',
+      features: [
+        { title: 'Encuestas con botones', desc: 'Votación interactiva con botones de Discord.' },
+        { title: 'Múltiples opciones', desc: 'Todas las opciones que quieras.' },
+        { title: 'Resultados en tiempo real', desc: 'Recuento automático de votos.' },
+      ]
+    },
+    {
+      name: 'Sorteos / Giveaways',
+      icon: '🎉',
+      color: '#f97316',
+      features: [
+        { title: 'Crear sorteos', desc: 'Sorteo con premio, duración y cantidad de ganadores.' },
+        { title: 'Auto-end', desc: 'Se cierra automáticamente al terminar el tiempo.' },
+        { title: 'Reroll', desc: 'Sortea de nuevo si el ganador no responde.' },
+        { title: 'Requisitos', desc: 'Requisitos de rol para participar.' },
+      ]
+    },
+    {
+      name: 'Aplicaciones',
+      icon: '📝',
+      color: '#0ea5e9',
+      features: [
+        { title: 'Formularios personalizados', desc: 'Crea formularios de aplicación con preguntas custom.' },
+        { title: 'Revisión', desc: 'Canal dedicado para revisar aplicaciones.' },
+        { title: 'Aprobar/Rechazar', desc: 'Botones para aprobar o rechazar con rol automático.' },
+      ]
+    },
+    {
+      name: 'Confesiones',
+      icon: '🤫',
+      color: '#7c3aed',
+      features: [
+        { title: 'Anónimas', desc: 'Los usuarios confiesan anónimamente.' },
+        { title: 'Aprobación', desc: 'Staff aprueba antes de publicar.' },
+        { title: 'Canal dedicado', desc: 'Canal de confesiones publicadas.' },
+      ]
+    },
+    {
+      name: 'Sugerencias',
+      icon: '💡',
+      color: '#eab308',
+      features: [
+        { title: 'Sistema de sugerencias', desc: 'Canal donde los usuarios sugieren mejoras.' },
+        { title: 'Votación', desc: 'Reacciones de voto a favor y en contra.' },
+        { title: 'Estados', desc: 'Pendiente, aprobada, rechazada, implementada.' },
+      ]
+    },
+    {
+      name: 'AFK',
+      icon: '💤',
+      color: '#6b7280',
+      features: [
+        { title: 'Sistema AFK', desc: 'Marca al usuario como AFK con razón.' },
+        { title: 'Auto-remove', desc: 'Se desmarca automáticamente al escribir.' },
+        { title: 'Notificación', desc: 'Avisa cuando mencionas a alguien AFK.' },
+      ]
+    },
+    {
+      name: 'Recordatorios',
+      icon: '⏰',
+      color: '#f59e0b',
+      features: [
+        { title: 'Recordatorios temporizados', desc: 'Te recuerda algo en X tiempo.' },
+        { title: 'Persistente', desc: 'Se guardan en Firestore, no se pierden al reiniciar.' },
+        { title: 'DM o canal', desc: 'Te avisa por DM o en el canal.' },
+      ]
+    },
+    {
+      name: 'Embeds',
+      icon: '🎨',
+      color: '#8b5cf6',
+      features: [
+        { title: 'Constructor de embeds', desc: 'Crea embeds personalizados con /embed.' },
+        { title: 'Templates guardados', desc: 'Guarda y reutiliza embeds.' },
+        { title: 'Color, título, descripción, imagen, thumbnail, footer, author', desc: 'Todos los campos de Discord embeds.' },
+      ]
+    },
+    {
+      name: 'IA',
+      icon: '🧠',
+      color: '#06b6d4',
+      features: [
+        { title: 'Chat IA', desc: 'Conversa con una IA directamente en Discord.' },
+        { title: 'Log de queries', desc: 'Registro de preguntas y respuestas.' },
+      ]
+    },
+    {
+      name: 'Plantillas de Servidor',
+      icon: '📐',
+      color: '#64748b',
+      features: [
+        { title: 'Templates predefinidos', desc: 'Configuraciones pre-armadas para servidores.' },
+        { title: 'Aplicar con un comando', desc: 'Aplica toda la configuración de golpe.' },
+        { title: 'Crea las tuyas', desc: 'Guarda tu configuración como plantilla.' },
+      ]
+    },
+    {
+      name: 'Dashboard Web',
+      icon: '🌐',
+      color: '#3b82f6',
+      features: [
+        { title: '21 paneles de configuración', desc: 'General, canales, roles, welcome, moderación, logging, tickets, niveles, economía, sorteos, starboard, música, automod, seguridad, cumpleaños, temp VC, stats, tags, confesiones, sugerencias, invitaciones.' },
+        { title: 'API REST completa', desc: 'Endpoints para todas las configuraciones.' },
+        { title: 'Login con Discord', desc: 'OAuth2 seguro con permisos de admin.' },
+        { title: 'Firestore persistente', desc: 'Toda la configuración guardada en la nube.' },
+      ]
+    },
+    {
+      name: 'Moderación Avanzada',
+      icon: '⚙️',
+      color: '#9ca3af',
+      features: [
+        { title: 'AutoMod avanzado', desc: 'Filtro de palabras, links, spam, mentions, invites.' },
+        { title: 'Anti-raid y anti-nuke', desc: 'Protección contra raids y eliminación masiva.' },
+        { title: 'Logs completos', desc: 'Cada acción queda registrada.' },
+        { title: 'Configuración por servidor', desc: 'Cada servidor tiene su propia configuración.' },
+      ]
+    },
+  ];
+
+  // Render features
+  const featContainer = document.getElementById('all-features');
+  if (featContainer) {
+    featContainer.innerHTML = categories.map(cat => `
+      <div class="rounded-2xl border border-white/5 overflow-hidden" style="background: rgba(255,255,255,0.015);">
+        <div class="px-6 py-4 flex items-center gap-3 border-b border-white/5" style="background: rgba(255,255,255,0.02);">
+          <span class="text-2xl">${cat.icon}</span>
+          <h3 class="font-bold text-lg" style="color: ${cat.color};">${cat.name}</h3>
+          <span class="ml-auto text-xs text-slate-600 cat-badge px-2 py-1 rounded-full">${cat.features.length} funciones</span>
+        </div>
+        <div class="p-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${cat.features.map(f => `
+            <div class="p-3 rounded-xl border border-white/5 hover:border-divine-400/20 transition" style="background: rgba(255,255,255,0.02);">
+              <div class="font-semibold text-sm text-white mb-1">${f.title}</div>
+              <div class="text-slate-500 text-xs leading-relaxed">${f.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    // Animate on scroll
+    document.querySelectorAll('#all-features > div').forEach(el => {
+      el.classList.add('fade-up');
+      observer.observe(el);
+    });
+  }
+
+  // ═══════════════ ALL COMMANDS DATA ═══════════════
+  const commands = [
+    { cat: 'Moderación', cmds: [
+      { name: '/ban', desc: 'Banear usuario con razón y duración' },
+      { name: '/kick', desc: 'Expulsar usuario del servidor' },
+      { name: '/mute', desc: 'Silenciar usuario temporalmente' },
+      { name: '/warn', desc: 'Advertir a un usuario' },
+      { name: '/purgar', desc: 'Eliminar mensajes por cantidad/filtro' },
+      { name: '/modlogs', desc: 'Ver logs de moderación' },
+    ]},
+    { cat: 'Configuración', cmds: [
+      { name: '/god setup', desc: 'Configuración inicial del bot' },
+      { name: '/god config', desc: 'Ver/editar configuración del servidor' },
+      { name: '/god language', desc: 'Cambiar idioma del bot' },
+      { name: '/canal set', desc: 'Configurar canales del bot' },
+      { name: '/rol set', desc: 'Configurar roles del bot' },
+    ]},
+    { cat: 'Niveles', cmds: [
+      { name: '/nivel rank', desc: 'Ver tu rank y XP' },
+      { name: '/nivel leaderboard', desc: 'Ranking del servidor' },
+      { name: '/nivel rewards', desc: 'Ver recompensas de nivel' },
+    ]},
+    { cat: 'Economía', cmds: [
+      { name: '/economia balance', desc: 'Ver tu balance' },
+      { name: '/economia daily', desc: 'Recompensa diaria' },
+      { name: '/economia work', desc: 'Trabajar por monedas' },
+      { name: '/economia transfer', desc: 'Enviar monedas a otro usuario' },
+      { name: '/economia leaderboard', desc: 'Ranking de riqueza' },
+    ]},
+    { cat: 'Música', cmds: [
+      { name: '/play', desc: 'Reproducir música' },
+      { name: '/skip', desc: 'Saltar canción actual' },
+      { name: '/queue', desc: 'Ver cola de reproducción' },
+      { name: '/loop', desc: 'Repetir canción/cola' },
+      { name: '/volumen', desc: 'Ajustar volumen' },
+      { name: '/stop', desc: 'Detener música y salir' },
+    ]},
+    { cat: 'Tickets', cmds: [
+      { name: '/ticket panel', desc: 'Crear panel de tickets' },
+      { name: '/ticket setup', desc: 'Configurar sistema de tickets' },
+      { name: '/ticket close', desc: 'Cerrar ticket actual' },
+    ]},
+    { cat: 'Sorteos', cmds: [
+      { name: '/sorteo', desc: 'Crear un sorteo' },
+      { name: '/sorteo reroll', desc: 'Sortear de nuevo' },
+    ]},
+    { cat: 'Tags', cmds: [
+      { name: '/tag', desc: 'Crear/usar tags personalizados' },
+      { name: '/tag list', desc: 'Ver todos los tags' },
+      { name: '/tag delete', desc: 'Eliminar un tag' },
+    ]},
+    { cat: 'Emotes', cmds: [
+      { name: '/emote pack', desc: 'Ver paquete de emotes' },
+      { name: '/emote add', desc: 'Agregar emote al paquete' },
+    ]},
+    { cat: 'Utilidades', cmds: [
+      { name: '/recordatorio', desc: 'Crear recordatorio' },
+      { name: '/afk', desc: 'Marcarse como AFK' },
+      { name: '/encuesta', desc: 'Crear encuesta con botones' },
+      { name: '/embed', desc: 'Crear embed personalizado' },
+      { name: '/8ball', desc: 'Bola mágica' },
+      { name: '/info', desc: 'Info del bot y servidor' },
+      { name: '/avatar', desc: 'Ver avatar de usuario' },
+      { name: '/serverinfo', desc: 'Info del servidor' },
+      { name: '/userinfo', desc: 'Info de usuario' },
+    ]},
+    { cat: 'Confesiones / Sugerencias', cmds: [
+      { name: '/confesar', desc: 'Enviar confesión anónima' },
+      { name: '/sugerir', desc: 'Enviar sugerencia' },
+    ]},
+    { cat: 'Cumpleaños', cmds: [
+      { name: '/cumple set', desc: 'Registrar cumpleaños' },
+      { name: '/cumple remove', desc: 'Eliminar cumpleaños registrado' },
+    ]},
+    { cat: 'Roles', cmds: [
+      { name: '/reactionrole create', desc: 'Crear reaction role' },
+      { name: '/buttonrole create', desc: 'Crear button role' },
+      { name: '/rolemenu create', desc: 'Crear menú de roles' },
+    ]},
+    { cat: 'Plantillas', cmds: [
+      { name: '/plantilla list', desc: 'Ver plantillas disponibles' },
+      { name: '/plantilla apply', desc: 'Aplicar plantilla al servidor' },
+      { name: '/plantilla save', desc: 'Guardar config como plantilla' },
+    ]},
+  ];
+
+  const cmdContainer = document.getElementById('all-commands');
+  if (cmdContainer) {
+    cmdContainer.innerHTML = commands.map(group => `
+      <div class="rounded-xl border border-white/5 overflow-hidden fade-up" style="background: rgba(255,255,255,0.015);">
+        <div class="px-5 py-3 border-b border-white/5 flex items-center gap-2">
+          <span class="text-sm font-bold text-divine-400">${group.cat}</span>
+          <span class="text-xs text-slate-600">${group.cmds.length} comandos</span>
+        </div>
+        <div class="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          ${group.cmds.map(c => `
+            <div class="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition">
+              <code class="text-divine-400 font-mono text-xs cmd-tag px-2 py-1 rounded">${c.name}</code>
+              <span class="text-slate-500 text-xs">${c.desc}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('#all-commands > div').forEach(el => observer.observe(el));
+  }
   </script>
+
+  <script src="/js/site.js"></script>
 </body>
 </html>
