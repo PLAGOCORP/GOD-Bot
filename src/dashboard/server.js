@@ -313,8 +313,20 @@ function createDashboard(client) {
   });
 
   app.get('/servers/:id', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+
+    // Validar que el usuario sea admin del servidor
+    if (!g) {
+      return res.status(403).send('No tienes acceso a este servidor');
+    }
+    const perms = BigInt(g.permissions || 0);
+    if ((perms & 0x8n) !== 0x8n) {
+      return res.status(403).send('Necesitas permiso de Administrator');
+    }
+
     // Redirigir al dashboard por defecto
-    return res.redirect(`/servers/${req.params.id}/panel/dashboard`);
+    return res.redirect(`/servers/${guildId}/panel/dashboard`);
   });
 
   // Ruta antigua mantenida para compatibilidad (no usada en nuevo UI)
@@ -441,50 +453,95 @@ function createDashboard(client) {
   }
 
   async function getGuildStats(guildId) {
-    const discordGuild = client?.guilds.cache.get(guildId);
-    if (!discordGuild) return null;
-    const admin = require('firebase-admin');
-    const fDb = admin.firestore();
+    try {
+      const discordGuild = client?.guilds.cache.get(guildId);
+      if (!discordGuild) {
+        return {
+          memberCount: 0,
+          channelCount: 0,
+          roleCount: 0,
+          openTickets: 0,
+          pendingConfessions: 0,
+          topUsers: [],
+        };
+      }
 
-    // Top usuarios (nivel + economía)
-    const usersSnap = await fDb.collection('users')
-      .where('guild_id', '==', guildId)
-      .orderBy('level_text', 'desc')
-      .limit(5)
-      .get();
-    const topUsers = usersSnap.docs.map(d => {
-      const data = d.data();
+      try {
+        const admin = require('firebase-admin');
+        const fDb = admin.firestore();
+
+        // Top usuarios (nivel + economía)
+        let topUsers = [];
+        try {
+          const usersSnap = await fDb.collection('users')
+            .where('guild_id', '==', guildId)
+            .orderBy('level_text', 'desc')
+            .limit(5)
+            .get();
+          topUsers = usersSnap.docs.map(d => {
+            const data = d.data();
+            return {
+              user_id: data.user_id,
+              level: data.level_text || 0,
+              balance: data.balance || 0,
+              username: discordGuild.members.cache.get(data.user_id)?.user?.username || `Usuario ${data.user_id}`,
+            };
+          });
+        } catch (e) {
+          logger.warn('getGuildStats: topUsers error', e.message);
+        }
+
+        let openTickets = 0, pendingConfessions = 0;
+        try {
+          const ticketsSnap = await fDb.collection('tickets')
+            .where('guild_id', '==', guildId)
+            .where('status', 'in', ['open', 'claimed'])
+            .get();
+          openTickets = ticketsSnap.size;
+        } catch (e) {
+          logger.warn('getGuildStats: tickets error', e.message);
+        }
+
+        try {
+          const confSnap = await fDb.collection('confessions')
+            .where('guild_id', '==', guildId)
+            .where('status', '==', 'pending')
+            .get();
+          pendingConfessions = confSnap.size;
+        } catch (e) {
+          logger.warn('getGuildStats: confessions error', e.message);
+        }
+
+        return {
+          memberCount: discordGuild.memberCount || 0,
+          channelCount: discordGuild.channels.cache.size,
+          roleCount: discordGuild.roles.cache.size,
+          openTickets,
+          pendingConfessions,
+          topUsers,
+        };
+      } catch (e) {
+        logger.warn('getGuildStats: Firestore error', e.message);
+        return {
+          memberCount: discordGuild.memberCount || 0,
+          channelCount: discordGuild.channels.cache.size,
+          roleCount: discordGuild.roles.cache.size,
+          openTickets: 0,
+          pendingConfessions: 0,
+          topUsers: [],
+        };
+      }
+    } catch (e) {
+      logger.error('getGuildStats critical error:', e.message);
       return {
-        user_id: data.user_id,
-        level: data.level_text || 0,
-        balance: data.balance || 0,
-        username: discordGuild.members.cache.get(data.user_id)?.user?.username || `Usuario ${data.user_id}`,
+        memberCount: 0,
+        channelCount: 0,
+        roleCount: 0,
+        openTickets: 0,
+        pendingConfessions: 0,
+        topUsers: [],
       };
-    });
-
-    // Tickets abiertos
-    const ticketsSnap = await fDb.collection('tickets')
-      .where('guild_id', '==', guildId)
-      .where('status', 'in', ['open', 'claimed'])
-      .get();
-    const openTickets = ticketsSnap.size;
-
-    // Confesiones pendientes
-    const confSnap = await fDb.collection('confessions')
-      .where('guild_id', '==', guildId)
-      .where('status', '==', 'pending')
-      .get();
-    const pendingConfessions = confSnap.size;
-
-    // Stats básicas del servidor
-    return {
-      memberCount: discordGuild.memberCount || 0,
-      channelCount: discordGuild.channels.cache.size,
-      roleCount: discordGuild.roles.cache.size,
-      openTickets,
-      pendingConfessions,
-      topUsers,
-    };
+    }
   }
 
   const PANELS = ['dashboard', 'general', 'members', 'audit', 'channels', 'roles', 'welcome', 'moderation', 'logging', 'tickets', 'leveling', 'economy', 'giveaways', 'starboard', 'music', 'automod', 'security', 'birthdays', 'tempvc', 'stats', 'tags', 'confessions', 'suggestions', 'invites'];
