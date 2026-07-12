@@ -41,44 +41,61 @@ function getState(guildId) {
   return guildPlayers.get(guildId);
 }
 
+async function withTimeout(promise, ms, errorMsg) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(errorMsg)), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+
 async function resolveQuery(query) {
-  // Direct URL
-  if (/^https?:\/\//i.test(query)) {
-    const type = await playdl.validate(query);
-    if (type === 'yt_video' || type === false) {
-      const info = await playdl.video_info(query).catch(() => null);
-      if (info?.video_details) {
+  try {
+    // Direct URL
+    if (/^https?:\/\//i.test(query)) {
+      const type = await withTimeout(playdl.validate(query), 5000, 'Validación URL muy lenta');
+      if (type === 'yt_video' || type === false) {
+        const info = await withTimeout(playdl.video_info(query), 8000, 'YouTube metadata timeout')
+          .catch(() => null);
+        if (info?.video_details) {
+          return {
+            title: info.video_details.title,
+            url: info.video_details.url,
+            duration: info.video_details.durationInSec || 0,
+            thumbnail: info.video_details.thumbnails?.[0]?.url,
+          };
+        }
+      }
+      if (type === 'so_track') {
+        const info = await withTimeout(playdl.soundcloud(query), 8000, 'SoundCloud metadata timeout');
         return {
-          title: info.video_details.title,
-          url: info.video_details.url,
-          duration: info.video_details.durationInSec,
-          thumbnail: info.video_details.thumbnails?.[0]?.url,
+          title: info.name,
+          url: info.url,
+          duration: info.durationInSec || 0,
+          thumbnail: info.thumbnail,
         };
       }
+      // try as generic stream url
+      return { title: query.slice(0, 80), url: query, duration: 0, thumbnail: null };
     }
-    if (type === 'so_track') {
-      const info = await playdl.soundcloud(query);
-      return {
-        title: info.name,
-        url: info.url,
-        duration: info.durationInSec,
-        thumbnail: info.thumbnail,
-      };
-    }
-    // try as generic stream url
-    return { title: query.slice(0, 80), url: query, duration: 0, thumbnail: null };
-  }
 
-  // YouTube search
-  const results = await playdl.search(query, { limit: 1, source: { youtube: 'video' } });
-  if (!results?.length) throw new Error('No se encontraron resultados.');
-  const v = results[0];
-  return {
-    title: v.title,
-    url: v.url,
-    duration: v.durationInSec,
-    thumbnail: v.thumbnails?.[0]?.url,
-  };
+    // YouTube search (5 seg timeout)
+    const results = await withTimeout(
+      playdl.search(query, { limit: 1, source: { youtube: 'video' } }),
+      5000,
+      'Búsqueda YouTube timeout'
+    );
+    if (!results?.length) throw new Error('No se encontraron resultados para: ' + query);
+    const v = results[0];
+    return {
+      title: v.title,
+      url: v.url,
+      duration: v.durationInSec || 0,
+      thumbnail: v.thumbnails?.[0]?.url,
+    };
+  } catch (err) {
+    logger.error('resolveQuery:', err.message);
+    throw err;
+  }
 }
 
 async function ensureConnection(member) {
@@ -122,17 +139,32 @@ async function playNext(guildId) {
 
   try {
     let stream;
-    const yt = await playdl.validate(track.url);
-    if (yt === 'yt_video' || track.url.includes('youtube') || track.url.includes('youtu.be')) {
-      stream = await playdl.stream(track.url, { discordPlayerCompatibility: true });
-    } else if (yt === 'so_track') {
-      stream = await playdl.stream(track.url);
-    } else {
-      stream = await playdl.stream(track.url).catch(async () => {
-        // fallback search by title
-        const r = await resolveQuery(track.title);
-        return playdl.stream(r.url, { discordPlayerCompatibility: true });
-      });
+    try {
+      const yt = await withTimeout(playdl.validate(track.url), 3000, 'Validación URL timeout');
+      if (yt === 'yt_video' || track.url.includes('youtube') || track.url.includes('youtu.be')) {
+        stream = await withTimeout(
+          playdl.stream(track.url, { discordPlayerCompatibility: true }),
+          15000,
+          'YouTube stream timeout'
+        );
+      } else if (yt === 'so_track') {
+        stream = await withTimeout(playdl.stream(track.url), 15000, 'SoundCloud stream timeout');
+      } else {
+        stream = await withTimeout(playdl.stream(track.url), 15000, 'Stream URL timeout').catch(async () => {
+          // fallback search by title
+          logger.warn(`playNext fallback: reconectando ${track.title}`);
+          const r = await resolveQuery(track.title);
+          return playdl.stream(r.url, { discordPlayerCompatibility: true });
+        });
+      }
+    } catch (err) {
+      // Si falla el stream, intentar saltar a la siguiente canción
+      logger.warn(`playNext skip track: ${err.message}`);
+      return playNext(guildId);
+    }
+
+    if (!stream?.stream) {
+      throw new Error('No se pudo obtener el stream de audio');
     }
 
     const resource = createAudioResource(stream.stream, {
@@ -142,13 +174,21 @@ async function playNext(guildId) {
     if (resource.volume) resource.volume.setVolume(state.volume);
     state.player.play(resource);
 
-    await db.addMusicHistory(guildId, track.requestedBy || null, track.title, track.url);
+    try {
+      await db.addMusicHistory(guildId, track.requestedBy || null, track.title, track.url);
+    } catch (e) {
+      logger.warn('addMusicHistory failed:', e.message);
+    }
 
     return track;
   } catch (err) {
-    logger.error('playNext:', err.message);
-    // try next
-    return playNext(guildId);
+    logger.error('playNext critical:', err.message);
+    state.current = null;
+    // Try next track
+    if (state.queue.length) {
+      return playNext(guildId);
+    }
+    return null;
   }
 }
 
