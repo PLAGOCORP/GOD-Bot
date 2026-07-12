@@ -51,10 +51,11 @@ module.exports = {
         const query = interaction.options.getString('cancion');
         console.log(`[MUSIC] Play: "${query}" by ${interaction.user.username}`);
 
+        // Worst caso: conectar voz (~20s) + buscar (~20s) + stream con reintentos 429 (~30s)
         const result = await Promise.race([
           music.play(interaction.member, query, interaction.channel.id),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Búsqueda de música tardó demasiado (>10s)')), 10000)
+            setTimeout(() => reject(new Error('YouTube está limitando las peticiones (rate limit). Intenta de nuevo en unos segundos.')), 70000)
           ),
         ]);
 

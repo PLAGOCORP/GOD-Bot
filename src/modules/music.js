@@ -12,8 +12,15 @@ const {
   NoSubscriberBehavior,
 } = require('@discordjs/voice');
 const playdl = require('play-dl');
+let ytdl = null;
+try {
+  ytdl = require('@distube/ytdl-core');
+} catch (e) {
+  // opcional, se usa como motor de respaldo si play-dl falla
+}
 const db = require('../database/db');
 const logger = require('../utils/logger');
+const config = require('../config');
 
 // FFmpeg real (binario de ffmpeg-static)
 try {
@@ -25,6 +32,32 @@ try {
   }
 } catch (e) {
   logger.warn('ffmpeg-static no disponible:', e.message);
+}
+
+// YouTube bloquea (HTTP 429) las peticiones de streaming desde IPs de
+// datacenter si no van autenticadas. Si hay una cookie configurada
+// (YOUTUBE_COOKIE), la usamos en ambos motores para reducir los bloqueos.
+const youtubeCookie = config.music?.youtubeCookie || '';
+let ytdlAgent = null;
+if (youtubeCookie) {
+  try {
+    playdl.setToken({ youtube: { cookie: youtubeCookie } });
+    logger.info('[MUSIC] Cookie de YouTube configurada en play-dl');
+  } catch (e) {
+    logger.warn('[MUSIC] No se pudo configurar cookie en play-dl:', e.message);
+  }
+  try {
+    const cookies = youtubeCookie.split(';').map((pair) => {
+      const idx = pair.indexOf('=');
+      return { name: pair.slice(0, idx).trim(), value: pair.slice(idx + 1).trim() };
+    }).filter((c) => c.name);
+    ytdlAgent = ytdl?.createAgent ? ytdl.createAgent(cookies) : null;
+    if (ytdlAgent) logger.info('[MUSIC] Cookie de YouTube configurada en ytdl-core');
+  } catch (e) {
+    logger.warn('[MUSIC] No se pudo configurar cookie en ytdl-core:', e.message);
+  }
+} else {
+  logger.warn('[MUSIC] YOUTUBE_COOKIE no configurada — YouTube puede bloquear (429) el streaming en producción. Ver .env.example');
 }
 
 /** @type {Map<string, { player: import('@discordjs/voice').AudioPlayer, queue: Array, textChannelId: string|null, volume: number, loop: boolean }>} */
@@ -48,14 +81,38 @@ async function withTimeout(promise, ms, errorMsg) {
   return Promise.race([promise, timeout]);
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// YouTube devuelve 429 (Too Many Requests) cuando play-dl hace demasiadas
+// peticiones seguidas. Reintenta con backoff exponencial antes de rendirse.
+async function retryOn429(fn, { retries = 3, baseDelay = 1500, label = 'op' } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const is429 = /429|too many requests/i.test(err?.message || '');
+      if (!is429 || attempt === retries) throw err;
+      const delay = baseDelay * Math.pow(2, attempt);
+      logger.warn(`[MUSIC] 429 en ${label}, reintento ${attempt + 1}/${retries} en ${delay}ms`);
+      await sleep(delay);
+    }
+  }
+  throw lastErr;
+}
+
 async function resolveQuery(query) {
   try {
     // Direct URL
     if (/^https?:\/\//i.test(query)) {
-      const type = await withTimeout(playdl.validate(query), 5000, 'Validación URL muy lenta');
+      const type = await withTimeout(playdl.validate(query), 8000, 'Validación URL muy lenta');
       if (type === 'yt_video' || type === false) {
-        const info = await withTimeout(playdl.video_info(query), 8000, 'YouTube metadata timeout')
-          .catch(() => null);
+        const info = await withTimeout(
+          retryOn429(() => playdl.video_info(query), { label: 'video_info', retries: 1, baseDelay: 1500 }),
+          10000,
+          'YouTube metadata timeout'
+        ).catch(() => null);
         if (info?.video_details) {
           return {
             title: info.video_details.title,
@@ -66,7 +123,7 @@ async function resolveQuery(query) {
         }
       }
       if (type === 'so_track') {
-        const info = await withTimeout(playdl.soundcloud(query), 8000, 'SoundCloud metadata timeout');
+        const info = await withTimeout(playdl.soundcloud(query), 15000, 'SoundCloud metadata timeout');
         return {
           title: info.name,
           url: info.url,
@@ -78,12 +135,14 @@ async function resolveQuery(query) {
       return { title: query.slice(0, 80), url: query, duration: 0, thumbnail: null };
     }
 
-    // YouTube search (5 seg timeout)
+    // YouTube search (20 seg timeout - play-dl puede ser lento)
+    console.log(`[MUSIC] Searching: "${query}"`);
     const results = await withTimeout(
-      playdl.search(query, { limit: 1, source: { youtube: 'video' } }),
-      5000,
-      'Búsqueda YouTube timeout'
+      retryOn429(() => playdl.search(query, { limit: 1, source: { youtube: 'video' } }), { label: 'search' }),
+      20000,
+      'Búsqueda YouTube timeout (>20s)'
     );
+    console.log(`[MUSIC] Found: ${results?.length} results`);
     if (!results?.length) throw new Error('No se encontraron resultados para: ' + query);
     const v = results[0];
     return {
@@ -127,6 +186,54 @@ async function ensureConnection(member) {
   return connection;
 }
 
+// Intenta primero play-dl y, si falla (típicamente por 429 de YouTube),
+// cae a @distube/ytdl-core como motor alterno antes de rendirse.
+async function getStreamForTrack(track) {
+  try {
+    return await withTimeout(
+      retryOn429(
+        () => playdl.stream(track.url, { discordPlayerCompatibility: true }),
+        { label: 'play-dl stream', retries: 1, baseDelay: 1500 }
+      ),
+      15000,
+      'play-dl stream timeout'
+    );
+  } catch (err1) {
+    logger.warn(`[playNext] play-dl falló (${err1.message}), probando ytdl-core...`);
+
+    if (!ytdl) throw err1;
+    try {
+      const isYoutube = /youtube\.com|youtu\.be/i.test(track.url);
+      if (!isYoutube) throw err1;
+
+      const nodeStream = ytdl(track.url, {
+        filter: 'audioonly',
+        quality: 'highestaudio',
+        highWaterMark: 1 << 25,
+        agent: ytdlAgent || undefined,
+      });
+      // Esperar a que empiece a fluir o falle, con timeout corto.
+      await withTimeout(
+        new Promise((resolve, reject) => {
+          nodeStream.once('response', resolve);
+          nodeStream.once('error', reject);
+        }),
+        15000,
+        'ytdl-core stream timeout'
+      );
+      return { stream: nodeStream, type: 'arbitrary' };
+    } catch (err2) {
+      logger.error(`[playNext] ytdl-core también falló: ${err2.message}`);
+      const blocked = /429|too many requests/i.test(err1.message) || /429|too many requests/i.test(err2.message);
+      throw new Error(
+        blocked
+          ? 'YouTube está bloqueando las peticiones de este servidor (rate limit). Configura YOUTUBE_COOKIE o intenta más tarde.'
+          : err1.message
+      );
+    }
+  }
+}
+
 async function playNext(guildId) {
   const state = getState(guildId);
   if (!state.queue.length) {
@@ -140,23 +247,8 @@ async function playNext(guildId) {
   try {
     let stream;
     try {
-      // Intentar obtener stream directamente
       logger.debug(`[playNext] Intentando stream: ${track.url}`);
-
-      stream = await withTimeout(
-        (async () => {
-          try {
-            // Primero intentar con YouTube compatibility
-            return await playdl.stream(track.url, { discordPlayerCompatibility: true });
-          } catch (e1) {
-            logger.warn(`[playNext] YouTube stream failed: ${e1.message}, trying direct`);
-            // Fallback: intentar sin opciones
-            return await playdl.stream(track.url);
-          }
-        })(),
-        15000,
-        'Stream timeout'
-      );
+      stream = await getStreamForTrack(track);
     } catch (err) {
       // Si falla el stream completamente, saltar
       logger.error(`[playNext] Stream error: ${err.message} - saltando a siguiente`);

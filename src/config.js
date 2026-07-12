@@ -94,4 +94,10 @@ module.exports = {
   tickets: {
     inactiveHours: 48,
   },
+
+  music: {
+    // Cookie de YouTube (sesión logueada) para evitar HTTP 429 en IPs de datacenter.
+    // Ver .env.example para instrucciones de cómo obtenerla.
+    youtubeCookie: process.env.YOUTUBE_COOKIE || '',
+  },
 };
