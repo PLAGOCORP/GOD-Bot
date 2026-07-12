@@ -3,29 +3,126 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Servidores — botgod.pro</title>
+  <title>Servidores — BotGod Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>"/>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { divine: { 400:'#fbbf24',500:'#f59e0b',600:'#d97706' } } } }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    body { background: #020612; overflow-x: hidden; }
+    #galaxy { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .content { position: relative; z-index: 1; }
+    .glow-text { text-shadow: 0 0 30px rgba(251,191,36,0.3); }
+    .server-card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+      position: relative;
+      overflow: hidden;
+    }
+    .server-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .server-card:hover { transform: translateY(-6px) scale(1.02); border-color: rgba(251,191,36,0.3); box-shadow: 0 20px 60px rgba(251,191,36,0.08), 0 0 0 1px rgba(251,191,36,0.1); }
+    .server-card:hover::before { opacity: 1; }
+    .server-icon {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800;
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      color: #020612;
+      flex-shrink: 0;
+    }
+    .btn-primary { background: linear-gradient(135deg, #f59e0b, #d97706); transition: all 0.3s; }
+    .btn-primary:hover { background: linear-gradient(135deg, #fbbf24, #f59e0b); box-shadow: 0 0 30px rgba(251,191,36,0.3); }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
-  <%- include('partials/nav', { inviteUrl: '/' }) %>
-  <main class="max-w-4xl mx-auto px-6 py-10">
-    <h2 class="text-2xl font-semibold mb-2">Hola, <%= user.global_name || user.username %></h2>
-    <p class="text-slate-400 mb-8">Servidores donde eres Admin y God está presente</p>
-    <% if (!guilds.length) { %>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-8 text-slate-400">
-        No hay servidores administrables. Invita el bot y asegúrate de tener permiso Administrator.
-        <a href="/" class="block mt-4 text-amber-400">← Inicio</a>
-      </div>
-    <% } %>
-    <div class="grid gap-4 sm:grid-cols-2">
-      <% guilds.forEach(function(g) { %>
-        <a href="/servers/<%= g.id %>" class="block bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-amber-500/50 transition">
-          <div class="font-semibold text-lg"><%= g.name %></div>
-          <div class="text-slate-500 text-sm mt-1 font-mono"><%= g.id %></div>
+<body class="text-slate-100 min-h-screen">
+  <canvas id="galaxy"></canvas>
+  <div class="content">
+    <nav class="border-b border-white/5" style="background: rgba(2,6,18,0.85); backdrop-filter: blur(20px);">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2 font-bold text-lg">
+          <span class="text-divine-400 glow-text">⚡</span>
+          <span>Bot<span class="text-divine-400">God</span></span>
+          <span class="text-slate-600 text-sm font-normal">.pro</span>
         </a>
-      <% }) %>
-    </div>
-  </main>
-  <%- include('partials/footer') %>
+        <div class="flex items-center gap-4 text-sm">
+          <span class="text-slate-500">Hola, <span class="text-white font-semibold"><%= user.global_name || user.username %></span></span>
+          <a href="/logout" class="text-red-400/70 hover:text-red-400 transition">Salir</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-6 py-16">
+      <div class="mb-12">
+        <p class="text-divine-400/70 text-xs font-semibold tracking-[0.2em] uppercase mb-2">Dashboard</p>
+        <h1 class="text-3xl sm:text-4xl font-black mb-2">Tus servidores</h1>
+        <p class="text-slate-500">Selecciona un servidor donde seas Admin y God esté presente</p>
+      </div>
+
+      <% if (!guilds.length) { %>
+        <div class="rounded-2xl border border-white/5 p-12 text-center" style="background: rgba(255,255,255,0.02);">
+          <div class="text-4xl mb-4">🔍</div>
+          <h3 class="text-xl font-bold mb-2">No hay servidores</h3>
+          <p class="text-slate-500 mb-6">Invita a God Bot y asegúrate de tener permiso Administrator</p>
+          <a href="https://discord.com/api/oauth2/authorize?client_id=1525370055724892170&permissions=8&scope=bot%20applications.commands" target="_blank" class="btn-primary text-slate-950 font-bold px-6 py-3 rounded-xl inline-block">Invitar a Discord</a>
+        </div>
+      <% } else { %>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <% guilds.forEach(function(g) { %>
+            <a href="/servers/<%= g.id %>" class="server-card rounded-2xl p-5 flex items-center gap-4 cursor-pointer">
+              <% if (g.icon) { %>
+                <img src="https://cdn.discordapp.com/icons/<%= g.id %>/<%= g.icon %>.png?size=128" alt="" class="w-14 h-14 rounded-2xl"/>
+              <% } else { %>
+                <div class="server-icon"><%= g.name.charAt(0) %></div>
+              <% } %>
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-base truncate text-white"><%= g.name %></div>
+                <div class="text-slate-600 text-xs font-mono mt-0.5"><%= g.id %></div>
+              </div>
+              <svg class="w-5 h-5 text-slate-600 group-hover:text-divine-400 transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </main>
+
+    <footer class="border-t border-white/5 py-8">
+      <div class="max-w-6xl mx-auto px-6 flex justify-between text-xs text-slate-600">
+        <span class="text-divine-400/50 font-semibold">botgod.pro</span>
+        <div class="flex gap-4">
+          <a href="/privacy" class="hover:text-slate-400">Privacidad</a>
+          <a href="/terms" class="hover:text-slate-400">Términos</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+  <script>
+    (function(){
+      const c=document.getElementById('galaxy'),x=c.getContext('2d');
+      let w,h,stars=[];
+      function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;}
+      resize();window.addEventListener('resize',resize);
+      for(let i=0;i<120;i++)stars.push({x:Math.random()*2000,y:Math.random()*2000,r:Math.random()*1.2+0.3,a:Math.random(),d:(Math.random()-0.5)*0.008});
+      function draw(){x.clearRect(0,0,w,h);
+        for(const s of stars){s.a+=s.d;if(s.a>1||s.a<0.1)s.d*=-1;
+          x.beginPath();x.arc(s.x%w,s.y%h,s.r,0,Math.PI*2);
+          x.fillStyle=`rgba(255,255,255,${s.a.toFixed(2)})`;x.fill();}
+        requestAnimationFrame(draw);}draw();
+    })();
+  </script>
 </body>
 </html>

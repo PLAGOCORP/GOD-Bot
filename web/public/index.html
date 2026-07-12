@@ -287,12 +287,16 @@
       icon: '🤖',
       color: '#f97316',
       features: [
-        { title: 'Filtro de palabras', desc: 'Bloquear palabras prohibidas con listas personalizadas.' },
-        { title: 'Filtro de links', desc: 'Bloquear o allow-list de links permitidos.' },
-        { title: 'Anti-spam', desc: 'Detección de spam por cantidad de mensajes en ventana de tiempo.' },
-        { title: 'Anti-invites', desc: 'Bloquear invites de Discord no autorizados.' },
-        { title: 'Anti-mention raid', desc: 'Detección de menciones masivas.' },
-        { title: 'Escalación automática', desc: 'Primera ofensa = warning, segunda = mute, tercera = kick, etc.' },
+        { title: 'Filtro de palabras prohibidas', desc: 'Lista personalizable de palabras bloqueadas. Detecta en tiempo real.' },
+        { title: 'Anti-invites de Discord', desc: 'Bloquea automáticamente links de discord.gg y discord.com/invite no autorizados.' },
+        { title: 'Filtro de links blacklist', desc: 'Lista de dominios bloqueados. Si alguien pega un link de esos dominios, se borra.' },
+        { title: 'Anti-spam de mensajes', desc: 'Detecta si un usuario envía demasiados mensajes en poco tiempo.' },
+        { title: 'Anti-spam de menciones', desc: 'Detecta menciones masivas (@everyone, roles, usuarios).' },
+        { title: 'Anti-attachments', desc: 'Límite de archivos adjuntos por mensaje configurable.' },
+        { title: 'Anti-caps', desc: 'Detecta mensajes con demasiadas mayúsculas.' },
+        { title: 'Sistema de strikes', desc: 'Cada ofensa suma un strike. Los strikes decaen después de 30 minutos.' },
+        { title: 'Escalación automática', desc: '1er strike = warning, 2do = delete + warning, 3ro = mute, 4to = kick, 5to = ban.' },
+        { title: 'Permisos de moderador', desc: 'Los usuarios con ManageMessages están exentos del AutoMod.' },
       ]
     },
     {
@@ -439,10 +443,15 @@
       icon: '🔗',
       color: '#14b8a6',
       features: [
-        { title: 'Tracking de invites', desc: 'Rastrea quién invitó a quién.' },
-        { title: 'Detección de fakes', desc: 'Detecta cuentas fake o alternas.' },
-        { title: 'Leaderboard de invites', desc: 'Ranking de mejores invitadores.' },
-        { title: ' Registro de joins/leaves', desc: 'Historial completo de entradas y salidas por invite.' },
+        { title: 'Tracking automático de invites', desc: 'Rastrea en tiempo real quién invitó a cada usuario. Detecta automáticamente qué invite se usó.' },
+        { title: 'Detección de fakes', desc: 'Si un usuario se va en menos de 10 minutos, se marca como fake y se revierte el invite del inviter.' },
+        { title: 'Conteo por inviter', desc: 'Cada usuario tiene su conteo de invites válidos. Se incrementa al join, se decrementa al leave fake.' },
+        { title: 'Leaderboard de invites', desc: 'Ranking de los mejores invitadores del servidor.' },
+        { title: 'Recompensas por invites', desc: 'Asigna roles automáticamente al alcanzar umbrales: 5 invites = rol X, 10 invites = rol Y, etc.' },
+        { title: 'Historial joins/leaves', desc: 'Registro completo de cada entrada y salida: quién invitó, cuándo entró, cuándo salió, si fue fake.' },
+        { title: 'Conteo de fakes por inviter', desc: 'Sabe cuántos fakes tiene cada inviter para tomar decisiones.' },
+        { title: 'Cache de invites', desc: 'Cache en memoria de todos los invites del servidor para comparar cambios en tiempo real.' },
+        { title: 'Log de recompensas', desc: 'Cuando un usuario obtiene un rol por invites, se registra en los mod logs.' },
       ]
     },
     {

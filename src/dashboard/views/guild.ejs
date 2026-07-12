@@ -3,67 +3,281 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title><%= guild.name %> — botgod.pro</title>
+  <title><%= guild.name %> — BotGod Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>"/>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { divine: { 400:'#fbbf24',500:'#f59e0b',600:'#d97706' } } } }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    body { background: #020612; overflow-x: hidden; }
+    #galaxy { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .content { position: relative; z-index: 1; }
+    .glow-text { text-shadow: 0 0 30px rgba(251,191,36,0.3); }
+    .btn-primary { background: linear-gradient(135deg, #f59e0b, #d97706); transition: all 0.3s; }
+    .btn-primary:hover { background: linear-gradient(135deg, #fbbf24, #f59e0b); box-shadow: 0 0 30px rgba(251,191,36,0.3); }
+    .stat-card { background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.06); }
+    .panel-link {
+      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.3s;
+    }
+    .panel-link:hover { border-color: rgba(251,191,36,0.3); transform: translateY(-2px); box-shadow: 0 10px 40px rgba(251,191,36,0.06); }
+    .module-toggle { transition: all 0.3s; }
+    .module-toggle:hover { background: rgba(251,191,36,0.05); }
+    .module-toggle.active { border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.05); }
+    .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(251,191,36,0.15), transparent); }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
-  <%- include('partials/nav', { inviteUrl: '/' }) %>
-  <main class="max-w-4xl mx-auto px-6 py-10 space-y-10">
-    <div>
-      <a href="/servers" class="text-sm text-slate-500 hover:text-amber-400">← Servidores</a>
-      <h1 class="text-3xl font-bold mt-2"><%= guild.name %></h1>
-      <p class="text-slate-500 font-mono text-sm"><%= guild.id %></p>
-      <% if (discordGuild) { %>
-        <p class="mt-2 text-slate-300">Miembros: <%= discordGuild.memberCount %></p>
-      <% } %>
-    </div>
-
-    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6">
-      <h2 class="text-xl font-semibold mb-4">Estadísticas</h2>
-      <div class="grid grid-cols-3 gap-4 text-center">
-        <div><div class="text-2xl font-bold text-amber-400"><%= stats.users %></div><div class="text-slate-500 text-sm">Usuarios DB</div></div>
-        <div><div class="text-2xl font-bold text-orange-400"><%= stats.warns %></div><div class="text-slate-500 text-sm">Warns</div></div>
-        <div><div class="text-2xl font-bold text-sky-400"><%= stats.tickets %></div><div class="text-slate-500 text-sm">Tickets abiertos</div></div>
-      </div>
-    </section>
-
-    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6">
-      <h2 class="text-xl font-semibold mb-4">Módulos</h2>
-      <form method="POST" action="/servers/<%= guild.id %>/modules" class="space-y-2">
-        <input type="hidden" name="_modules" value="<%= modules.map(m => m.name).join(',') %>"/>
-        <div class="grid sm:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2">
-          <% modules.forEach(function(m) { %>
-            <label class="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-slate-800/50">
-              <input type="checkbox" name="mod_<%= m.name %>" <%= m.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-              <span class="font-mono text-sm"><%= m.name %></span>
-            </label>
-          <% }) %>
+<body class="text-slate-100 min-h-screen">
+  <canvas id="galaxy"></canvas>
+  <div class="content">
+    <nav class="border-b border-white/5" style="background: rgba(2,6,18,0.85); backdrop-filter: blur(20px);">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="/servers" class="text-slate-500 hover:text-divine-400 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </a>
+          <div class="flex items-center gap-3">
+            <% if (guild.icon) { %>
+              <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png?size=128" alt="" class="w-8 h-8 rounded-lg"/>
+            <% } else { %>
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-divine-400 to-divine-600 flex items-center justify-center text-slate-950 font-bold text-sm"><%= guild.name.charAt(0) %></div>
+            <% } %>
+            <span class="font-bold text-sm hidden sm:block"><%= guild.name %></span>
+          </div>
         </div>
-        <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">
-          Guardar módulos
-        </button>
-      </form>
-    </section>
+        <div class="flex items-center gap-4 text-sm">
+          <span class="text-slate-500 text-xs"><%= user.global_name || user.username %></span>
+          <a href="/logout" class="text-red-400/70 hover:text-red-400 transition text-xs">Salir</a>
+        </div>
+      </div>
+    </nav>
 
-    <% if (discordGuild) { %>
-    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6">
-      <h2 class="text-xl font-semibold mb-4">Gestionar rol</h2>
-      <form method="POST" action="/servers/<%= guild.id %>/roles" class="grid gap-3 sm:grid-cols-2">
-        <input name="userId" placeholder="User ID" required class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"/>
-        <select name="roleId" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
-          <% discordGuild.roles.cache.filter(r => r.id !== discordGuild.id).sort((a,b)=>b.position-a.position).first(40).forEach(function(r) { %>
-            <option value="<%= r.id %>"><%= r.name %></option>
-          <% }) %>
-        </select>
-        <select name="action" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
-          <option value="add">Añadir rol</option>
-          <option value="remove">Quitar rol</option>
-        </select>
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold">Aplicar</button>
-      </form>
-    </section>
-    <% } %>
-  </main>
-  <%- include('partials/footer') %>
+    <main class="max-w-5xl mx-auto px-6 py-12">
+      <!-- Header -->
+      <div class="flex items-center gap-4 mb-10">
+        <% if (guild.icon) { %>
+          <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png?size=128" alt="" class="w-16 h-16 rounded-2xl"/>
+        <% } else { %>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-divine-400 to-divine-600 flex items-center justify-center text-slate-950 font-black text-2xl"><%= guild.name.charAt(0) %></div>
+        <% } %>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-black"><%= guild.name %></h1>
+          <p class="text-slate-600 text-sm font-mono"><%= guild.id %></p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-4 mb-10">
+        <div class="stat-card rounded-2xl p-5 text-center">
+          <div class="text-2xl font-black text-divine-400 glow-text"><%= stats.users %></div>
+          <div class="text-slate-500 text-xs mt-1">Usuarios DB</div>
+        </div>
+        <div class="stat-card rounded-2xl p-5 text-center">
+          <div class="text-2xl font-black text-orange-400 glow-text"><%= stats.warns %></div>
+          <div class="text-slate-500 text-xs mt-1">Warns activos</div>
+        </div>
+        <div class="stat-card rounded-2xl p-5 text-center">
+          <div class="text-2xl font-black text-sky-400 glow-text"><%= stats.tickets %></div>
+          <div class="text-slate-500 text-xs mt-1">Tickets abiertos</div>
+        </div>
+      </div>
+
+      <!-- Panel navigation -->
+      <div class="mb-10">
+        <p class="text-divine-400/70 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Configuración</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <a href="/servers/<%= guild.id %>/panel/general" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">⚙️</span>
+            <span class="font-semibold text-sm">General</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/channels" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">📢</span>
+            <span class="font-semibold text-sm">Canales</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/roles" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🎭</span>
+            <span class="font-semibold text-sm">Roles</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/welcome" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">👋</span>
+            <span class="font-semibold text-sm">Bienvenida</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/moderation" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🛡️</span>
+            <span class="font-semibold text-sm">Moderación</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/logging" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">📋</span>
+            <span class="font-semibold text-sm">Logs</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/tickets" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🎫</span>
+            <span class="font-semibold text-sm">Tickets</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/leveling" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">📈</span>
+            <span class="font-semibold text-sm">Niveles</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/economy" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">💰</span>
+            <span class="font-semibold text-sm">Economía</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/giveaways" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🎉</span>
+            <span class="font-semibold text-sm">Sorteos</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/starboard" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">⭐</span>
+            <span class="font-semibold text-sm">Starboard</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/music" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🎵</span>
+            <span class="font-semibold text-sm">Música</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/automod" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🤖</span>
+            <span class="font-semibold text-sm">AutoMod</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/security" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🔒</span>
+            <span class="font-semibold text-sm">Seguridad</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/birthdays" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🎂</span>
+            <span class="font-semibold text-sm">Cumpleaños</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/tempvc" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🔊</span>
+            <span class="font-semibold text-sm">Temp VC</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/stats" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">📊</span>
+            <span class="font-semibold text-sm">Stats</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/tags" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🏷️</span>
+            <span class="font-semibold text-sm">Tags</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/confessions" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">🤫</span>
+            <span class="font-semibold text-sm">Confesiones</span>
+          </a>
+          <a href="/servers/<%= guild.id %>/panel/suggestions" class="panel-link rounded-xl p-4 flex items-center gap-3">
+            <span class="text-xl">💡</span>
+            <span class="font-semibold text-sm">Sugerencias</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="section-divider mb-10"></div>
+
+      <!-- Modules -->
+      <div class="mb-10">
+        <p class="text-divine-400/70 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Módulos</p>
+        <form id="modulesForm">
+          <input type="hidden" name="_modules" value="<%= modules.map(m => m.name).join(',') %>"/>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <% modules.forEach(function(m) { %>
+              <label class="module-toggle flex items-center gap-3 p-3 rounded-xl border border-white/5 cursor-pointer <%= m.enabled ? 'active' : '' %>">
+                <input type="checkbox" name="mod_<%= m.name %>" <%= m.enabled ? 'checked' : '' %> class="hidden peer"/>
+                <div class="w-10 h-6 rounded-full relative transition-colors peer-checked:bg-divine-500 bg-slate-700">
+                  <div class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform peer-checked:translate-x-4"></div>
+                </div>
+                <span class="font-mono text-sm text-slate-300"><%= m.name %></span>
+              </label>
+            <% }) %>
+          </div>
+          <button type="submit" class="mt-6 btn-primary text-slate-950 font-bold px-6 py-3 rounded-xl">Guardar módulos</button>
+        </form>
+      </div>
+
+      <!-- Manage roles -->
+      <% if (discordGuild) { %>
+      <div class="section-divider mb-10"></div>
+      <div>
+        <p class="text-divine-400/70 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Gestionar rol</p>
+        <form method="POST" action="/servers/<%= guild.id %>/roles" class="flex flex-wrap gap-3 items-end">
+          <input name="userId" placeholder="User ID" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm flex-1 min-w-[200px]"/>
+          <select name="roleId" class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm min-w-[200px]">
+            <% discordGuild.roles.cache.filter(r => r.id !== discordGuild.id).sort((a,b)=>b.position-a.position).first(40).forEach(function(r) { %>
+              <option value="<%= r.id %>"><%= r.name %></option>
+            <% }) %>
+          </select>
+          <select name="action" class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm">
+            <option value="add">Añadir rol</option>
+            <option value="remove">Quitar rol</option>
+          </select>
+          <button type="submit" class="btn-primary text-slate-950 font-bold px-6 py-3 rounded-xl">Aplicar</button>
+        </form>
+      </div>
+      <% } %>
+    </main>
+
+    <footer class="border-t border-white/5 py-8 mt-12">
+      <div class="max-w-6xl mx-auto px-6 flex justify-between text-xs text-slate-600">
+        <span class="text-divine-400/50 font-semibold">botgod.pro</span>
+        <div class="flex gap-4">
+          <a href="/privacy" class="hover:text-slate-400">Privacidad</a>
+          <a href="/terms" class="hover:text-slate-400">Términos</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Galaxy
+    (function(){
+      const c=document.getElementById('galaxy'),x=c.getContext('2d');
+      let w,h,stars=[];
+      function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;}
+      resize();window.addEventListener('resize',resize);
+      for(let i=0;i<120;i++)stars.push({x:Math.random()*2000,y:Math.random()*2000,r:Math.random()*1.2+0.3,a:Math.random(),d:(Math.random()-0.5)*0.008});
+      function draw(){x.clearRect(0,0,w,h);
+        for(const s of stars){s.a+=s.d;if(s.a>1||s.a<0.1)s.d*=-1;
+          x.beginPath();x.arc(s.x%w,s.y%h,s.r,0,Math.PI*2);
+          x.fillStyle=`rgba(255,255,255,${s.a.toFixed(2)})`;x.fill();}
+        requestAnimationFrame(draw);}draw();
+    })();
+
+    // Module form
+    document.getElementById('modulesForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const modules = {};
+      fd.getAll('_modules').join(',').split(',').forEach(m => {
+        modules[m] = fd.get('mod_' + m) === 'on';
+      });
+      try {
+        const res = await fetch('/api/guilds/<%= guild.id %>/modules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modules })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          showToast('Módulos guardados');
+        } else {
+          showToast('Error: ' + (json.error || 'desconocido'), 'error');
+        }
+      } catch (err) {
+        showToast('Error de conexión', 'error');
+      }
+    });
+
+    function showToast(msg, type = 'success') {
+      const t = document.createElement('div');
+      t.className = 'fixed top-4 right-4 z-50 text-white px-5 py-3 rounded-xl shadow-2xl text-sm font-semibold ' +
+        (type === 'error' ? 'bg-red-600' : 'bg-divine-500');
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+  </script>
 </body>
 </html>
