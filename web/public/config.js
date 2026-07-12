@@ -1,8 +1,8 @@
 /** Generado por scripts/write-web-config.js — no editar a mano si usas el script */
 window.GOD_SITE = {
   clientId: "1525370055724892170",
-  apiBase: "https://botgod.pro",
-  dashboardUrl: "https://botgod.pro",
+  apiBase: "https://panel.botgod.pro",
+  dashboardUrl: "https://panel.botgod.pro",
 };
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyBvCh7rdPW35SME3VKnKO9Fo-bm4GmRbMw",
