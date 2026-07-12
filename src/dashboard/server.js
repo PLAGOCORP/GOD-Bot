@@ -313,6 +313,12 @@ function createDashboard(client) {
   });
 
   app.get('/servers/:id', requireAuth, async (req, res) => {
+    // Redirigir al dashboard por defecto
+    return res.redirect(`/servers/${req.params.id}/panel/dashboard`);
+  });
+
+  // Ruta antigua mantenida para compatibilidad (no usada en nuevo UI)
+  app.get('/servers/:id/old', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g) return res.status(403).send('Sin acceso');
@@ -434,8 +440,55 @@ function createDashboard(client) {
     return { settings, modules, discordGuild, channels, roles };
   }
 
-  const PANELS = ['general', 'channels', 'roles', 'welcome', 'moderation', 'logging', 'tickets', 'leveling', 'economy', 'giveaways', 'starboard', 'music', 'automod', 'security', 'birthdays', 'tempvc', 'stats', 'tags', 'confessions', 'suggestions', 'invites'];
-  const PANEL_TITLES = { general: 'General', channels: 'Canales', roles: 'Roles', welcome: 'Bienvenida', moderation: 'Moderación', logging: 'Logs', tickets: 'Tickets', leveling: 'Niveles', economy: 'Economía', giveaways: 'Sorteos', starboard: 'Starboard', music: 'Música', automod: 'AutoMod', security: 'Seguridad', birthdays: 'Cumpleaños', tempvc: 'Temp VC', stats: 'Estadísticas', tags: 'Tags', confessions: 'Confesiones', suggestions: 'Sugerencias', invites: 'Invitaciones' };
+  async function getGuildStats(guildId) {
+    const discordGuild = client?.guilds.cache.get(guildId);
+    if (!discordGuild) return null;
+    const admin = require('firebase-admin');
+    const fDb = admin.firestore();
+
+    // Top usuarios (nivel + economía)
+    const usersSnap = await fDb.collection('users')
+      .where('guild_id', '==', guildId)
+      .orderBy('level_text', 'desc')
+      .limit(5)
+      .get();
+    const topUsers = usersSnap.docs.map(d => {
+      const data = d.data();
+      return {
+        user_id: data.user_id,
+        level: data.level_text || 0,
+        balance: data.balance || 0,
+        username: discordGuild.members.cache.get(data.user_id)?.user?.username || `Usuario ${data.user_id}`,
+      };
+    });
+
+    // Tickets abiertos
+    const ticketsSnap = await fDb.collection('tickets')
+      .where('guild_id', '==', guildId)
+      .where('status', 'in', ['open', 'claimed'])
+      .get();
+    const openTickets = ticketsSnap.size;
+
+    // Confesiones pendientes
+    const confSnap = await fDb.collection('confessions')
+      .where('guild_id', '==', guildId)
+      .where('status', '==', 'pending')
+      .get();
+    const pendingConfessions = confSnap.size;
+
+    // Stats básicas del servidor
+    return {
+      memberCount: discordGuild.memberCount || 0,
+      channelCount: discordGuild.channels.cache.size,
+      roleCount: discordGuild.roles.cache.size,
+      openTickets,
+      pendingConfessions,
+      topUsers,
+    };
+  }
+
+  const PANELS = ['dashboard', 'general', 'channels', 'roles', 'welcome', 'moderation', 'logging', 'tickets', 'leveling', 'economy', 'giveaways', 'starboard', 'music', 'automod', 'security', 'birthdays', 'tempvc', 'stats', 'tags', 'confessions', 'suggestions', 'invites'];
+  const PANEL_TITLES = { dashboard: '📊 Dashboard', general: 'General', channels: 'Canales', roles: 'Roles', welcome: 'Bienvenida', moderation: 'Moderación', logging: 'Logs', tickets: 'Tickets', leveling: 'Niveles', economy: 'Economía', giveaways: 'Sorteos', starboard: 'Starboard', music: 'Música', automod: 'AutoMod', security: 'Seguridad', birthdays: 'Cumpleaños', tempvc: 'Temp VC', stats: 'Estadísticas', tags: 'Tags', confessions: 'Confesiones', suggestions: 'Sugerencias', invites: 'Invitaciones' };
 
   for (const panel of PANELS) {
     app.get(`/servers/:id/panel/${panel}`, requireAuth, async (req, res) => {
@@ -446,6 +499,12 @@ function createDashboard(client) {
       const { config: automodConfig } = await db.getModuleConfig(guildId, 'automod');
       let tags = [];
       try { tags = await db.listTags(guildId); } catch { /* */ }
+
+      let stats = null;
+      if (panel === 'dashboard') {
+        try { stats = await getGuildStats(guildId); } catch { /* */ }
+      }
+
       res.render(`panel/${panel}`, {
         layout: 'layout',
         title: PANEL_TITLES[panel] || panel,
@@ -455,6 +514,7 @@ function createDashboard(client) {
         botVersion: config.bot.version,
         ...ctx,
         ...makeSelectHelpers(ctx.channels, ctx.roles),
+        stats: stats || {},
         automodConfig,
         tags,
       });
