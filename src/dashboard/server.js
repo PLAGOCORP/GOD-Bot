@@ -306,6 +306,39 @@ function createDashboard(client) {
     }
   });
 
+  app.post('/servers/:id/modules', requireAuth, (req, res) => {
+    const guildId = req.params.id;
+    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).send('Forbidden');
+    try {
+      const { _modules, ...rest } = req.body;
+      const mods = {};
+      if (_modules) {
+        _modules.split(',').forEach((m) => {
+          mods[m.trim()] = req.body['mod_' + m.trim()] === 'on';
+        });
+      }
+      for (const [mod, enabled] of Object.entries(mods)) {
+        db.setModuleEnabled(guildId, mod, enabled);
+      }
+      res.redirect(`/servers/${guildId}?ok=modules`);
+    } catch (err) {
+      res.status(400).send('Error modules: ' + err.message);
+    }
+  });
+
+  app.post('/servers/:id/settings', requireAuth, (req, res) => {
+    const guildId = req.params.id;
+    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
+    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).send('Forbidden');
+    try {
+      db.setGuildSettings(guildId, req.body);
+      res.redirect(`/servers/${guildId}?ok=settings`);
+    } catch (err) {
+      res.status(400).send('Error settings: ' + err.message);
+    }
+  });
+
   // ─── Panel helpers ──────────────────────────────────────────
   function getGuildCtx(guildId) {
     db.ensureGuild(guildId);
