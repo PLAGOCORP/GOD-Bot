@@ -30,6 +30,18 @@ function createDashboard(client) {
   app.use(express.json());
   app.use('/public', express.static(path.join(__dirname, 'public')));
 
+  // CORS para landing en Firebase
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && (origin.includes('botgod.pro') || origin.includes('web.app') || origin.includes('firebase'))) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   // Seguridad básica de headers
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
