@@ -51,7 +51,6 @@ module.exports = {
       const fDb = admin.firestore();
       const customSnap = await fDb.collection('serverTemplates')
         .where('builtin', '==', false)
-        .orderBy('id', 'desc')
         .limit(20)
         .get();
       const custom = customSnap.docs.map((d) => ({ id: d.id, ...d.data() }));

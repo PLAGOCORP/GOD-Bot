@@ -298,11 +298,13 @@ async function createTicket(data) {
 
 async function getTicketByChannel(channelId) {
   const snap1 = await col('tickets').where('channel_id', '==', channelId)
-    .where('status', '!=', 'closed').orderBy('created_at', 'desc').limit(1).get();
-  if (!snap1.empty) return { id: snap1.docs[0].id, ...snap1.docs[0].data() };
+    .orderBy('created_at', 'desc').limit(5).get();
+  const t1 = snap1.docs.find(d => d.data().status !== 'closed');
+  if (t1) return { id: t1.id, ...t1.data() };
   const snap2 = await col('tickets').where('thread_id', '==', channelId)
-    .where('status', '!=', 'closed').orderBy('created_at', 'desc').limit(1).get();
-  if (!snap2.empty) return { id: snap2.docs[0].id, ...snap2.docs[0].data() };
+    .orderBy('created_at', 'desc').limit(5).get();
+  const t2 = snap2.docs.find(d => d.data().status !== 'closed');
+  if (t2) return { id: t2.id, ...t2.data() };
   return null;
 }
 
