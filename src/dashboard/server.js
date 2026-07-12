@@ -82,6 +82,7 @@ function createDashboard(client) {
   app.get('/', (req, res) => {
     if (req.session.user) return res.redirect('/servers');
     res.render('home', {
+      layout: false,
       bot: config.bot,
       site,
       user: null,
@@ -98,11 +99,12 @@ function createDashboard(client) {
   });
 
   app.get('/features', (req, res) => {
-    res.render('features', { bot: config.bot, site, user: req.session.user || null, inviteUrl: inviteUrl() });
+    res.render('features', { layout: false, bot: config.bot, site, user: req.session.user || null, inviteUrl: inviteUrl() });
   });
 
   app.get('/status', (req, res) => {
     res.render('status', {
+      layout: false,
       bot: config.bot,
       site,
       user: req.session.user || null,
@@ -121,6 +123,7 @@ function createDashboard(client) {
 
   app.get('/privacy', (req, res) => {
     res.render('legal', {
+      layout: false,
       bot: config.bot,
       site,
       title: 'Privacidad',
@@ -132,14 +135,15 @@ function createDashboard(client) {
           <li>Transcripts de tickets si usas ese módulo</li>
           <li>Sesión web vía OAuth2 de Discord (solo si inicias sesión en el dashboard)</li>
         </ul>
-        <p class="mt-4">No vendemos datos. El bot es self-hosted: los datos viven en la base SQLite del operador.</p>
-        <p class="mt-2">Contacto del operador: el dueño del bot que hostea la instancia.</p>
+        <p class="mt-4">No vendemos datos. Los datos se almacenan de forma segura en Firebase Firestore.</p>
+        <p class="mt-2">Contacto del operador: plago1806@gmail.com</p>
       `,
     });
   });
 
   app.get('/terms', (req, res) => {
     res.render('legal', {
+      layout: false,
       bot: config.bot,
       site,
       title: 'Términos',
@@ -158,7 +162,7 @@ function createDashboard(client) {
   // ─── Auth OAuth2 ───────────────────────────────────────────
   app.get('/login', (req, res) => {
     if (!config.clientId || !config.clientSecret) {
-      return res.status(500).render('error', {
+      return res.status(500).render('error', { layout: false,
         bot: config.bot,
         site,
         message:
@@ -213,7 +217,7 @@ function createDashboard(client) {
       res.redirect('/servers');
     } catch (err) {
       logger.error('OAuth botgod.pro:', err.message);
-      res.status(500).render('error', {
+      res.status(500).render('error', { layout: false,
         bot: config.bot,
         site,
         message: 'Error OAuth: ' + err.message + '. Verifica el Redirect URI: ' + redirectUri,
@@ -236,6 +240,7 @@ function createDashboard(client) {
       return isAdmin && botGuildIds.has(g.id);
     });
     res.render('servers', {
+      layout: false,
       user: req.session.user,
       guilds: manageable,
       bot: config.bot,
@@ -265,6 +270,7 @@ function createDashboard(client) {
     const stats = { users, warns, tickets };
     const discordGuild = client?.guilds.cache.get(guildId);
     res.render('guild', {
+      layout: false,
       user: req.session.user,
       guild: g,
       discordGuild,
@@ -502,7 +508,7 @@ function createDashboard(client) {
 
   // 404
   app.use((req, res) => {
-    res.status(404).render('error', {
+    res.status(404).render('error', { layout: false,
       bot: config.bot,
       site,
       message: 'Página no encontrada.',

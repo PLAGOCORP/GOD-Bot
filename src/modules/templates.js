@@ -290,12 +290,12 @@ async function apply(guild, templateId, progressChannel) {
   }
   if (createdRoles.Miembro || createdRoles.Cliente || createdRoles.Alumno || createdRoles.Amigo || createdRoles.Vecino) {
     const auto = createdRoles.Miembro || createdRoles.Cliente || createdRoles.Alumno || createdRoles.Amigo || createdRoles.Vecino;
-    db.setModuleConfig(guild.id, 'welcome', { autoroles: [auto.id] });
+    await db.setModuleConfig(guild.id, 'welcome', { autoroles: [auto.id] });
   }
 
-  db.setGuildSettings(guild.id, settings);
+  await db.setGuildSettings(guild.id, settings);
   for (const [mod, en] of Object.entries(tpl.modules || {})) {
-    db.setModuleEnabled(guild.id, mod, en);
+    await db.setModuleEnabled(guild.id, mod, en);
   }
 
   // Panel de tickets si hay canal
@@ -312,17 +312,23 @@ async function apply(guild, templateId, progressChannel) {
   return { roles: createdRoles, channels: createdChannels };
 }
 
-function seedBuiltinToDb() {
+async function seedBuiltinToDb() {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
   for (const [id, t] of Object.entries(BUILTIN)) {
-    const existing = db.db
-      .prepare('SELECT id FROM server_templates WHERE name = ? AND builtin = 1')
-      .get(t.name);
-    if (!existing) {
-      db.db
-        .prepare(
-          'INSERT INTO server_templates (name, description, config_json, public, builtin) VALUES (?, ?, ?, 1, 1)'
-        )
-        .run(t.name, t.description, JSON.stringify({ id, ...t, roles: t.roles.map((r) => r.name) }));
+    const existingSnap = await fDb.collection('serverTemplates')
+      .where('name', '==', t.name)
+      .where('builtin', '==', true)
+      .limit(1)
+      .get();
+    if (existingSnap.empty) {
+      await db.createServerTemplate({
+        name: t.name,
+        description: t.description,
+        config_json: { id, ...t, roles: t.roles.map((r) => r.name) },
+        public: true,
+        builtin: true,
+      });
     }
   }
 }

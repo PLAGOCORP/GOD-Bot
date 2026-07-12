@@ -5,8 +5,8 @@ const embeds = require('../utils/embeds');
 const { rankCard } = require('../utils/canvas');
 const { AttachmentBuilder } = require('discord.js');
 
-function isNoXp(message) {
-  const { config: lv } = db.getModuleConfig(message.guild.id, 'leveling');
+async function isNoXp(message) {
+  const { config: lv } = await db.getModuleConfig(message.guild.id, 'leveling');
   const noChannels = lv.noXpChannels || [];
   const noRoles = lv.noXpRoles || [];
   if (noChannels.includes(message.channel.id)) return true;
@@ -18,9 +18,9 @@ function isNoXp(message) {
   return false;
 }
 
-function xpMultiplier(member) {
+async function xpMultiplier(member) {
   if (!member) return 1;
-  const { config: lv } = db.getModuleConfig(member.guild.id, 'leveling');
+  const { config: lv } = await db.getModuleConfig(member.guild.id, 'leveling');
   const mults = lv.roleMultipliers || {}; // { roleId: 1.5 }
   let m = 1;
   for (const [roleId, mul] of Object.entries(mults)) {
@@ -30,21 +30,21 @@ function xpMultiplier(member) {
   return m;
 }
 
-function addTextXp(guildId, userId, message) {
-  if (!db.isModuleEnabled(guildId, 'leveling')) return null;
-  if (message && isNoXp(message)) return null;
+async function addTextXp(guildId, userId, message) {
+  if (!await db.isModuleEnabled(guildId, 'leveling')) return null;
+  if (message && await isNoXp(message)) return null;
 
-  const user = db.ensureUser(guildId, userId);
+  const user = await db.ensureUser(guildId, userId);
   const now = Date.now();
   if (now - (user.last_xp || 0) < config.leveling.cooldown) return null;
 
-  const mult = message?.member ? xpMultiplier(message.member) : 1;
+  const mult = message?.member ? await xpMultiplier(message.member) : 1;
   const amount = Math.floor(randomInt(config.leveling.xpMin, config.leveling.xpMax) * mult);
   const before = levelFromXp(user.xp_text);
   const xp_text = user.xp_text + amount;
   const after = levelFromXp(xp_text);
 
-  db.updateUser(guildId, userId, {
+  await db.updateUser(guildId, userId, {
     xp_text,
     level_text: after.level,
     last_xp: now,
@@ -61,31 +61,43 @@ function addTextXp(guildId, userId, message) {
   };
 }
 
-function leaderboard(guildId, limit = 10) {
-  return db.db
-    .prepare(
-      'SELECT user_id, xp_text, level_text, messages_count FROM users WHERE guild_id = ? ORDER BY xp_text DESC LIMIT ?'
-    )
-    .all(guildId, limit);
+async function leaderboard(guildId, limit = 10) {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const snap = await fDb.collection('users')
+    .where('guild_id', '==', guildId)
+    .orderBy('xp_text', 'desc')
+    .limit(limit)
+    .get();
+  return snap.docs.map((d) => ({
+    user_id: d.data().user_id,
+    xp_text: d.data().xp_text,
+    level_text: d.data().level_text,
+    messages_count: d.data().messages_count,
+  }));
 }
 
-function rankOf(guildId, userId) {
-  const rows = db.db
-    .prepare('SELECT user_id FROM users WHERE guild_id = ? ORDER BY xp_text DESC')
-    .all(guildId);
+async function rankOf(guildId, userId) {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const snap = await fDb.collection('users')
+    .where('guild_id', '==', guildId)
+    .orderBy('xp_text', 'desc')
+    .get();
+  const rows = snap.docs.map((d) => ({ user_id: d.data().user_id }));
   const idx = rows.findIndex((r) => r.user_id === userId);
   return idx === -1 ? null : idx + 1;
 }
 
 async function announceLevelUp(message, result) {
   if (!result?.leveledUp) return;
-  const settings = db.getGuildSettings(message.guild.id);
+  const settings = await db.getGuildSettings(message.guild.id);
   const channel = settings.levelChannel
     ? message.guild.channels.cache.get(settings.levelChannel)
     : message.channel;
   if (!channel) return;
 
-  const { config: lv } = db.getModuleConfig(message.guild.id, 'leveling');
+  const { config: lv } = await db.getModuleConfig(message.guild.id, 'leveling');
   const rewards = lv.rewards || {};
   const roleId = rewards[String(result.newLevel)];
   if (roleId) {
@@ -100,7 +112,7 @@ async function announceLevelUp(message, result) {
       level: result.newLevel,
       currentXp: result.currentXp,
       needed: result.needed,
-      rank: rankOf(message.guild.id, message.author.id),
+      rank: await rankOf(message.guild.id, message.author.id),
     });
     files = [new AttachmentBuilder(png, { name: 'levelup.png' })];
   } catch { /* */ }

@@ -142,9 +142,7 @@ async function playNext(guildId) {
     if (resource.volume) resource.volume.setVolume(state.volume);
     state.player.play(resource);
 
-    db.db
-      .prepare('INSERT INTO music_history (guild_id, user_id, title, url) VALUES (?, ?, ?, ?)')
-      .run(guildId, track.requestedBy || null, track.title, track.url);
+    await db.addMusicHistory(guildId, track.requestedBy || null, track.title, track.url);
 
     return track;
   } catch (err) {
@@ -163,7 +161,7 @@ async function onIdle(guildId) {
 }
 
 async function play(member, query, textChannelId) {
-  if (!db.isModuleEnabled(member.guild.id, 'music')) {
+  if (!await db.isModuleEnabled(member.guild.id, 'music')) {
     throw new Error('Módulo música desactivado.');
   }
   await ensureConnection(member);

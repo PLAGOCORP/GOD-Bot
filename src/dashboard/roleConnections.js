@@ -21,20 +21,21 @@ function handleRoleConnectionsVerification(client) {
       const user = await userRes.json();
 
       const db = require('../database/db');
-      db.ensureGuild(config.guildId || '0');
-      const userData = db.db
-        .prepare('SELECT * FROM users WHERE user_id = ? AND guild_id = ?')
-        .get(user.id, config.guildId || '0');
+      await db.ensureGuild(config.guildId || '0');
+      const userData = await db.getUser(config.guildId || '0', user.id);
+      const admin = require('firebase-admin');
+      const fDb = admin.firestore();
+      const warnsSnap = await fDb.collection('warns')
+        .where('user_id', '==', user.id)
+        .where('active', '==', true)
+        .count()
+        .get();
 
       const metadata = {
-        level: String(userData?.level || 0),
-        xp: String(userData?.xp || 0),
+        level: String(userData?.level_text || 0),
+        xp: String(userData?.xp_text || 0),
         coins: String(userData?.balance || 0),
-        warnings: String(
-          db.db
-            .prepare('SELECT COUNT(*) AS c FROM warns WHERE user_id = ? AND active = 1')
-            .get(user.id)?.c || 0
-        ),
+        warnings: String(warnsSnap.data().count || 0),
       };
 
       res.json({

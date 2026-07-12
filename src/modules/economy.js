@@ -2,8 +2,8 @@ const db = require('../database/db');
 const config = require('../config');
 const { randomInt } = require('../utils/helpers');
 
-function getProfile(guildId, userId) {
-  const u = db.ensureUser(guildId, userId);
+async function getProfile(guildId, userId) {
+  const u = await db.ensureUser(guildId, userId);
   return {
     balance: u.balance,
     bank: u.bank,
@@ -13,7 +13,7 @@ function getProfile(guildId, userId) {
   };
 }
 
-function saveMoney(guildId, userId, { balance, bank, lastDaily, lastWork, inventory }) {
+async function saveMoney(guildId, userId, { balance, bank, lastDaily, lastWork, inventory }) {
   const fields = {};
   if (balance !== undefined) fields.balance = balance;
   if (bank !== undefined) fields.bank = bank;
@@ -23,8 +23,8 @@ function saveMoney(guildId, userId, { balance, bank, lastDaily, lastWork, invent
   return db.updateUser(guildId, userId, fields);
 }
 
-function claimDaily(guildId, userId) {
-  const p = getProfile(guildId, userId);
+async function claimDaily(guildId, userId) {
+  const p = await getProfile(guildId, userId);
   const now = Date.now();
   if (now - (p.lastDaily || 0) < config.economy.dailyCooldown) {
     return { ok: false, remaining: config.economy.dailyCooldown - (now - p.lastDaily) };
@@ -35,8 +35,8 @@ function claimDaily(guildId, userId) {
   return { ok: true, amount, balance };
 }
 
-function claimWork(guildId, userId) {
-  const p = getProfile(guildId, userId);
+async function claimWork(guildId, userId) {
+  const p = await getProfile(guildId, userId);
   const now = Date.now();
   if (now - (p.lastWork || 0) < config.economy.workCooldown) {
     return { ok: false, remaining: config.economy.workCooldown - (now - p.lastWork) };
@@ -47,22 +47,34 @@ function claimWork(guildId, userId) {
   return { ok: true, amount, balance };
 }
 
-function transfer(guildId, fromId, toId, amount) {
-  const from = getProfile(guildId, fromId);
+async function transfer(guildId, fromId, toId, amount) {
+  const from = await getProfile(guildId, fromId);
   if (from.balance < amount) return { ok: false };
-  db.ensureUser(guildId, toId);
-  saveMoney(guildId, fromId, { balance: from.balance - amount });
-  const to = getProfile(guildId, toId);
-  saveMoney(guildId, toId, { balance: to.balance + amount });
+  await db.ensureUser(guildId, toId);
+  await saveMoney(guildId, fromId, { balance: from.balance - amount });
+  const to = await getProfile(guildId, toId);
+  await saveMoney(guildId, toId, { balance: to.balance + amount });
   return { ok: true };
 }
 
-function leaderboard(guildId, limit = 10) {
-  return db.db
-    .prepare(
-      'SELECT user_id, balance, bank, (balance + bank) AS total FROM users WHERE guild_id = ? ORDER BY total DESC LIMIT ?'
-    )
-    .all(guildId, limit);
+async function leaderboard(guildId, limit = 10) {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const snap = await fDb.collection('users')
+    .where('guild_id', '==', guildId)
+    .get();
+  return snap.docs
+    .map((d) => {
+      const data = d.data();
+      return {
+        user_id: data.user_id,
+        balance: data.balance || 0,
+        bank: data.bank || 0,
+        total: (data.balance || 0) + (data.bank || 0),
+      };
+    })
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
 }
 
 const SHOP = [

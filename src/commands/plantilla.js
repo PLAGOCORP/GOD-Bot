@@ -47,9 +47,14 @@ module.exports = {
 
     if (sub === 'listar') {
       const list = templates.listBuiltin();
-      const custom = db.db
-        .prepare('SELECT id, name, description FROM server_templates WHERE builtin = 0 ORDER BY id DESC LIMIT 20')
-        .all();
+      const admin = require('firebase-admin');
+      const fDb = admin.firestore();
+      const customSnap = await fDb.collection('serverTemplates')
+        .where('builtin', '==', false)
+        .orderBy('id', 'desc')
+        .limit(20)
+        .get();
+      const custom = customSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       let body =
         list.map((t) => `• **${t.name}** (\`${t.id}\`)\n  ${t.description}`).join('\n\n') +
         '\n\nUsa `/plantilla aplicar ... confirmar:True`';
@@ -64,10 +69,10 @@ module.exports = {
     if (sub === 'guardar') {
       const name = interaction.options.getString('nombre');
       const description = interaction.options.getString('descripcion') || '';
-      const settings = db.getGuildSettings(interaction.guild.id);
+      const settings = await db.getGuildSettings(interaction.guild.id);
       const modules = {};
       for (const m of Object.keys(db.DEFAULT_MODULES)) {
-        modules[m] = db.isModuleEnabled(interaction.guild.id, m);
+        modules[m] = await db.isModuleEnabled(interaction.guild.id, m);
       }
       const snapshot = {
         type: 'custom_settings',
@@ -83,11 +88,14 @@ module.exports = {
         savedAt: Date.now(),
         guildId: interaction.guild.id,
       };
-      db.db
-        .prepare(
-          'INSERT INTO server_templates (name, description, config_json, created_by, public, builtin) VALUES (?, ?, ?, ?, 0, 0)'
-        )
-        .run(name, description, JSON.stringify(snapshot), interaction.user.id);
+      await db.createServerTemplate({
+        name,
+        description,
+        config_json: snapshot,
+        created_by: interaction.user.id,
+        public: false,
+        builtin: false,
+      });
       return interaction.reply({
         embeds: [
           embeds.success(

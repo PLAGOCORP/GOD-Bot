@@ -31,7 +31,7 @@ async function getWebhook(channel) {
   return hook;
 }
 
-function findEmoji(client, name) {
+async function findEmoji(client, name) {
   const lower = name.toLowerCase();
   // Prefer guild emojis the bot can see
   for (const guild of client.guilds.cache.values()) {
@@ -39,9 +39,14 @@ function findEmoji(client, name) {
     if (emoji) return emoji;
   }
   // Packs in DB
-  const row = db.db
-    .prepare('SELECT * FROM emote_packs WHERE LOWER(emoji_name) = ? LIMIT 1')
-    .get(lower);
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const packSnap = await fDb.collection('emotePacks')
+    .where('emoji_name', '>=', lower)
+    .where('emoji_name', '<=', lower + '\uf8ff')
+    .limit(1)
+    .get();
+  const row = packSnap.empty ? null : packSnap.docs[0].data();
   if (row) {
     return {
       name: row.emoji_name,
@@ -59,18 +64,24 @@ function findEmoji(client, name) {
   return null;
 }
 
-function replaceEmotes(content, client) {
+async function replaceEmotes(content, client) {
   let replaced = false;
-  const out = content.replace(EMOJI_PARSE, (match, name) => {
-    const emoji = findEmoji(client, name);
-    if (!emoji) return match;
+  let out = content;
+  let match;
+  const regex = new RegExp(EMOJI_PARSE.source, 'g');
+  while ((match = regex.exec(content)) !== null) {
+    const name = match[1];
+    const emoji = await findEmoji(client, name);
+    if (!emoji) continue;
     replaced = true;
+    let replacement;
     if (emoji.customUrl) {
-      // Use markdown image for pack URLs when no discord emoji id
-      return `[${name}](${emoji.customUrl})`;
+      replacement = `[${name}](${emoji.customUrl})`;
+    } else {
+      replacement = emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
     }
-    return emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
-  });
+    out = out.replace(match[0], replacement);
+  }
   return { content: out, replaced };
 }
 
@@ -79,14 +90,14 @@ function replaceEmotes(content, client) {
  */
 async function handleMessage(message) {
   if (!message.guild || message.author.bot || message.webhookId) return false;
-  if (!db.isModuleEnabled(message.guild.id, 'emotes')) return false;
+  if (!await db.isModuleEnabled(message.guild.id, 'emotes')) return false;
   if (!message.content || !message.content.includes(':')) return false;
 
   // Don't process pure commands
-  const settings = db.getGuildSettings(message.guild.id);
+  const settings = await db.getGuildSettings(message.guild.id);
   if (message.content.startsWith(settings.prefix || 'g!')) return false;
 
-  const { content, replaced } = replaceEmotes(message.content, message.client);
+  const { content, replaced } = await replaceEmotes(message.content, message.client);
   if (!replaced) return false;
 
   try {
@@ -105,18 +116,30 @@ async function handleMessage(message) {
   }
 }
 
-function addEmote(guildId, name, url, animated = false) {
-  db.db
-    .prepare(
-      'INSERT INTO emote_packs (guild_id, name, emoji_name, emoji_url, animated) VALUES (?, ?, ?, ?, ?)'
-    )
-    .run(guildId, name, name, url, animated ? 1 : 0);
+async function addEmote(guildId, name, url, animated = false) {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  await fDb.collection('emotePacks').doc().set({
+    guild_id: guildId,
+    name,
+    emoji_name: name,
+    emoji_url: url,
+    animated: !!animated,
+  });
 }
 
-function listEmotes(guildId) {
-  return db.db
-    .prepare('SELECT * FROM emote_packs WHERE guild_id = ? OR guild_id IS NULL ORDER BY emoji_name')
-    .all(guildId);
+async function listEmotes(guildId) {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const guildSnap = await fDb.collection('emotePacks')
+    .where('guild_id', '==', guildId)
+    .get();
+  const globalSnap = await fDb.collection('emotePacks')
+    .where('guild_id', '==', null)
+    .get();
+  return [...guildSnap.docs, ...globalSnap.docs]
+    .map((d) => d.data())
+    .sort((a, b) => (a.emoji_name || '').localeCompare(b.emoji_name || ''));
 }
 
 function stealEmoji(guild, emoji) {

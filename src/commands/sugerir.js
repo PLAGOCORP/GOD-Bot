@@ -35,13 +35,13 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const ch = interaction.options.getChannel('canal');
-      db.setGuildSettings(interaction.guild.id, { suggestionChannel: ch.id });
+      await db.setGuildSettings(interaction.guild.id, { suggestionChannel: ch.id });
       return interaction.reply({ embeds: [embeds.success('Sugerencias', `Canal: ${ch}`)] });
     }
 
     if (sub === 'enviar') {
       const texto = interaction.options.getString('texto');
-      const settings = db.getGuildSettings(interaction.guild.id);
+      const settings = await db.getGuildSettings(interaction.guild.id);
       const chId = settings.suggestionChannel;
       if (!chId) {
         return interaction.reply({
@@ -54,12 +54,12 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Canal de sugerencias inválido')], ephemeral: true });
       }
 
-      const info = db.db
-        .prepare(
-          'INSERT INTO suggestions (guild_id, user_id, content, status) VALUES (?, ?, ?, ?)'
-        )
-        .run(interaction.guild.id, interaction.user.id, texto, 'pending');
-      const id = info.lastInsertRowid;
+      const id = await db.createSuggestion({
+        guild_id: interaction.guild.id,
+        user_id: interaction.user.id,
+        content: texto,
+        status: 'pending',
+      });
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -82,9 +82,7 @@ module.exports = {
       });
       await msg.react('👍').catch(() => {});
       await msg.react('👎').catch(() => {});
-      db.db
-        .prepare('UPDATE suggestions SET message_id = ?, channel_id = ? WHERE id = ?')
-        .run(msg.id, ch.id, id);
+      await db.updateSuggestion(id, { message_id: msg.id, channel_id: ch.id });
 
       return interaction.reply({
         embeds: [embeds.success('Sugerencia enviada', `ID #${id} en ${ch}`)],

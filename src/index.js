@@ -74,11 +74,15 @@ setInterval(async () => {
   try {
     const hours = config.tickets.inactiveHours || 48;
     const cutoff = Date.now() - hours * 3600_000;
-    const stale = db.db
-      .prepare(
-        `SELECT * FROM tickets WHERE status IN ('open','claimed') AND (last_activity IS NULL OR last_activity < ?) AND created_at < ?`
-      )
-      .all(cutoff, cutoff);
+    const admin = require('firebase-admin');
+    const fDb = admin.firestore();
+    const staleSnap = await fDb.collection('tickets')
+      .where('status', 'in', ['open', 'claimed'])
+      .where('created_at', '<', cutoff)
+      .get();
+    const stale = staleSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((t) => !t.last_activity || t.last_activity < cutoff);
     for (const t of stale) {
       if (!t.channel_id) continue;
       const ch = await client.channels.fetch(t.channel_id).catch(() => null);
@@ -88,7 +92,7 @@ setInterval(async () => {
           .catch(() => {});
         setTimeout(() => ch.delete().catch(() => {}), 8000);
       }
-      db.updateTicket(t.id, { status: 'closed', closed_at: Date.now() });
+      await db.updateTicket(t.id, { status: 'closed', closed_at: Date.now() });
     }
   } catch { /* */ }
 }, 60 * 60_000);

@@ -48,15 +48,21 @@ function ticketButtons(claimed = false) {
 
 async function createTicketChannel(interaction, category, subject) {
   const guild = interaction.guild;
-  const settings = db.getGuildSettings(guild.id);
+  const settings = await db.getGuildSettings(guild.id);
   const name = `ticket-${interaction.user.username}`
     .toLowerCase()
     .replace(/[^a-z0-9-]/g, '')
     .slice(0, 90);
 
-  const existing = db.db
-    .prepare("SELECT * FROM tickets WHERE guild_id = ? AND creator_id = ? AND status = 'open'")
-    .get(guild.id, interaction.user.id);
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const existingSnap = await fDb.collection('tickets')
+    .where('guild_id', '==', guild.id)
+    .where('creator_id', '==', interaction.user.id)
+    .where('status', '==', 'open')
+    .limit(1)
+    .get();
+  const existing = existingSnap.empty ? null : { id: existingSnap.docs[0].id, ...existingSnap.docs[0].data() };
   if (existing?.channel_id) {
     const ch = guild.channels.cache.get(existing.channel_id);
     if (ch) return { error: `Ya tienes un ticket abierto: ${ch}` };
@@ -179,7 +185,7 @@ function ratingButtons(ticketId) {
 }
 
 async function closeTicket(interaction) {
-  const ticket = db.getTicketByChannel(interaction.channel.id);
+  const ticket = await db.getTicketByChannel(interaction.channel.id);
   if (!ticket) {
     return interaction.reply({ content: 'Este canal no es un ticket de God.', ephemeral: true });
   }
@@ -187,7 +193,7 @@ async function closeTicket(interaction) {
   await interaction.reply({ content: '🔒 Generando transcript y cerrando en 12s... Valora el soporte si puedes.' });
 
   const file = await generateTranscript(interaction.channel, ticket);
-  db.updateTicket(ticket.id, {
+  await db.updateTicket(ticket.id, {
     status: 'closed',
     closed_at: Date.now(),
     transcript_path: file,
@@ -201,7 +207,7 @@ async function closeTicket(interaction) {
     })
     .catch(() => {});
 
-  const settings = db.getGuildSettings(interaction.guild.id);
+  const settings = await db.getGuildSettings(interaction.guild.id);
   const logCh = settings.ticketLog
     ? interaction.guild.channels.cache.get(settings.ticketLog)
     : logging.resolveLogChannel(interaction.guild, 'ticket');

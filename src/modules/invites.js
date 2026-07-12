@@ -35,14 +35,14 @@ async function trackJoin(member) {
     await cacheGuildInvites(member.guild);
   } catch { /* */ }
 
-  db.recordJoin({
+  await db.recordJoin({
     guildId: member.guild.id,
     userId: member.id,
     inviterId: used?.inviterId,
     code: used?.code,
   });
   if (used?.inviterId) {
-    db.updateUser(member.guild.id, member.id, { inviter_id: used.inviterId });
+    await db.updateUser(member.guild.id, member.id, { inviter_id: used.inviterId });
     await checkInviteRewards(member.guild, used.inviterId);
   }
   return used;
@@ -50,34 +50,45 @@ async function trackJoin(member) {
 
 async function trackLeave(member) {
   if (!db.isModuleEnabled(member.guild.id, 'invites')) return;
-  const row = db.db
-    .prepare(
-      'SELECT * FROM invite_joins WHERE guild_id = ? AND user_id = ? AND left_at IS NULL ORDER BY joined_at DESC LIMIT 1'
-    )
-    .get(member.guild.id, member.id);
-  if (!row) return;
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const joinSnap = await fDb.collection('inviteJoins')
+    .where('guild_id', '==', member.guild.id)
+    .where('user_id', '==', member.id)
+    .where('left_at', '==', null)
+    .orderBy('joined_at', 'desc')
+    .limit(1)
+    .get();
+  if (joinSnap.empty) return;
+  const row = { id: joinSnap.docs[0].id, ...joinSnap.docs[0].data() };
 
   const now = Date.now();
-  const isFake = now - row.joined_at < FAKE_LEAVE_MS ? 1 : 0;
-  db.db
-    .prepare('UPDATE invite_joins SET left_at = ?, is_fake = ? WHERE id = ?')
-    .run(now, isFake, row.id);
+  const isFake = now - row.joined_at < FAKE_LEAVE_MS;
+  await joinSnap.docs[0].ref.update({ left_at: now, is_fake: isFake });
 
   if (isFake && row.inviter_id) {
-    // decrement invites_count for fake
-    db.db
-      .prepare(
-        'UPDATE users SET invites_count = CASE WHEN invites_count > 0 THEN invites_count - 1 ELSE 0 END WHERE user_id = ? AND guild_id = ?'
-      )
-      .run(row.inviter_id, member.guild.id);
-    db.db
-      .prepare('UPDATE invites SET fake_detected = fake_detected + 1 WHERE guild_id = ? AND inviter_id = ?')
-      .run(member.guild.id, row.inviter_id);
+    const inviterUser = await db.getUser(member.guild.id, row.inviter_id);
+    if (inviterUser) {
+      await db.updateUser(member.guild.id, row.inviter_id, {
+        invites_count: Math.max(0, (inviterUser.invites_count || 0) - 1),
+      });
+    }
+    await db.upsertInvite(null, member.guild.id, row.inviter_id, null);
+    const inviteSnap = await fDb.collection('invites')
+      .where('guild_id', '==', member.guild.id)
+      .where('inviter_id', '==', row.inviter_id)
+      .limit(1)
+      .get();
+    if (!inviteSnap.empty) {
+      await inviteSnap.docs[0].ref.update({
+        fake_detected: admin.firestore.FieldValue.increment(1),
+      });
+    }
   }
 }
 
 async function checkInviteRewards(guild, inviterId) {
-  const { config: inv } = db.getModuleConfig(guild.id, 'invites');
+  const { config: inv } = await db.getModuleConfig(guild.id, 'invites');
   const rewards = inv.rewards || {}; // { "5": "roleId", "10": "roleId" }
   const count = getUserInvites(guild.id, inviterId);
   const member = await guild.members.fetch(inviterId).catch(() => null);
@@ -106,25 +117,33 @@ async function checkInviteRewards(guild, inviterId) {
   }
 }
 
-function getUserInvites(guildId, userId) {
-  const u = db.ensureUser(guildId, userId);
+async function getUserInvites(guildId, userId) {
+  const u = await db.ensureUser(guildId, userId);
   return u.invites_count || 0;
 }
 
-function topInvites(guildId, limit = 10) {
-  return db.db
-    .prepare(
-      'SELECT user_id, invites_count FROM users WHERE guild_id = ? AND invites_count > 0 ORDER BY invites_count DESC LIMIT ?'
-    )
-    .all(guildId, limit);
+async function topInvites(guildId, limit = 10) {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const snap = await fDb.collection('users')
+    .where('guild_id', '==', guildId)
+    .where('invites_count', '>', 0)
+    .orderBy('invites_count', 'desc')
+    .limit(limit)
+    .get();
+  return snap.docs.map((d) => ({ user_id: d.data().user_id, invites_count: d.data().invites_count }));
 }
 
-function fakeCount(guildId, inviterId) {
-  return db.db
-    .prepare(
-      'SELECT COUNT(*) AS c FROM invite_joins WHERE guild_id = ? AND inviter_id = ? AND is_fake = 1'
-    )
-    .get(guildId, inviterId).c;
+async function fakeCount(guildId, inviterId) {
+  const admin = require('firebase-admin');
+  const fDb = admin.firestore();
+  const snap = await fDb.collection('inviteJoins')
+    .where('guild_id', '==', guildId)
+    .where('inviter_id', '==', inviterId)
+    .where('is_fake', '==', true)
+    .count()
+    .get();
+  return snap.data().count;
 }
 
 module.exports = {

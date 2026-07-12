@@ -170,9 +170,7 @@ module.exports = {
             });
             answer = c.choices?.[0]?.message?.content || '';
           }
-          db.db
-            .prepare('INSERT INTO ai_logs (guild_id, user_id, query, response) VALUES (?, ?, ?, ?)')
-            .run(interaction.guild.id, interaction.user.id, question, answer);
+          await db.insertAiLog(interaction.guild.id, interaction.user.id, question, answer);
           return interaction.editReply({
             embeds: [embeds.god('God responde', truncate(answer, 4000))],
           });
@@ -247,7 +245,7 @@ module.exports = {
       if (!isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
-      db.ensureGuild(interaction.guild.id);
+      await db.ensureGuild(interaction.guild.id);
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('setup_modules')
@@ -290,17 +288,20 @@ module.exports = {
       if (!isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
-      const body = MODULE_LIST.map(
-        (m) => `${db.isModuleEnabled(interaction.guild.id, m) ? '✅' : '❌'} **${m}**`
+      const moduleStates = await Promise.all(MODULE_LIST.map(
+        async (m) => ({ m, enabled: await db.isModuleEnabled(interaction.guild.id, m) })
+      ));
+      const body = moduleStates.map(
+        ({ m, enabled }) => `${enabled ? '✅' : '❌'} **${m}**`
       ).join('\n');
       const select = new StringSelectMenuBuilder()
         .setCustomId('god_module_toggle')
         .setPlaceholder('Toggle módulo...')
         .addOptions(
-          MODULE_LIST.slice(0, 25).map((m) => ({
+          moduleStates.slice(0, 25).map(({ m, enabled }) => ({
             label: m,
             value: m,
-            description: db.isModuleEnabled(interaction.guild.id, m) ? 'ON — click para OFF' : 'OFF — click para ON',
+            description: enabled ? 'ON — click para OFF' : 'OFF — click para ON',
           }))
         );
       return interaction.reply({
@@ -324,7 +325,7 @@ module.exports = {
       if (miembros) patch.logChannels.member = miembros.id;
       if (tickets) patch.logChannels.ticket = tickets.id;
       if (!Object.keys(patch.logChannels).length) {
-        const s = db.getGuildSettings(interaction.guild.id);
+        const s = await db.getGuildSettings(interaction.guild.id);
         return interaction.reply({
           embeds: [
             embeds.info(
@@ -340,7 +341,7 @@ module.exports = {
           ephemeral: true,
         });
       }
-      db.setGuildSettings(interaction.guild.id, patch);
+      await db.setGuildSettings(interaction.guild.id, patch);
       return interaction.reply({
         embeds: [embeds.success('Logs actualizados', 'Canales de logging configurados.')],
       });
@@ -351,7 +352,7 @@ module.exports = {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
       const role = interaction.options.getRole('rol');
-      db.setGuildSettings(interaction.guild.id, { modRole: role.id });
+      await db.setGuildSettings(interaction.guild.id, { modRole: role.id });
       return interaction.reply({
         embeds: [embeds.success('Rol de staff', `Los miembros con ${role} se tratan como moderadores de God.`)],
       });

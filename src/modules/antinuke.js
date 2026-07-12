@@ -4,33 +4,27 @@ const logging = require('./logging');
 const embeds = require('../utils/embeds');
 const logger = require('../utils/logger');
 
-function record(guildId, userId, action) {
-  db.db
-    .prepare('INSERT INTO antinuke_actions (guild_id, user_id, action) VALUES (?, ?, ?)')
-    .run(guildId, userId, action);
+async function record(guildId, userId, action) {
+  await db.addAntinukeAction(guildId, userId, action);
 }
 
-function recentCount(guildId, userId, windowMs) {
-  const since = Date.now() - windowMs;
-  return db.db
-    .prepare(
-      'SELECT COUNT(*) AS c FROM antinuke_actions WHERE guild_id = ? AND user_id = ? AND timestamp > ?'
-    )
-    .get(guildId, userId, since).c;
+async function recentCount(guildId, userId, windowMs) {
+  const actions = await db.getAntinukeActions(guildId, windowMs);
+  return actions.filter((a) => a.user_id === userId).length;
 }
 
 async function checkAndAct(guild, executorId, action) {
-  if (!db.isModuleEnabled(guild.id, 'antinuke')) return;
+  if (!await db.isModuleEnabled(guild.id, 'antinuke')) return;
   if (!executorId) return;
   if (executorId === guild.client.user.id) return;
   if (executorId === guild.ownerId) return;
 
-  const settings = db.getGuildSettings(guild.id);
+  const settings = await db.getGuildSettings(guild.id);
   const threshold = settings.antinukeThreshold || 3;
   const windowMs = settings.antinukeWindowMs || 10000;
 
-  record(guild.id, executorId, action);
-  const count = recentCount(guild.id, executorId, windowMs);
+  await record(guild.id, executorId, action);
+  const count = await recentCount(guild.id, executorId, windowMs);
   if (count < threshold) return;
 
   logger.warn(`Anti-nuke: ${executorId} en ${guild.id} → ${count}x ${action}`);

@@ -121,24 +121,17 @@ module.exports = {
         description: interaction.options.getString('descripcion'),
         color: interaction.options.getString('color') || '9B59B6',
       };
-      db.db
-        .prepare(
-          `INSERT INTO embed_templates (guild_id, name, data_json, created_by) VALUES (?, ?, ?, ?)
-           ON CONFLICT(guild_id, name) DO UPDATE SET data_json = excluded.data_json`
-        )
-        .run(interaction.guild.id, nombre, JSON.stringify(data), interaction.user.id);
+      await db.setEmbedTemplate(interaction.guild.id, nombre, data, interaction.user.id);
       return interaction.reply({ embeds: [embeds.success('Plantilla guardada', `\`${nombre}\``)] });
     }
 
     if (sub === 'plantilla') {
       const nombre = interaction.options.getString('nombre').toLowerCase();
-      const row = db.db
-        .prepare('SELECT * FROM embed_templates WHERE guild_id = ? AND name = ?')
-        .get(interaction.guild.id, nombre);
+      const row = await db.getEmbedTemplate(interaction.guild.id, nombre);
       if (!row) {
         return interaction.reply({ embeds: [embeds.error('Plantilla no existe')], ephemeral: true });
       }
-      const data = JSON.parse(row.data_json);
+      const data = typeof row.data_json === 'string' ? JSON.parse(row.data_json) : (row.data_json || {});
       const canal = interaction.options.getChannel('canal') || interaction.channel;
       await canal.send({
         embeds: [
@@ -153,9 +146,12 @@ module.exports = {
     }
 
     if (sub === 'lista') {
-      const list = db.db
-        .prepare('SELECT name FROM embed_templates WHERE guild_id = ?')
-        .all(interaction.guild.id);
+      const admin = require('firebase-admin');
+      const fDb = admin.firestore();
+      const listSnap = await fDb.collection('embedTemplates')
+        .where('guild_id', '==', interaction.guild.id)
+        .get();
+      const list = listSnap.docs.map((d) => ({ name: d.data().name }));
       return interaction.reply({
         embeds: [
           embeds.info(
