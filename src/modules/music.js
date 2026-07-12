@@ -11,6 +11,7 @@ const {
   getVoiceConnection,
   NoSubscriberBehavior,
 } = require('@discordjs/voice');
+const { PermissionFlagsBits } = require('discord.js');
 const playdl = require('play-dl');
 let ytdl = null;
 try {
@@ -160,37 +161,105 @@ async function resolveQuery(query) {
 async function ensureConnection(member) {
   const channel = member.voice?.channel;
   if (!channel) throw new Error('Debes estar en un canal de voz.');
-  const me = channel.guild.members.me;
-  if (!channel.joinable) throw new Error('No puedo unirme a ese canal de voz.');
-  if (!channel.speakable && me) {
-    // stage channels may differ
-  }
+  const guild = channel.guild;
+  const me = guild.members.me;
 
-  let connection = getVoiceConnection(channel.guild.id);
-  if (!connection || connection.joinConfig.channelId !== channel.id) {
-    connection = joinVoiceChannel({
-      channelId: channel.id,
-      guildId: channel.guild.id,
-      adapterCreator: channel.guild.voiceAdapterCreator,
-      selfDeaf: true,
-    });
-
-    connection.on('stateChange', (oldState, newState) => {
-      logger.debug(`[voice] ${oldState.status} -> ${newState.status}`);
-    });
-    connection.on('error', (err) => {
-      logger.error('[voice] Connection error:', err.message);
-    });
-
-    try {
-      await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
-    } catch (err) {
-      logger.error(`[voice] entersState falló. Estado final: ${connection.state.status}. Error: ${err.message}`);
-      connection.destroy();
-      throw new Error('No se pudo conectar al canal de voz a tiempo.');
+  // Chequeo de permisos explícito (channel.joinable a veces da falsos positivos)
+  const perms = me ? channel.permissionsFor(me) : null;
+  if (perms) {
+    if (!perms.has(PermissionFlagsBits.ViewChannel)) {
+      throw new Error('No puedo ver ese canal de voz (falta permiso Ver Canal).');
+    }
+    if (!perms.has(PermissionFlagsBits.Connect)) {
+      throw new Error('No tengo permiso para **conectarme** a ese canal de voz.');
+    }
+    if (!perms.has(PermissionFlagsBits.Speak)) {
+      throw new Error('No tengo permiso para **hablar** en ese canal de voz.');
     }
   }
-  const state = getState(channel.guild.id);
+  if (channel.userLimit && channel.members.size >= channel.userLimit && !perms?.has(PermissionFlagsBits.MoveMembers)) {
+    throw new Error('El canal de voz está lleno.');
+  }
+
+  let connection = getVoiceConnection(guild.id);
+  if (!connection || connection.joinConfig.channelId !== channel.id) {
+    // Limpia cualquier conexión previa (posible "fantasma" de una sesión
+    // anterior del bot que quedó registrada en Discord).
+    const existing = getVoiceConnection(guild.id);
+    if (existing) {
+      existing.destroy();
+      await sleep(500);
+    }
+
+    // Hasta 2 intentos: el "stuck en signalling" (VOICE_SERVER_UPDATE que
+    // nunca llega) a menudo se resuelve con un reintento tras limpiar estado.
+    const maxAttempts = 2;
+    let lastGotServer = false;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      let gotServer = false;
+      let gotState = false;
+      const rawProbe = (packet) => {
+        if (packet?.t === 'VOICE_SERVER_UPDATE' && packet?.d?.guild_id === guild.id) {
+          gotServer = true;
+          logger.info(`[voice] ✓ VOICE_SERVER_UPDATE recibido (endpoint: ${packet.d.endpoint})`);
+        }
+        if (packet?.t === 'VOICE_STATE_UPDATE' && packet?.d?.guild_id === guild.id && packet?.d?.user_id === guild.client.user.id) {
+          gotState = true;
+          logger.info(`[voice] ✓ VOICE_STATE_UPDATE (bot) recibido (channel: ${packet.d.channel_id})`);
+        }
+      };
+      guild.client.on('raw', rawProbe);
+
+      connection = joinVoiceChannel({
+        channelId: channel.id,
+        guildId: guild.id,
+        adapterCreator: guild.voiceAdapterCreator,
+        selfDeaf: true,
+        debug: true,
+      });
+
+      connection.on('stateChange', (oldState, newState) => {
+        logger.info(`[voice] (intento ${attempt}) estado ${oldState.status} -> ${newState.status}`);
+      });
+      connection.on('debug', (msg) => {
+        logger.debug(`[voice:debug] ${String(msg).slice(0, 300)}`);
+      });
+      connection.on('error', (err) => {
+        logger.error('[voice] Connection error:', err.message);
+      });
+
+      try {
+        await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+        guild.client.removeListener('raw', rawProbe);
+        break; // ¡conectado!
+      } catch (err) {
+        lastGotServer = gotServer;
+        logger.error(
+          `[voice] intento ${attempt}/${maxAttempts} falló. Estado: ${connection.state.status}. ` +
+          `VOICE_SERVER_UPDATE=${gotServer} VOICE_STATE_UPDATE=${gotState}. Error: ${err.message}`
+        );
+        guild.client.removeListener('raw', rawProbe);
+        connection.destroy();
+        connection = null;
+        if (attempt < maxAttempts) {
+          await sleep(1500);
+          continue;
+        }
+      }
+    }
+
+    if (!connection) {
+      if (!lastGotServer) {
+        throw new Error(
+          'Discord no envió los datos del servidor de voz. Suele ser un problema temporal ' +
+          'de la región de voz — en el canal de voz: Editar canal → Región de voz → elige una fija ' +
+          '(ej. US Central) o "Automático", y vuelve a intentarlo.'
+        );
+      }
+      throw new Error('No se pudo conectar al canal de voz a tiempo (el handshake UDP no completó).');
+    }
+  }
+  const state = getState(guild.id);
   connection.subscribe(state.player);
   return connection;
 }
