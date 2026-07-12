@@ -1,0 +1,154 @@
+<div class="space-y-6">
+  <div class="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-dark-700 rounded-xl p-6">
+    <h1 class="text-3xl font-bold text-purple-400 mb-2">👥 Gestión de Miembros</h1>
+    <p class="text-slate-400">Búsqueda, filtrado y acciones rápidas sobre usuarios</p>
+  </div>
+
+  <!-- Búsqueda y filtros -->
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <div class="flex gap-3 mb-4">
+      <input type="text" id="memberSearch" placeholder="🔍 Buscar miembro por nombre o ID..." class="flex-1 bg-dark-800 border border-dark-700 rounded-lg px-4 py-2 text-slate-300 placeholder-slate-500"/>
+      <select id="sortBy" class="bg-dark-800 border border-dark-700 rounded-lg px-4 py-2 text-slate-300">
+        <option value="name">Nombre (A-Z)</option>
+        <option value="joined">Recién Unido</option>
+        <option value="level">Nivel (Mayor)</option>
+        <option value="warnings">Warnings</option>
+      </select>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <span class="text-xs bg-dark-800 px-3 py-1 rounded-full text-slate-400">Mostrando 1-50 de 342 miembros</span>
+      <span class="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full">✓ 312 en línea</span>
+    </div>
+  </div>
+
+  <!-- Tabla de miembros -->
+  <div class="bg-dark-900 border border-dark-700 rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-dark-700 bg-dark-800">
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Usuario</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Nivel</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Warnings</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Se Unió</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Estado</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-xs">👤</div>
+                <div>
+                  <div class="text-slate-200 font-medium">Usuario#1234</div>
+                  <div class="text-xs text-slate-500 font-mono">123456789</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3"><span class="font-bold text-amber-400">42</span></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded">2</span></td>
+            <td class="px-4 py-3 text-slate-400">Hace 30 días</td>
+            <td class="px-4 py-3"><span class="flex items-center gap-1 text-xs"><span class="w-2 h-2 bg-emerald-400 rounded-full"></span> En línea</span></td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Ver perfil">👁️</button>
+                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Mutar">🔇</button>
+                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Warning">⚠️</button>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-xs">👤</div>
+                <div>
+                  <div class="text-slate-200 font-medium">Spammer#5678</div>
+                  <div class="text-xs text-slate-500 font-mono">987654321</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3"><span class="font-bold text-slate-400">8</span></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded font-bold">5</span></td>
+            <td class="px-4 py-3 text-slate-400">Hace 2 días</td>
+            <td class="px-4 py-3"><span class="flex items-center gap-1 text-xs text-slate-400"><span class="w-2 h-2 bg-slate-400 rounded-full"></span> Offline</span></td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 text-xs rounded" title="Kickear">🚪</button>
+                <button class="px-2 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 text-xs rounded" title="Banear">🔨</button>
+                <button class="px-2 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 text-xs rounded" title="Limpiar Warnings">🗑️</button>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs">👤</div>
+                <div>
+                  <div class="text-slate-200 font-medium">Moderador#9012</div>
+                  <div class="text-xs text-slate-500 font-mono">555888999</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3"><span class="font-bold text-blue-400">78</span></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded">0</span></td>
+            <td class="px-4 py-3 text-slate-400">Hace 90 días</td>
+            <td class="px-4 py-3"><span class="flex items-center gap-1 text-xs"><span class="w-2 h-2 bg-emerald-400 rounded-full"></span> En línea</span></td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Ver perfil">👁️</button>
+                <button class="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs rounded" title="Admin">🛡️</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="flex items-center justify-center gap-2">
+    <button class="px-3 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-slate-300 text-sm">← Anterior</button>
+    <span class="text-slate-400 text-sm">Página 1 de 7</span>
+    <button class="px-3 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-slate-300 text-sm">Siguiente →</button>
+  </div>
+
+  <!-- Acciones en lote -->
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-lg font-semibold mb-4">⚡ Acciones Rápidas</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <button class="flex flex-col items-center gap-2 bg-dark-800 hover:bg-dark-700 rounded-lg px-4 py-3 transition text-slate-300">
+        <span class="text-2xl">🔇</span>
+        <span class="text-xs font-medium">Silenciar</span>
+      </button>
+      <button class="flex flex-col items-center gap-2 bg-dark-800 hover:bg-dark-700 rounded-lg px-4 py-3 transition text-slate-300">
+        <span class="text-2xl">⏱️</span>
+        <span class="text-xs font-medium">Timeout</span>
+      </button>
+      <button class="flex flex-col items-center gap-2 bg-dark-800 hover:bg-dark-700 rounded-lg px-4 py-3 transition text-slate-300">
+        <span class="text-2xl">🧹</span>
+        <span class="text-xs font-medium">Limpiar Warns</span>
+      </button>
+      <button class="flex flex-col items-center gap-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg px-4 py-3 transition text-red-300">
+        <span class="text-2xl">🚪</span>
+        <span class="text-xs font-medium">Kickear</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="bg-blue-500/10 border border-blue-700/30 rounded-lg p-4">
+    <div class="text-sm text-blue-300">
+      <strong>💡 Tips:</strong> Usa los filtros para encontrar usuarios rápidamente. Los Warnings se resetean automáticamente cada mes. Puedes ver el historial de un usuario haciendo click en su avatar.
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('memberSearch').addEventListener('input', (e) => {
+  // Implementar búsqueda en vivo aquí
+  console.log('Buscando:', e.target.value);
+});
+</script>

@@ -1,0 +1,117 @@
+<div class="space-y-6">
+  <div class="bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-dark-700 rounded-xl p-6">
+    <h1 class="text-3xl font-bold text-blue-400 mb-2">📋 Auditoría de Cambios</h1>
+    <p class="text-slate-400">Historial de configuración y acciones administrativas</p>
+  </div>
+
+  <!-- Tabla de auditoría simulada (en producción vendrá de BD) -->
+  <div class="bg-dark-900 border border-dark-700 rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-dark-700 bg-dark-800">
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Fecha</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Admin</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Acción</th>
+            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Detalles</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Hoy 15:30</span></td>
+            <td class="px-4 py-3 text-slate-300"><strong>Admin#1234</strong></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">Config</span></td>
+            <td class="px-4 py-3 text-slate-400">Cambió prefijo de `!` a `g!`</td>
+          </tr>
+          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Hoy 14:12</span></td>
+            <td class="px-4 py-3 text-slate-300"><strong>Mod#5678</strong></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full">Módulo</span></td>
+            <td class="px-4 py-3 text-slate-400">Habilitó módulo <strong>automod</strong></td>
+          </tr>
+          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Hoy 13:45</span></td>
+            <td class="px-4 py-3 text-slate-300"><strong>Admin#1234</strong></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs rounded-full">Canal</span></td>
+            <td class="px-4 py-3 text-slate-400">Configuró canal de logs en #mod-logs</td>
+          </tr>
+          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Ayer 22:01</span></td>
+            <td class="px-4 py-3 text-slate-300"><strong>Admin#1234</strong></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded-full">Seguridad</span></td>
+            <td class="px-4 py-3 text-slate-400">Habilitó anti-raid con umbral de 5</td>
+          </tr>
+          <tr class="hover:bg-dark-800/50 transition">
+            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Ayer 18:30</span></td>
+            <td class="px-4 py-3 text-slate-300"><strong>Mod#5678</strong></td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">Rol</span></td>
+            <td class="px-4 py-3 text-slate-400">Agregó role automático <strong>@Miembro</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Filtros y búsqueda -->
+  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
+    <h2 class="text-lg font-semibold mb-4">Filtrar Auditoría</h2>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-2">Admin</label>
+        <input type="text" placeholder="Buscar por usuario..." class="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300 placeholder-slate-500"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-2">Tipo de Acción</label>
+        <select class="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300">
+          <option value="">Todas</option>
+          <option value="config">Configuración</option>
+          <option value="module">Módulos</option>
+          <option value="channel">Canales</option>
+          <option value="role">Roles</option>
+          <option value="security">Seguridad</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-2">Período</label>
+        <select class="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300">
+          <option value="7">Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+          <option value="all">Todo el tiempo</option>
+        </select>
+      </div>
+    </div>
+    <button class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg">🔍 Filtrar</button>
+  </div>
+
+  <!-- Estadísticas de auditoría -->
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+      <div class="text-slate-400 text-sm font-medium mb-2">📝 Total Cambios</div>
+      <div class="text-3xl font-bold text-blue-400">127</div>
+      <div class="text-slate-500 text-xs mt-1">últimos 30 días</div>
+    </div>
+    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+      <div class="text-slate-400 text-sm font-medium mb-2">👤 Admins Activos</div>
+      <div class="text-3xl font-bold text-emerald-400">5</div>
+      <div class="text-slate-500 text-xs mt-1">han realizado cambios</div>
+    </div>
+    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+      <div class="text-slate-400 text-sm font-medium mb-2">🔐 Cambios Seguridad</div>
+      <div class="text-3xl font-bold text-red-400">12</div>
+      <div class="text-slate-500 text-xs mt-1">antirraids, antinukes</div>
+    </div>
+    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+      <div class="text-slate-400 text-sm font-medium mb-2">📦 Módulos Cambiados</div>
+      <div class="text-3xl font-bold text-purple-400">8</div>
+      <div class="text-slate-500 text-xs mt-1">activados/desactivados</div>
+    </div>
+  </div>
+
+  <!-- Nota sobre privacidad -->
+  <div class="bg-blue-500/10 border border-blue-700/30 rounded-lg p-4">
+    <div class="text-sm text-blue-300">
+      <strong>ℹ️ Privacidad:</strong> Este registro de auditoría solo es visible para administradores. Se mantiene por seguridad y cumplimiento normativo.
+    </div>
+  </div>
+</div>
