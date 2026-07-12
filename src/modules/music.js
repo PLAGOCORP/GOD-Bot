@@ -174,9 +174,18 @@ async function ensureConnection(member) {
       adapterCreator: channel.guild.voiceAdapterCreator,
       selfDeaf: true,
     });
+
+    connection.on('stateChange', (oldState, newState) => {
+      logger.debug(`[voice] ${oldState.status} -> ${newState.status}`);
+    });
+    connection.on('error', (err) => {
+      logger.error('[voice] Connection error:', err.message);
+    });
+
     try {
       await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
-    } catch {
+    } catch (err) {
+      logger.error(`[voice] entersState falló. Estado final: ${connection.state.status}. Error: ${err.message}`);
       connection.destroy();
       throw new Error('No se pudo conectar al canal de voz a tiempo.');
     }

@@ -7,6 +7,14 @@
  * G.O.D. v3 Ultimate — implementación real completa
  */
 require('dotenv').config();
+
+// Fix conexión de voz en Railway/Render/Fly (y otros PaaS): desde Node 18+
+// el orden de resolución DNS por defecto prioriza IPv6, pero muchos
+// contenedores no soportan bien UDP sobre IPv6 — esto hace que el
+// handshake de @discordjs/voice nunca complete ("no se pudo conectar
+// al canal de voz a tiempo"). Forzar IPv4 primero lo arregla.
+require('node:dns').setDefaultResultOrder('ipv4first');
+
 const {
   Client,
   GatewayIntentBits,
