@@ -33,9 +33,7 @@ async function handleReaction(reaction, user, added) {
   const min = settings.starboardMin || 3;
   const count = reaction.count || 0;
 
-  let row = db.db
-    .prepare('SELECT * FROM starboard WHERE message_id = ? AND guild_id = ?')
-    .get(message.id, message.guild.id);
+  let row = await db.getStarboard(message.id, message.guild.id);
 
   const starCh = message.guild.channels.cache.get(settings.starboardChannel);
   if (!starCh) return;
@@ -44,7 +42,7 @@ async function handleReaction(reaction, user, added) {
     if (row?.starboard_message_id) {
       const sm = await starCh.messages.fetch(row.starboard_message_id).catch(() => null);
       if (sm) await sm.delete().catch(() => {});
-      db.db.prepare('DELETE FROM starboard WHERE message_id = ? AND guild_id = ?').run(message.id, message.guild.id);
+      await db.deleteStarboard(message.id, message.guild.id);
     }
     return;
   }
@@ -68,23 +66,20 @@ async function handleReaction(reaction, user, added) {
     const sm = await starCh.messages.fetch(row.starboard_message_id).catch(() => null);
     if (sm) {
       await sm.edit({ content, embeds: [embed] });
-      db.db
-        .prepare('UPDATE starboard SET star_count = ? WHERE message_id = ? AND guild_id = ?')
-        .run(count, message.id, message.guild.id);
+      await db.saveStarboard({ message_id: message.id, guild_id: message.guild.id, star_count: count });
       return;
     }
   }
 
   const sent = await starCh.send({ content, embeds: [embed] });
-  db.db
-    .prepare(
-      `INSERT INTO starboard (message_id, guild_id, channel_id, star_count, starboard_message_id, author_id)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(message_id, guild_id) DO UPDATE SET
-         star_count = excluded.star_count,
-         starboard_message_id = excluded.starboard_message_id`
-    )
-    .run(message.id, message.guild.id, message.channel.id, count, sent.id, message.author?.id || null);
+  await db.saveStarboard({
+    message_id: message.id,
+    guild_id: message.guild.id,
+    channel_id: message.channel.id,
+    star_count: count,
+    starboard_message_id: sent.id,
+    author_id: message.author?.id || null,
+  });
 }
 
 module.exports = { handleReaction };

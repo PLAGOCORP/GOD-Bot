@@ -145,18 +145,7 @@ module.exports = {
         });
       }
       const pollId = Date.now().toString(36);
-      const votes = {}; // optionIndex -> Set serialized later
-      db.db.exec(`
-        CREATE TABLE IF NOT EXISTS polls (
-          id TEXT PRIMARY KEY,
-          guild_id TEXT,
-          channel_id TEXT,
-          message_id TEXT,
-          question TEXT,
-          options_json TEXT,
-          votes_json TEXT DEFAULT '{}'
-        )
-      `);
+      const votes = {};
       const row = new ActionRowBuilder().addComponents(
         ...options.map((opt, i) =>
           new ButtonBuilder()
@@ -171,19 +160,15 @@ module.exports = {
         components: [row],
         fetchReply: true,
       });
-      db.db
-        .prepare(
-          'INSERT INTO polls (id, guild_id, channel_id, message_id, question, options_json, votes_json) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        )
-        .run(
-          pollId,
-          interaction.guild.id,
-          interaction.channel.id,
-          msg.id,
-          question,
-          JSON.stringify(options),
-          '{}'
-        );
+      await db.createPoll({
+        id: pollId,
+        guild_id: interaction.guild.id,
+        channel_id: interaction.channel.id,
+        message_id: msg.id,
+        question,
+        options,
+        votes: {},
+      });
       return;
     }
 

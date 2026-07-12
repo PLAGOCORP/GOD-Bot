@@ -216,7 +216,7 @@ module.exports = {
       }
       const lang = interaction.options.getString('lang');
       db.ensureGuild(interaction.guild.id);
-      db.db.prepare('UPDATE guilds SET language = ? WHERE guild_id = ?').run(lang, interaction.guild.id);
+      await db.setGuildSettings(interaction.guild.id, { language: lang });
       return interaction.reply({
         embeds: [embeds.success('Idioma', lang === 'es' ? 'Español' : 'English')],
       });

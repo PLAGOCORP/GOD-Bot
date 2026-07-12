@@ -14,7 +14,7 @@ function scheduleReminder(reminder, client) {
 
 async function fireReminder(reminder, client) {
   try {
-    db.db.prepare('UPDATE reminders SET fired = 1 WHERE id = ?').run(reminder.id);
+    await db.markReminderFired(reminder.id);
   } catch { /* */ }
   try {
     const user = await client.users.fetch(reminder.user_id);
@@ -27,9 +27,9 @@ async function fireReminder(reminder, client) {
   }
 }
 
-function loadPendingReminders(client) {
+async function loadPendingReminders(client) {
   try {
-    const pending = db.db.prepare('SELECT * FROM reminders WHERE fired = 0 AND remind_at > ?').all(Date.now());
+    const pending = await db.getPendingReminders();
     for (const r of pending) scheduleReminder(r, client);
     if (pending.length) require('../utils/logger').info(`⏰ ${pending.length} recordatorios pendientes cargados`);
   } catch { /* */ }

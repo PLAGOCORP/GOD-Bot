@@ -1,27 +1,21 @@
 const cron = require('node-cron');
+const admin = require('firebase-admin');
 const db = require('../database/db');
 const embeds = require('../utils/embeds');
 const logger = require('../utils/logger');
 
-function setBirthday(guildId, userId, day, month) {
-  db.db
-    .prepare(
-      `INSERT INTO birthdays (user_id, guild_id, birth_day, birth_month)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(user_id, guild_id) DO UPDATE SET birth_day = excluded.birth_day, birth_month = excluded.birth_month`
-    )
-    .run(userId, guildId, day, month);
+async function setBirthday(guildId, userId, day, month) {
+  await db.setBirthday(guildId, userId, day, month);
 }
 
-function getBirthday(guildId, userId) {
-  return db.db
-    .prepare('SELECT * FROM birthdays WHERE guild_id = ? AND user_id = ?')
-    .get(guildId, userId);
+async function getBirthday(guildId, userId) {
+  const snap = await admin.firestore().collection('birthdays').doc(`${guildId}_${userId}`).get();
+  return snap.exists ? snap.data() : null;
 }
 
-function upcoming(guildId, limit = 10) {
+async function upcoming(guildId, limit = 10) {
   const now = new Date();
-  const all = db.db.prepare('SELECT * FROM birthdays WHERE guild_id = ?').all(guildId);
+  const all = await db.getBirthdays(guildId);
   const scored = all.map((b) => {
     let next = new Date(now.getFullYear(), b.birth_month - 1, b.birth_day);
     if (next < now) next = new Date(now.getFullYear() + 1, b.birth_month - 1, b.birth_day);
@@ -45,9 +39,7 @@ async function runDaily(client) {
   const month = now.getMonth() + 1;
   const yearKey = now.getFullYear() * 10000 + month * 100 + day;
 
-  const rows = db.db
-    .prepare('SELECT * FROM birthdays WHERE birth_day = ? AND birth_month = ?')
-    .all(day, month);
+  const rows = await db.getTodayBirthdays();
 
   for (const row of rows) {
     if (row.last_wished === yearKey) continue;
@@ -79,9 +71,7 @@ async function runDaily(client) {
       if (member) await member.roles.add(settings.birthdayRole).catch(() => {});
     }
 
-    db.db
-      .prepare('UPDATE birthdays SET last_wished = ? WHERE user_id = ? AND guild_id = ?')
-      .run(yearKey, row.user_id, row.guild_id);
+    await admin.firestore().collection('birthdays').doc(`${row.guild_id}_${row.user_id}`).set({ last_wished: yearKey }, { merge: true });
   }
 
   // Remove yesterday's birthday role
@@ -91,9 +81,9 @@ async function runDaily(client) {
     const y = new Date(Date.now() - 86400000);
     const yDay = y.getDate();
     const yMonth = y.getMonth() + 1;
-    const old = db.db
-      .prepare('SELECT user_id FROM birthdays WHERE guild_id = ? AND birth_day = ? AND birth_month = ?')
-      .all(guild.id, yDay, yMonth);
+    const oldSnap = await admin.firestore().collection('birthdays')
+      .where('guild_id', '==', guild.id).where('birth_day', '==', yDay).where('birth_month', '==', yMonth).get();
+    const old = oldSnap.docs.map((d) => d.data());
     for (const r of old) {
       const member = await guild.members.fetch(r.user_id).catch(() => null);
       if (member) await member.roles.remove(settings.birthdayRole).catch(() => {});

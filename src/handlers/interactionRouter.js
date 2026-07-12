@@ -115,7 +115,7 @@ async function handleButton(interaction, client) {
 
   if (id.startsWith('poll_vote:')) {
     const [, pollId, optIdx] = id.split(':');
-    const poll = db.db.prepare('SELECT * FROM polls WHERE id = ?').get(pollId);
+    const poll = await db.getPoll(pollId);
     if (!poll) return interaction.reply({ content: 'Encuesta no encontrada.', ephemeral: true });
     const options = JSON.parse(poll.options_json || '[]');
     const votes = JSON.parse(poll.votes_json || '{}');
@@ -126,7 +126,7 @@ async function handleButton(interaction, client) {
     const key = String(optIdx);
     votes[key] = votes[key] || [];
     votes[key].push(interaction.user.id);
-    db.db.prepare('UPDATE polls SET votes_json = ? WHERE id = ?').run(JSON.stringify(votes), pollId);
+    await db.updatePoll(pollId, { votes });
     const body = options
       .map((o, i) => `**${i + 1}.** ${o} — \`${(votes[String(i)] || []).length}\``)
       .join('\n');
@@ -309,7 +309,7 @@ async function handleButton(interaction, client) {
     }
     const sid = id.split(':')[1];
     const status = id.startsWith('sug_approve:') ? 'approved' : 'denied';
-    db.db.prepare('UPDATE suggestions SET status = ? WHERE id = ?').run(status, sid);
+    await db.updateSuggestion(sid, { status });
     return interaction.update({
       content: status === 'approved' ? `✅ Aprobada por ${interaction.user}` : `❌ Rechazada por ${interaction.user}`,
       components: [],
@@ -395,7 +395,7 @@ async function handleSelect(interaction, client) {
 
   if (interaction.customId.startsWith('rolemenu:')) {
     const menuId = interaction.customId.split(':')[1];
-    const menu = db.db.prepare('SELECT * FROM role_menus WHERE id = ?').get(menuId);
+    const menu = await db.getRoleMenu(menuId);
     if (!menu) return interaction.reply({ content: 'Menú no encontrado.', ephemeral: true });
     const options = JSON.parse(menu.options_json || '[]');
     const selected = interaction.values;

@@ -87,7 +87,7 @@ module.exports = {
 
     const tag = db.getTag(message.guild.id, name);
     if (tag) {
-      db.db.prepare('UPDATE tags SET uses = uses + 1 WHERE guild_id = ? AND name = ?').run(message.guild.id, name);
+      await db.incrementTagUses(message.guild.id, name);
       const fakeIx = {
         user: message.author,
         guild: message.guild,

@@ -21,14 +21,14 @@ module.exports = {
     }
     const remindAt = Date.now() + msVal;
     try {
-      db.db.prepare('INSERT INTO reminders (user_id, guild_id, channel_id, content, remind_at) VALUES (?, ?, ?, ?, ?)').run(
+      const id = await db.addReminder(
         interaction.user.id,
         interaction.guild?.id || null,
         interaction.channel?.id || null,
         text,
         remindAt
       );
-      const row = db.db.prepare('SELECT * FROM reminders WHERE user_id = ? AND remind_at = ? ORDER BY id DESC LIMIT 1').get(interaction.user.id, remindAt);
+      const row = await db.getReminder(interaction.user.id, remindAt);
       if (row) scheduleReminder(row, interaction.client);
     } catch { /* */ }
     await interaction.reply({

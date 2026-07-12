@@ -118,12 +118,14 @@ module.exports = {
       if (!options.length) {
         return interaction.reply({ embeds: [embeds.error('Ningún rol válido')], ephemeral: true });
       }
-      const info = db.db
-        .prepare(
-          'INSERT INTO role_menus (guild_id, message_id, channel_id, name, options_json, max_values) VALUES (?, ?, ?, ?, ?, ?)'
-        )
-        .run(interaction.guild.id, 'pending', interaction.channel.id, titulo, JSON.stringify(options), max);
-      const menuId = info.lastInsertRowid;
+      const menuId = await db.createRoleMenu({
+        guild_id: interaction.guild.id,
+        message_id: 'pending',
+        channel_id: interaction.channel.id,
+        name: titulo,
+        options_json: JSON.stringify(options),
+        max_values: max,
+      });
       const select = new StringSelectMenuBuilder()
         .setCustomId(`rolemenu:${menuId}`)
         .setPlaceholder(titulo.slice(0, 100))
@@ -134,7 +136,7 @@ module.exports = {
         embeds: [embeds.god(`🎭 ${titulo}`, 'Elige tus roles en el menú:')],
         components: [new ActionRowBuilder().addComponents(select)],
       });
-      db.db.prepare('UPDATE role_menus SET message_id = ? WHERE id = ?').run(msg.id, menuId);
+      await db.updateRoleMenuMessage(menuId, msg.id);
       return interaction.reply({ embeds: [embeds.success('Menú de roles creado')], ephemeral: true });
     }
 

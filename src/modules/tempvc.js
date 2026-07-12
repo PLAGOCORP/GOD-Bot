@@ -11,17 +11,17 @@ const {
 const db = require('../database/db');
 const embeds = require('../utils/embeds');
 
-function countUserChannels(guildId, userId) {
-  return db.db
-    .prepare('SELECT COUNT(*) AS c FROM temp_channels WHERE guild_id = ? AND creator_id = ?')
-    .get(guildId, userId).c;
+async function countUserChannels(guildId, userId) {
+  const snap = await require('firebase-admin').firestore().collection('tempChannels')
+    .where('guild_id', '==', guildId).where('creator_id', '==', userId).count().get();
+  return snap.data().count;
 }
 
 async function createTempChannel(interaction, name, userLimit) {
   const guild = interaction.guild;
   const settings = db.getGuildSettings(guild.id);
   const limit = settings.tempvcLimit || 3;
-  if (countUserChannels(guild.id, interaction.user.id) >= limit) {
+  if (await countUserChannels(guild.id, interaction.user.id) >= limit) {
     throw new Error(`Ya tienes el máximo de VCs temporales (${limit}).`);
   }
 
@@ -47,9 +47,7 @@ async function createTempChannel(interaction, name, userLimit) {
     reason: `Temp VC por ${interaction.user.tag}`,
   });
 
-  db.db
-    .prepare('INSERT INTO temp_channels (channel_id, guild_id, creator_id) VALUES (?, ?, ?)')
-    .run(channel.id, guild.id, interaction.user.id);
+  await db.saveTempChannel(channel.id, guild.id, interaction.user.id);
 
   // Move user if in voice
   if (interaction.member.voice?.channel) {
@@ -60,21 +58,21 @@ async function createTempChannel(interaction, name, userLimit) {
 }
 
 async function cleanupEmpty(client) {
-  const rows = db.db.prepare('SELECT * FROM temp_channels').all();
+  const rows = await db.getAllTempChannels();
   for (const row of rows) {
     const guild = client.guilds.cache.get(row.guild_id);
     if (!guild) {
-      db.db.prepare('DELETE FROM temp_channels WHERE channel_id = ?').run(row.channel_id);
+      await db.deleteTempChannel(row.channel_id);
       continue;
     }
     const ch = guild.channels.cache.get(row.channel_id);
     if (!ch) {
-      db.db.prepare('DELETE FROM temp_channels WHERE channel_id = ?').run(row.channel_id);
+      await db.deleteTempChannel(row.channel_id);
       continue;
     }
     if (ch.members.filter((m) => !m.user.bot).size === 0) {
       await ch.delete('Temp VC vacío').catch(() => {});
-      db.db.prepare('DELETE FROM temp_channels WHERE channel_id = ?').run(row.channel_id);
+      await db.deleteTempChannel(row.channel_id);
     }
   }
 }

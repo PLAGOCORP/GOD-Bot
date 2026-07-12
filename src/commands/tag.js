@@ -76,7 +76,7 @@ module.exports = {
       if (!tag) {
         return interaction.reply({ embeds: [embeds.error('Tag no existe')], ephemeral: true });
       }
-      db.db.prepare('UPDATE tags SET uses = uses + 1 WHERE guild_id = ? AND name = ?').run(gid, nombre.toLowerCase());
+      await db.incrementTagUses(gid, nombre.toLowerCase());
       return interaction.reply({ content: renderTag(tag.content, interaction) });
     }
 

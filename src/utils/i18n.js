@@ -20,11 +20,11 @@ const strings = {
   },
 };
 
-function t(guildId, key, vars = {}) {
+async function t(guildId, key, vars = {}) {
   let lang = 'es';
   try {
     const db = require('../database/db');
-    const g = db.db.prepare('SELECT language FROM guilds WHERE guild_id = ?').get(guildId);
+    const g = await db.getGuildSettings(guildId);
     if (g?.language) lang = g.language;
   } catch { /* */ }
   let s = strings[lang]?.[key] || strings.es[key] || key;

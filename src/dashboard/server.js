@@ -243,26 +243,26 @@ function createDashboard(client) {
     });
   });
 
-  app.get('/servers/:id', requireAuth, (req, res) => {
+  app.get('/servers/:id', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g) return res.status(403).send('Sin acceso');
     const perms = BigInt(g.permissions || 0);
     if ((perms & 0x8n) !== 0x8n) return res.status(403).send('Necesitas Administrator');
 
-    db.ensureGuild(guildId);
-    const settings = db.getGuildSettings(guildId);
-    const modules = Object.keys(db.DEFAULT_MODULES).map((m) => ({
+    await db.ensureGuild(guildId);
+    const settings = await db.getGuildSettings(guildId);
+    const modEntries = Object.keys(db.DEFAULT_MODULES);
+    const modules = await Promise.all(modEntries.map(async (m) => ({
       name: m,
-      enabled: db.isModuleEnabled(guildId, m),
-    }));
-    const stats = {
-      users: db.db.prepare('SELECT COUNT(*) AS c FROM users WHERE guild_id = ?').get(guildId).c,
-      warns: db.db.prepare('SELECT COUNT(*) AS c FROM warns WHERE guild_id = ? AND active = 1').get(guildId).c,
-      tickets: db.db
-        .prepare("SELECT COUNT(*) AS c FROM tickets WHERE guild_id = ? AND status != 'closed'")
-        .get(guildId).c,
-    };
+      enabled: await db.isModuleEnabled(guildId, m),
+    })));
+    const [users, warns, tickets] = await Promise.all([
+      db.countUsers(guildId),
+      db.countActiveWarns(guildId),
+      db.countOpenTickets(guildId),
+    ]);
+    const stats = { users, warns, tickets };
     const discordGuild = client?.guilds.cache.get(guildId);
     res.render('guild', {
       user: req.session.user,
@@ -276,14 +276,14 @@ function createDashboard(client) {
     });
   });
 
-  app.post('/servers/:id/modules', requireAuth, (req, res) => {
+  app.post('/servers/:id/modules', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).send('Forbidden');
     if (req.body._modules) {
       const all = String(req.body._modules).split(',');
       for (const m of all) {
-        db.setModuleEnabled(guildId, m, req.body[`mod_${m}`] === 'on');
+        await db.setModuleEnabled(guildId, m, req.body[`mod_${m}`] === 'on');
       }
     }
     res.redirect(`/servers/${guildId}`);
@@ -306,7 +306,7 @@ function createDashboard(client) {
     }
   });
 
-  app.post('/servers/:id/modules', requireAuth, (req, res) => {
+  app.post('/servers/:id/modules', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).send('Forbidden');
@@ -319,7 +319,7 @@ function createDashboard(client) {
         });
       }
       for (const [mod, enabled] of Object.entries(mods)) {
-        db.setModuleEnabled(guildId, mod, enabled);
+        await db.setModuleEnabled(guildId, mod, enabled);
       }
       res.redirect(`/servers/${guildId}?ok=modules`);
     } catch (err) {
@@ -327,12 +327,12 @@ function createDashboard(client) {
     }
   });
 
-  app.post('/servers/:id/settings', requireAuth, (req, res) => {
+  app.post('/servers/:id/settings', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).send('Forbidden');
     try {
-      db.setGuildSettings(guildId, req.body);
+      await db.setGuildSettings(guildId, req.body);
       res.redirect(`/servers/${guildId}?ok=settings`);
     } catch (err) {
       res.status(400).send('Error settings: ' + err.message);
@@ -340,13 +340,14 @@ function createDashboard(client) {
   });
 
   // ─── Panel helpers ──────────────────────────────────────────
-  function getGuildCtx(guildId) {
-    db.ensureGuild(guildId);
-    const settings = db.getGuildSettings(guildId);
-    const modules = Object.keys(db.DEFAULT_MODULES).map((m) => ({
+  async function getGuildCtx(guildId) {
+    await db.ensureGuild(guildId);
+    const settings = await db.getGuildSettings(guildId);
+    const modEntries = Object.keys(db.DEFAULT_MODULES);
+    const modules = await Promise.all(modEntries.map(async (m) => ({
       name: m,
-      enabled: db.isModuleEnabled(guildId, m),
-    }));
+      enabled: await db.isModuleEnabled(guildId, m),
+    })));
     const discordGuild = client?.guilds.cache.get(guildId);
     const channels = discordGuild
       ? discordGuild.channels.cache
@@ -367,14 +368,14 @@ function createDashboard(client) {
   const PANEL_TITLES = { general: 'General', channels: 'Canales', roles: 'Roles', welcome: 'Bienvenida', moderation: 'Moderación', logging: 'Logs', tickets: 'Tickets', leveling: 'Niveles', economy: 'Economía', giveaways: 'Sorteos', starboard: 'Starboard', music: 'Música', automod: 'AutoMod', security: 'Seguridad', birthdays: 'Cumpleaños', tempvc: 'Temp VC', stats: 'Estadísticas', tags: 'Tags', confessions: 'Confesiones', suggestions: 'Sugerencias', invites: 'Invitaciones' };
 
   for (const panel of PANELS) {
-    app.get(`/servers/:id/panel/${panel}`, requireAuth, (req, res) => {
+    app.get(`/servers/:id/panel/${panel}`, requireAuth, async (req, res) => {
       const guildId = req.params.id;
       const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
       if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).send('Necesitas Administrator');
-      const ctx = getGuildCtx(guildId);
-      const automodConfig = db.getModuleConfig(guildId, 'automod').config;
+      const ctx = await getGuildCtx(guildId);
+      const { config: automodConfig } = await db.getModuleConfig(guildId, 'automod');
       let tags = [];
-      try { tags = db.db.prepare('SELECT * FROM tags WHERE guild_id = ?').all(guildId); } catch { /* */ }
+      try { tags = await db.listTags(guildId); } catch { /* */ }
       res.render(`panel/${panel}`, {
         layout: 'layout',
         title: PANEL_TITLES[panel] || panel,
@@ -390,19 +391,19 @@ function createDashboard(client) {
   }
 
   // ─── API REST ───────────────────────────────────────────────
-  app.post('/api/guilds/:id/settings', requireAuth, (req, res) => {
+  app.post('/api/guilds/:id/settings', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
     try {
-      db.setGuildSettings(guildId, req.body);
+      await db.setGuildSettings(guildId, req.body);
       res.json({ ok: true, message: 'Configuración guardada' });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
   });
 
-  app.post('/api/guilds/:id/modules', requireAuth, (req, res) => {
+  app.post('/api/guilds/:id/modules', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
@@ -410,7 +411,7 @@ function createDashboard(client) {
       const { modules } = req.body;
       if (modules && typeof modules === 'object') {
         for (const [mod, enabled] of Object.entries(modules)) {
-          db.setModuleEnabled(guildId, mod, !!enabled);
+          await db.setModuleEnabled(guildId, mod, !!enabled);
         }
       }
       res.json({ ok: true, message: 'Módulos actualizados' });
@@ -419,30 +420,30 @@ function createDashboard(client) {
     }
   });
 
-  app.post('/api/guilds/:id/automod', requireAuth, (req, res) => {
+  app.post('/api/guilds/:id/automod', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
     try {
       const { enabled, ...cfg } = req.body;
-      db.setModuleConfig(guildId, 'automod', cfg);
-      db.setModuleEnabled(guildId, 'automod', !!enabled);
+      await db.setModuleConfig(guildId, 'automod', cfg);
+      await db.setModuleEnabled(guildId, 'automod', !!enabled);
       res.json({ ok: true, message: 'AutoMod guardado' });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
   });
 
-  app.post('/api/guilds/:id/tags', requireAuth, (req, res) => {
+  app.post('/api/guilds/:id/tags', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
     if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
     try {
       const { action, name, content } = req.body;
       if (action === 'delete') {
-        db.db.prepare('DELETE FROM tags WHERE guild_id = ? AND name = ?').run(guildId, name);
+        await db.deleteTag(guildId, name);
       } else if (action === 'add' && name && content) {
-        db.db.prepare('INSERT OR REPLACE INTO tags (guild_id, name, content, created_by) VALUES (?, ?, ?, ?)').run(guildId, name, content, req.session.user.id);
+        await db.setTag(guildId, name, content, req.session.user.id);
       }
       res.json({ ok: true, message: 'Tag actualizado' });
     } catch (e) {
@@ -450,17 +451,18 @@ function createDashboard(client) {
     }
   });
 
-  app.get('/api/guilds/:id/stats', requireAuth, (req, res) => {
+  app.get('/api/guilds/:id/stats', requireAuth, async (req, res) => {
     const guildId = req.params.id;
     try {
-      const stats = {
-        users: db.db.prepare('SELECT COUNT(*) AS c FROM users WHERE guild_id = ?').get(guildId).c,
-        warns: db.db.prepare('SELECT COUNT(*) AS c FROM warns WHERE guild_id = ? AND active = 1').get(guildId).c,
-        tickets: db.db.prepare("SELECT COUNT(*) AS c FROM tickets WHERE guild_id = ? AND status != 'closed'").get(guildId).c,
-        tags: db.db.prepare('SELECT COUNT(*) AS c FROM tags WHERE guild_id = ?').get(guildId).c,
-        confessions: db.db.prepare("SELECT COUNT(*) AS c FROM confessions WHERE guild_id = ? AND status = 'pending'").get(guildId).c,
-        suggestions: db.db.prepare("SELECT COUNT(*) AS c FROM suggestions WHERE guild_id = ? AND status = 'pending'").get(guildId).c,
-      };
+      const [users, warns, tickets, tags, confessions, suggestions] = await Promise.all([
+        db.countUsers(guildId),
+        db.countActiveWarns(guildId),
+        db.countOpenTickets(guildId),
+        db.countTags(guildId),
+        db.countPendingConfessions(guildId),
+        db.countPendingSuggestions(guildId),
+      ]);
+      const stats = { users, warns, tickets, tags, confessions, suggestions };
       res.json({ ok: true, stats });
     } catch (e) {
       res.status(500).json({ error: e.message });

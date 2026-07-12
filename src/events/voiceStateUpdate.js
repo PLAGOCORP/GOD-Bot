@@ -19,7 +19,7 @@ module.exports = {
 
     // Cleanup empty temp VCs shortly after leave
     if (oldState.channelId && oldState.channelId !== newState.channelId) {
-      const row = db.db.prepare('SELECT * FROM temp_channels WHERE channel_id = ?').get(oldState.channelId);
+      const row = await db.getTempChannel(oldState.channelId);
       if (row) {
         setTimeout(() => tempvc.cleanupEmpty(client), 3000);
       }

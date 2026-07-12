@@ -9,25 +9,23 @@ const {
 const db = require('../database/db');
 const embeds = require('../utils/embeds');
 
-function submit(guildId, authorId, content) {
-  const info = db.db
-    .prepare(
-      `INSERT INTO confessions (guild_id, author_id, content, status) VALUES (?, ?, ?, 'pending')`
-    )
-    .run(guildId, authorId, content);
-  return info.lastInsertRowid;
+async function submit(guildId, authorId, content) {
+  return db.createConfession({
+    guild_id: guildId,
+    author_id: authorId,
+    content,
+    status: 'pending',
+  });
 }
 
-function get(id) {
-  return db.db.prepare('SELECT * FROM confessions WHERE id = ?').get(id);
+async function get(id) {
+  return db.getConfession(id);
 }
 
-function setStatus(id, status, modId, messageId = null) {
-  db.db
-    .prepare(
-      'UPDATE confessions SET status = ?, approved_by = ?, published_message_id = COALESCE(?, published_message_id) WHERE id = ?'
-    )
-    .run(status, modId, messageId, id);
+async function setStatus(id, status, modId, messageId = null) {
+  const fields = { status, approved_by: modId };
+  if (messageId) fields.published_message_id = messageId;
+  await db.updateConfession(id, fields);
 }
 
 function confessModal() {

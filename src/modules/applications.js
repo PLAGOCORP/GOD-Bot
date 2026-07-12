@@ -6,60 +6,49 @@ const {
   TextInputBuilder,
   TextInputStyle,
 } = require('discord.js');
+const admin = require('firebase-admin');
 const db = require('../database/db');
 const embeds = require('../utils/embeds');
 
-function createType(guildId, type, title, description, reviewChannelId, approveRoleId, questions) {
-  db.db
-    .prepare(
-      `INSERT INTO application_types (guild_id, type, title, description, questions_json, review_channel_id, approve_role_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(guild_id, type) DO UPDATE SET
-         title = excluded.title,
-         description = excluded.description,
-         questions_json = excluded.questions_json,
-         review_channel_id = excluded.review_channel_id,
-         approve_role_id = excluded.approve_role_id`
-    )
-    .run(
-      guildId,
-      type.toLowerCase(),
-      title,
-      description || '',
-      JSON.stringify(questions || ['¿Por qué te postulas?', 'Experiencia', 'Disponibilidad']),
-      reviewChannelId || null,
-      approveRoleId || null
-    );
+async function createType(guildId, type, title, description, reviewChannelId, approveRoleId, questions) {
+  const docId = `${guildId}_${type.toLowerCase()}`;
+  await admin.firestore().collection('applicationTypes').doc(docId).set({
+    guild_id: guildId,
+    type: type.toLowerCase(),
+    title,
+    description: description || '',
+    questions_json: JSON.stringify(questions || ['¿Por qué te postulas?', 'Experiencia', 'Disponibilidad']),
+    review_channel_id: reviewChannelId || null,
+    approve_role_id: approveRoleId || null,
+  }, { merge: true });
 }
 
-function getType(guildId, type) {
-  return db.db
-    .prepare('SELECT * FROM application_types WHERE guild_id = ? AND type = ?')
-    .get(guildId, type.toLowerCase());
+async function getType(guildId, type) {
+  const snap = await admin.firestore().collection('applicationTypes')
+    .where('guild_id', '==', guildId).where('type', '==', type.toLowerCase()).limit(1).get();
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
 }
 
-function listTypes(guildId) {
-  return db.db.prepare('SELECT * FROM application_types WHERE guild_id = ?').all(guildId);
+async function listTypes(guildId) {
+  return db.getApplicationTypes(guildId);
 }
 
-function submit(guildId, userId, type, answers) {
-  const info = db.db
-    .prepare(
-      `INSERT INTO applications (guild_id, user_id, type, status, answers_json)
-       VALUES (?, ?, ?, 'pending', ?)`
-    )
-    .run(guildId, userId, type.toLowerCase(), JSON.stringify(answers));
-  return info.lastInsertRowid;
+async function submit(guildId, userId, type, answers) {
+  return db.createApplication({
+    guild_id: guildId,
+    user_id: userId,
+    type: type.toLowerCase(),
+    status: 'pending',
+    answers_json: JSON.stringify(answers),
+  });
 }
 
-function getApp(id) {
-  return db.db.prepare('SELECT * FROM applications WHERE id = ?').get(id);
+async function getApp(id) {
+  return db.getApplication(id);
 }
 
-function setStatus(id, status, reviewerId) {
-  db.db
-    .prepare('UPDATE applications SET status = ?, reviewed_by = ? WHERE id = ?')
-    .run(status, reviewerId, id);
+async function setStatus(id, status, reviewerId) {
+  await db.updateApplication(id, { status, reviewed_by: reviewerId });
 }
 
 function reviewButtons(appId) {
