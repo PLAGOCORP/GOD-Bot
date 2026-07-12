@@ -8,12 +8,13 @@ const path = require('path');
 
 const out = path.join(__dirname, '..', 'web', 'public', 'config.js');
 const clientId = process.env.CLIENT_ID || '';
-const apiBase = process.env.API_PUBLIC_URL || process.env.DASHBOARD_URL || '';
+const apiBase = process.env.API_PUBLIC_URL || '';
+const dashboardUrl = process.env.DASHBOARD_URL || apiBase || '';
 const content = `/** Generado por scripts/write-web-config.js — no editar a mano si usas el script */
 window.GOD_SITE = {
   clientId: ${JSON.stringify(clientId === 'tu_client_id_aqui' ? '' : clientId)},
   apiBase: ${JSON.stringify(apiBase.includes('localhost') ? '' : apiBase)},
-  dashboardUrl: ${JSON.stringify(apiBase.includes('localhost') ? '' : apiBase)},
+  dashboardUrl: ${JSON.stringify(dashboardUrl.includes('localhost') ? '' : dashboardUrl)},
 };
 window.FIREBASE_CONFIG = {
   apiKey: ${JSON.stringify(process.env.FIREBASE_API_KEY || '')},
