@@ -14,7 +14,6 @@ module.exports = {
         .setDescription('Crea un tipo de aplicación')
         .addStringOption((o) => o.setName('tipo').setDescription('ID tipo ej: staff').setRequired(true))
         .addStringOption((o) => o.setName('titulo').setDescription('Título').setRequired(true))
-        .addStringOption((o) => o.setName('descripcion').setDescription('Descripción'))
         .addChannelOption((o) =>
           o
             .setName('revision')
@@ -22,6 +21,7 @@ module.exports = {
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(true)
         )
+        .addStringOption((o) => o.setName('descripcion').setDescription('Descripción'))
         .addRoleOption((o) => o.setName('rol_aprobar').setDescription('Rol al aprobar'))
     )
     .addSubcommand((s) =>
