@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title><%= title %> — BotGod Dashboard</title>
+  <title><%= title %> — BotGod</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -17,60 +17,45 @@
       }
     }
   </script>
-  <style>
-    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-    .sidebar-link { transition: all 0.15s ease; }
-    .sidebar-link:hover, .sidebar-link.active { background: rgba(251,191,36,0.1); color: #fbbf24; }
-    .sidebar-link.active { border-right: 3px solid #fbbf24; }
-    .fade-in { animation: fadeIn 0.2s ease-in; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-    .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s; }
-    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-  </style>
+  <link rel="stylesheet" href="/public/css/dashboard.css"/>
 </head>
-<body class="bg-dark-950 text-slate-100 min-h-screen flex">
-  <%- include('partials/sidebar', { guild, current: section, user }) %>
+<body class="dashboard-body min-h-screen">
+  <div id="dash-bg"></div>
+  <canvas id="dash-stars"></canvas>
+  <div id="dash-overlay" class="dash-overlay"></div>
 
-  <div class="flex-1 flex flex-col min-h-screen ml-0 lg:ml-64">
-    <header class="bg-dark-900/80 backdrop-blur border-b border-dark-700 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
-      <div class="flex items-center gap-3">
-        <button id="menuToggle" class="lg:hidden text-slate-400 hover:text-white">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-        <h1 class="text-lg font-semibold"><%= title %></h1>
-      </div>
-      <div class="flex items-center gap-3">
-        <span class="text-sm text-slate-400"><%= guild.name %></span>
-        <% if (guild.icon) { %>
-          <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png" class="w-8 h-8 rounded-full"/>
-        <% } else { %>
-          <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-sm"><%= guild.name.charAt(0) %></div>
-        <% } %>
-      </div>
-    </header>
+  <div class="dash-shell flex min-h-screen">
+    <%- include('partials/sidebar', { guild, current: section, user, botVersion }) %>
 
-    <main class="flex-1 p-6 fade-in">
-      <%- body %>
-    </main>
+    <div class="dash-main flex-1 flex flex-col">
+      <header class="dash-header">
+        <div class="flex items-center gap-3">
+          <button id="menuToggle" type="button" class="lg:hidden text-slate-400 hover:text-amber-400 transition p-1" aria-label="Menú">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div>
+            <div class="dash-header-title"><%= title %></div>
+            <div class="dash-header-sub">Panel de administración</div>
+          </div>
+        </div>
+        <div class="dash-guild-badge">
+          <span class="text-sm font-medium text-slate-300 hidden sm:inline max-w-[140px] truncate"><%= guild.name %></span>
+          <% if (guild.icon) { %>
+            <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png?size=64" alt=""/>
+          <% } else { %>
+            <div class="guild-icon-fallback"><%= guild.name.charAt(0) %></div>
+          <% } %>
+        </div>
+      </header>
+
+      <main class="dash-content">
+        <%- body %>
+      </main>
+    </div>
   </div>
 
-  <div id="toast" class="hidden fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg toast max-w-sm"></div>
-
+  <script src="/public/js/dashboard.js"></script>
   <script>
-    document.getElementById('menuToggle')?.addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    });
-
-    function showToast(msg, type = 'success') {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = 'fixed top-4 right-4 z-50 text-white px-4 py-3 rounded-lg shadow-lg toast max-w-sm ' +
-        (type === 'error' ? 'bg-red-600' : type === 'warning' ? 'bg-amber-600' : 'bg-emerald-600');
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3000);
-    }
-
     async function saveSettings(url, data) {
       try {
         const res = await fetch(url, {
@@ -79,7 +64,7 @@
           body: JSON.stringify(data)
         });
         const json = await res.json();
-        if (json.ok) showToast(json.message || 'Guardado');
+        if (json.ok) showToast(json.message || 'Guardado correctamente');
         else showToast(json.error || 'Error al guardar', 'error');
       } catch (e) {
         showToast('Error de conexión', 'error');
