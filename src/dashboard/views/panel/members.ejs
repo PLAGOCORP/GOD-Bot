@@ -1,154 +1,297 @@
-<div class="space-y-6">
-  <div class="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-dark-700 rounded-xl p-6">
-    <h1 class="text-3xl font-bold text-purple-400 mb-2">👥 Gestión de Miembros</h1>
-    <p class="text-slate-400">Búsqueda, filtrado y acciones rápidas sobre usuarios</p>
+<div class="space-y-6 max-w-6xl" id="membersPanel" data-guild-id="<%= guild.id %>">
+  <div class="dash-hero">
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <p class="text-amber-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Administración</p>
+        <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">👥 Miembros</h1>
+        <p class="text-slate-500 text-sm">Datos en vivo de Discord + nivel, economía y warnings de Firestore.</p>
+      </div>
+      <div class="flex gap-3">
+        <div class="dash-stat-card stat-amber" style="padding:0.85rem 1.1rem">
+          <div class="text-slate-500 text-xs uppercase font-semibold">Total</div>
+          <div class="text-2xl font-black text-amber-400" id="stat-total">—</div>
+        </div>
+        <div class="dash-stat-card stat-emerald" style="padding:0.85rem 1.1rem">
+          <div class="text-slate-500 text-xs uppercase font-semibold">En línea</div>
+          <div class="text-2xl font-black text-emerald-400" id="stat-online">—</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Búsqueda y filtros -->
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <div class="flex gap-3 mb-4">
-      <input type="text" id="memberSearch" placeholder="🔍 Buscar miembro por nombre o ID..." class="flex-1 bg-dark-800 border border-dark-700 rounded-lg px-4 py-2 text-slate-300 placeholder-slate-500"/>
-      <select id="sortBy" class="bg-dark-800 border border-dark-700 rounded-lg px-4 py-2 text-slate-300">
-        <option value="name">Nombre (A-Z)</option>
-        <option value="joined">Recién Unido</option>
-        <option value="level">Nivel (Mayor)</option>
-        <option value="warnings">Warnings</option>
+  <div class="dash-card p-5">
+    <div class="flex flex-col sm:flex-row gap-3 mb-4">
+      <div class="servers-search-wrap flex-1 mb-0">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="search" id="memberSearch" class="servers-search w-full" placeholder="Buscar por nombre o ID de Discord..." autocomplete="off"/>
+      </div>
+      <select id="sortBy" class="servers-search sm:w-44" style="padding-left:1rem">
+        <option value="name">Nombre A-Z</option>
+        <option value="joined">Recién unidos</option>
+        <option value="level">Mayor nivel</option>
+        <option value="warnings">Más warnings</option>
       </select>
+      <button type="button" id="btnRefresh" class="dash-btn-primary" style="white-space:nowrap">↻ Actualizar</button>
     </div>
-    <div class="flex gap-2 flex-wrap">
-      <span class="text-xs bg-dark-800 px-3 py-1 rounded-full text-slate-400">Mostrando 1-50 de 342 miembros</span>
-      <span class="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full">✓ 312 en línea</span>
-    </div>
+    <p class="text-xs text-slate-500" id="membersMeta">Cargando...</p>
   </div>
 
-  <!-- Tabla de miembros -->
-  <div class="bg-dark-900 border border-dark-700 rounded-xl overflow-hidden">
+  <div class="dash-card overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm" id="membersTable">
         <thead>
-          <tr class="border-b border-dark-700 bg-dark-800">
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Usuario</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Nivel</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Warnings</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Se Unió</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Estado</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Acciones</th>
+          <tr class="border-b border-white/5 text-left">
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Usuario</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Nivel</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Coins</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Warns</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Unión</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Estado</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-xs">👤</div>
-                <div>
-                  <div class="text-slate-200 font-medium">Usuario#1234</div>
-                  <div class="text-xs text-slate-500 font-mono">123456789</div>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-3"><span class="font-bold text-amber-400">42</span></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded">2</span></td>
-            <td class="px-4 py-3 text-slate-400">Hace 30 días</td>
-            <td class="px-4 py-3"><span class="flex items-center gap-1 text-xs"><span class="w-2 h-2 bg-emerald-400 rounded-full"></span> En línea</span></td>
-            <td class="px-4 py-3">
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Ver perfil">👁️</button>
-                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Mutar">🔇</button>
-                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Warning">⚠️</button>
-              </div>
-            </td>
-          </tr>
-
-          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-xs">👤</div>
-                <div>
-                  <div class="text-slate-200 font-medium">Spammer#5678</div>
-                  <div class="text-xs text-slate-500 font-mono">987654321</div>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-3"><span class="font-bold text-slate-400">8</span></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded font-bold">5</span></td>
-            <td class="px-4 py-3 text-slate-400">Hace 2 días</td>
-            <td class="px-4 py-3"><span class="flex items-center gap-1 text-xs text-slate-400"><span class="w-2 h-2 bg-slate-400 rounded-full"></span> Offline</span></td>
-            <td class="px-4 py-3">
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 text-xs rounded" title="Kickear">🚪</button>
-                <button class="px-2 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 text-xs rounded" title="Banear">🔨</button>
-                <button class="px-2 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 text-xs rounded" title="Limpiar Warnings">🗑️</button>
-              </div>
-            </td>
-          </tr>
-
-          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs">👤</div>
-                <div>
-                  <div class="text-slate-200 font-medium">Moderador#9012</div>
-                  <div class="text-xs text-slate-500 font-mono">555888999</div>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-3"><span class="font-bold text-blue-400">78</span></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded">0</span></td>
-            <td class="px-4 py-3 text-slate-400">Hace 90 días</td>
-            <td class="px-4 py-3"><span class="flex items-center gap-1 text-xs"><span class="w-2 h-2 bg-emerald-400 rounded-full"></span> En línea</span></td>
-            <td class="px-4 py-3">
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs rounded" title="Ver perfil">👁️</button>
-                <button class="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs rounded" title="Admin">🛡️</button>
-              </div>
-            </td>
-          </tr>
+        <tbody id="membersBody">
+          <tr><td colspan="7" class="px-4 py-12 text-center text-slate-500">Cargando miembros...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Paginación -->
-  <div class="flex items-center justify-center gap-2">
-    <button class="px-3 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-slate-300 text-sm">← Anterior</button>
-    <span class="text-slate-400 text-sm">Página 1 de 7</span>
-    <button class="px-3 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-slate-300 text-sm">Siguiente →</button>
+  <div class="flex items-center justify-center gap-3" id="pagination">
+    <button type="button" id="btnPrev" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-sm hover:border-amber-500/30 transition disabled:opacity-40" disabled>← Anterior</button>
+    <span class="text-slate-500 text-sm" id="pageInfo">Página 1</span>
+    <button type="button" id="btnNext" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-sm hover:border-amber-500/30 transition disabled:opacity-40" disabled>Siguiente →</button>
   </div>
+</div>
 
-  <!-- Acciones en lote -->
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-lg font-semibold mb-4">⚡ Acciones Rápidas</h2>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <button class="flex flex-col items-center gap-2 bg-dark-800 hover:bg-dark-700 rounded-lg px-4 py-3 transition text-slate-300">
-        <span class="text-2xl">🔇</span>
-        <span class="text-xs font-medium">Silenciar</span>
-      </button>
-      <button class="flex flex-col items-center gap-2 bg-dark-800 hover:bg-dark-700 rounded-lg px-4 py-3 transition text-slate-300">
-        <span class="text-2xl">⏱️</span>
-        <span class="text-xs font-medium">Timeout</span>
-      </button>
-      <button class="flex flex-col items-center gap-2 bg-dark-800 hover:bg-dark-700 rounded-lg px-4 py-3 transition text-slate-300">
-        <span class="text-2xl">🧹</span>
-        <span class="text-xs font-medium">Limpiar Warns</span>
-      </button>
-      <button class="flex flex-col items-center gap-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg px-4 py-3 transition text-red-300">
-        <span class="text-2xl">🚪</span>
-        <span class="text-xs font-medium">Kickear</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Tips -->
-  <div class="bg-blue-500/10 border border-blue-700/30 rounded-lg p-4">
-    <div class="text-sm text-blue-300">
-      <strong>💡 Tips:</strong> Usa los filtros para encontrar usuarios rápidamente. Los Warnings se resetean automáticamente cada mes. Puedes ver el historial de un usuario haciendo click en su avatar.
-    </div>
+<!-- Modal perfil -->
+<div id="memberModal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.65);backdrop-filter:blur(6px)">
+  <div class="dash-card w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
+    <button type="button" id="modalClose" class="absolute top-4 right-4 text-slate-500 hover:text-white text-xl">×</button>
+    <div id="modalContent"></div>
   </div>
 </div>
 
 <script>
-document.getElementById('memberSearch').addEventListener('input', (e) => {
-  // Implementar búsqueda en vivo aquí
-  console.log('Buscando:', e.target.value);
-});
+(function () {
+  const root = document.getElementById('membersPanel');
+  const guildId = root.dataset.guildId;
+  let state = { page: 1, pages: 1, q: '', sort: 'name', loading: false };
+  let searchTimer;
+
+  const els = {
+    body: document.getElementById('membersBody'),
+    meta: document.getElementById('membersMeta'),
+    total: document.getElementById('stat-total'),
+    online: document.getElementById('stat-online'),
+    pageInfo: document.getElementById('pageInfo'),
+    prev: document.getElementById('btnPrev'),
+    next: document.getElementById('btnNext'),
+    search: document.getElementById('memberSearch'),
+    sort: document.getElementById('sortBy'),
+    modal: document.getElementById('memberModal'),
+    modalContent: document.getElementById('modalContent'),
+  };
+
+  function statusLabel(s) {
+    const map = { online: ['En línea', '#34d399'], idle: ['Ausente', '#fbbf24'], dnd: ['No molestar', '#f87171'], offline: ['Offline', '#64748b'] };
+    const [label, color] = map[s] || map.offline;
+    return `<span class="flex items-center gap-1.5 text-xs"><span class="w-2 h-2 rounded-full" style="background:${color}"></span>${label}</span>`;
+  }
+
+  function formatDate(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const diff = Date.now() - ts;
+    const days = Math.floor(diff / 86400000);
+    if (days < 1) return 'Hoy';
+    if (days < 30) return `Hace ${days}d`;
+    return d.toLocaleDateString('es-ES');
+  }
+
+  function warnBadge(n) {
+    if (n >= 3) return `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/20 text-red-300">${n}</span>`;
+    if (n > 0) return `<span class="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-300">${n}</span>`;
+    return `<span class="px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-400">0</span>`;
+  }
+
+  async function loadMembers() {
+    if (state.loading) return;
+    state.loading = true;
+    els.body.innerHTML = '<tr><td colspan="7" class="px-4 py-12 text-center text-slate-500">Cargando...</td></tr>';
+    try {
+      const params = new URLSearchParams({ page: state.page, sort: state.sort, limit: 25 });
+      if (state.q) params.set('q', state.q);
+      const res = await fetch(`/api/guilds/${guildId}/members?${params}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Error');
+      state.pages = data.pages;
+      els.total.textContent = data.total;
+      els.online.textContent = data.online;
+      const from = data.total ? (data.page - 1) * data.limit + 1 : 0;
+      const to = Math.min(data.page * data.limit, data.total);
+      els.meta.textContent = `Mostrando ${from}-${to} de ${data.total} miembros`;
+      els.pageInfo.textContent = `Página ${data.page} de ${data.pages}`;
+      els.prev.disabled = data.page <= 1;
+      els.next.disabled = data.page >= data.pages;
+
+      if (!data.members.length) {
+        els.body.innerHTML = '<tr><td colspan="7" class="px-4 py-12 text-center text-slate-500">No se encontraron miembros</td></tr>';
+        return;
+      }
+
+      els.body.innerHTML = data.members.map((m) => `
+        <tr class="border-b border-white/5 hover:bg-white/[0.02] transition member-row" data-id="${m.id}">
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-3">
+              <img src="${m.avatar}" alt="" class="w-9 h-9 rounded-full border border-white/10"/>
+              <div class="min-w-0">
+                <div class="font-semibold text-slate-200 truncate">${escapeHtml(m.displayName)}</div>
+                <div class="text-xs text-slate-600 font-mono truncate">@${escapeHtml(m.username)} · ${m.id}</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-3 font-bold text-amber-400">${m.level}</td>
+          <td class="px-4 py-3 font-mono text-emerald-400/90 text-xs">${Number(m.balance).toLocaleString('es-ES')}</td>
+          <td class="px-4 py-3">${warnBadge(m.warns)}</td>
+          <td class="px-4 py-3 text-slate-500 text-xs">${formatDate(m.joinedAt)}</td>
+          <td class="px-4 py-3">${statusLabel(m.status)}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-1 flex-wrap">
+              <button type="button" class="member-action px-2 py-1 rounded text-xs bg-white/5 hover:bg-amber-500/10 text-slate-300" data-action="view" data-id="${m.id}">Ver</button>
+              <button type="button" class="member-action px-2 py-1 rounded text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-300" data-action="warn" data-id="${m.id}">Warn</button>
+              <button type="button" class="member-action px-2 py-1 rounded text-xs bg-white/5 hover:bg-white/10 text-slate-400" data-action="timeout" data-id="${m.id}">Timeout</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      els.body.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-red-400">${escapeHtml(e.message)}</td></tr>`;
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  async function openProfile(userId) {
+    els.modal.classList.remove('hidden');
+    els.modal.classList.add('flex');
+    els.modalContent.innerHTML = '<p class="text-slate-500">Cargando perfil...</p>';
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/members/${userId}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      const m = data.member;
+      const warnsHtml = m.warnsList.length
+        ? m.warnsList.map((w) => `<li class="text-xs text-slate-400 py-1 border-b border-white/5"><strong class="text-amber-400/80">#${w.id.slice(0,6)}</strong> — ${escapeHtml(w.reason)} <span class="text-slate-600">(${new Date(w.timestamp).toLocaleDateString('es-ES')})</span></li>`).join('')
+        : '<li class="text-xs text-slate-600">Sin advertencias activas</li>';
+      const rolesHtml = m.roles.map((r) => `<span class="dash-module-pill off text-[10px]">${escapeHtml(r.name)}</span>`).join(' ');
+
+      els.modalContent.innerHTML = `
+        <div class="flex items-center gap-4 mb-5">
+          <img src="${m.avatar}" class="w-16 h-16 rounded-2xl border-2 border-amber-500/20"/>
+          <div>
+            <h3 class="text-xl font-bold text-white">${escapeHtml(m.displayName)}</h3>
+            <p class="text-sm text-slate-500">@${escapeHtml(m.username)}</p>
+            <p class="text-xs font-mono text-slate-600 mt-1">${m.id}</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
+          <div class="p-3 rounded-lg bg-white/[0.03]"><span class="text-slate-500 text-xs">Nivel</span><div class="font-bold text-amber-400">${m.level}</div></div>
+          <div class="p-3 rounded-lg bg-white/[0.03]"><span class="text-slate-500 text-xs">Balance</span><div class="font-bold text-emerald-400">${Number(m.balance).toLocaleString('es-ES')}</div></div>
+          <div class="p-3 rounded-lg bg-white/[0.03]"><span class="text-slate-500 text-xs">XP texto</span><div class="font-bold text-slate-300">${m.xpText}</div></div>
+          <div class="p-3 rounded-lg bg-white/[0.03]"><span class="text-slate-500 text-xs">Mensajes</span><div class="font-bold text-slate-300">${m.messages}</div></div>
+        </div>
+        <div class="mb-4"><span class="text-xs text-slate-500 uppercase font-bold">Roles</span><div class="flex flex-wrap gap-1 mt-2">${rolesHtml || '<span class="text-slate-600 text-xs">Sin roles</span>'}</div></div>
+        <div class="mb-5"><span class="text-xs text-slate-500 uppercase font-bold">Warnings</span><ul class="mt-2">${warnsHtml}</ul></div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="mod-btn dash-btn-primary text-sm" data-action="warn" data-id="${m.id}">⚠️ Warn</button>
+          <button type="button" class="mod-btn px-3 py-2 rounded-lg text-sm bg-white/5 text-slate-300 hover:bg-white/10" data-action="timeout" data-id="${m.id}">⏱️ Timeout</button>
+          <button type="button" class="mod-btn px-3 py-2 rounded-lg text-sm bg-white/5 text-slate-300 hover:bg-white/10" data-action="clearwarns" data-id="${m.id}">🧹 Limpiar warns</button>
+          <button type="button" class="mod-btn px-3 py-2 rounded-lg text-sm bg-orange-500/10 text-orange-300 hover:bg-orange-500/20" data-action="kick" data-id="${m.id}">🚪 Kick</button>
+          <button type="button" class="mod-btn px-3 py-2 rounded-lg text-sm bg-red-500/10 text-red-300 hover:bg-red-500/20" data-action="ban" data-id="${m.id}">🔨 Ban</button>
+        </div>
+      `;
+    } catch (e) {
+      els.modalContent.innerHTML = `<p class="text-red-400">${escapeHtml(e.message)}</p>`;
+    }
+  }
+
+  async function doModerate(userId, action) {
+    let reason = '';
+    let durationMinutes = 10;
+    if (action === 'warn' || action === 'kick' || action === 'ban' || action === 'timeout') {
+      reason = prompt('Razón (opcional):') || 'Sin razón especificada';
+      if (reason === null) return;
+    }
+    if (action === 'timeout') {
+      const mins = prompt('Duración en minutos (1-40320):', '10');
+      if (mins === null) return;
+      durationMinutes = parseInt(mins, 10) || 10;
+    }
+    if (action === 'kick' || action === 'ban') {
+      if (!confirm(`¿Confirmas ${action} para este usuario?`)) return;
+    }
+    if (action === 'clearwarns' && !confirm('¿Eliminar todos los warnings?')) return;
+
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/members/${userId}/moderate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, reason, durationMinutes }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      showToast(data.message || 'Hecho');
+      loadMembers();
+      if (!els.modal.classList.contains('hidden')) openProfile(userId);
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  els.search.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      state.q = els.search.value.trim();
+      state.page = 1;
+      loadMembers();
+    }, 400);
+  });
+
+  els.sort.addEventListener('change', () => {
+    state.sort = els.sort.value;
+    state.page = 1;
+    loadMembers();
+  });
+
+  document.getElementById('btnRefresh').addEventListener('click', () => loadMembers());
+  els.prev.addEventListener('click', () => { if (state.page > 1) { state.page--; loadMembers(); } });
+  els.next.addEventListener('click', () => { if (state.page < state.pages) { state.page++; loadMembers(); } });
+
+  document.getElementById('modalClose').addEventListener('click', () => {
+    els.modal.classList.add('hidden');
+    els.modal.classList.remove('flex');
+  });
+
+  els.modal.addEventListener('click', (e) => {
+    if (e.target === els.modal) {
+      els.modal.classList.add('hidden');
+      els.modal.classList.remove('flex');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.member-action, .mod-btn');
+    if (!btn) return;
+    const { action, id } = btn.dataset;
+    if (action === 'view') openProfile(id);
+    else doModerate(id, action);
+  });
+
+  loadMembers();
+})();
 </script>

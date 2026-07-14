@@ -69,6 +69,14 @@
       ]
     },
     {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "warns_count", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "confessions",
       "queryScope": "COLLECTION",
       "fields": [

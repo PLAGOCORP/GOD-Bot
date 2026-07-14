@@ -12,6 +12,7 @@ const db = require('../database/db');
 const logger = require('../utils/logger');
 const { handleInteractions } = require('./interactions');
 const { handleRoleConnectionsVerification } = require('./roleConnections');
+const membersApi = require('./membersApi');
 
 const expressLayouts = require('express-ejs-layouts');
 
@@ -122,6 +123,15 @@ function createDashboard(client) {
     });
     const token = await tokenRes.json();
     return token.access_token ? { accessToken: token.access_token, expiresAt: Date.now() + (token.expires_in || 604800) * 1000 } : null;
+  }
+
+  function requireGuildAdminApi(req, res, guildId) {
+    const g = (req.session.user?.guilds || []).find((x) => x.id === guildId);
+    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) {
+      res.status(403).json({ error: 'Forbidden' });
+      return false;
+    }
+    return true;
   }
 
   function requireAuth(req, res, next) {
@@ -648,6 +658,57 @@ function createDashboard(client) {
       res.json({ ok: true, message: 'Tag actualizado' });
     } catch (e) {
       res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/guilds/:id/members', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    if (!client) return res.status(503).json({ error: 'Bot no conectado' });
+    try {
+      const data = await membersApi.listMembers(client, guildId, {
+        q: req.query.q || '',
+        sort: req.query.sort || 'name',
+        page: parseInt(req.query.page || '1', 10),
+        limit: Math.min(parseInt(req.query.limit || '25', 10), 50),
+      });
+      res.json({ ok: true, ...data });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/guilds/:id/members/:userId', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    const { userId } = req.params;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    if (!client) return res.status(503).json({ error: 'Bot no conectado' });
+    try {
+      const member = await membersApi.getMemberProfile(client, guildId, userId);
+      res.json({ ok: true, member });
+    } catch (e) {
+      res.status(404).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/members/:userId/moderate', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    const { userId } = req.params;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    if (!client) return res.status(503).json({ error: 'Bot no conectado' });
+    try {
+      const { action, reason, durationMinutes } = req.body || {};
+      const result = await membersApi.moderateMember(
+        client,
+        guildId,
+        userId,
+        action,
+        { reason, durationMinutes },
+        req.session.user.id
+      );
+      res.json({ ok: true, message: result.message });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
     }
   });
 
