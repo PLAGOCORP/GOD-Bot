@@ -320,6 +320,7 @@ function createDashboard(client) {
       guilds: manageable,
       bot: config.bot,
       site,
+      inviteUrl: inviteUrl(),
     });
   });
 
