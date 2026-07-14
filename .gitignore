@@ -7,8 +7,10 @@ data/*.json
 data/*.db
 data/*.db-*
 data/transcripts/*
+data/sessions/*
 !data/.gitkeep
 !data/transcripts/.gitkeep
+!data/sessions/.gitkeep
 *.log
 .DS_Store
 Thumbs.db

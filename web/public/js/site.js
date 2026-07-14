@@ -1,14 +1,15 @@
 /**
- * Landing botgod.pro — stats + links
- * Configura CLIENT_ID y API_BASE en window.GOD_SITE (inyectado o defaults)
+ * Landing botgod.pro — stats + links + keep-alive del backend Render
  */
 (function () {
   const cfg = window.GOD_SITE || {};
   const CLIENT_ID = cfg.clientId || localStorage.getItem('GOD_CLIENT_ID') || '';
-  // API del bot en VPS (cuando el dashboard Express está en otro host)
   const API_BASE = (cfg.apiBase || localStorage.getItem('GOD_API_BASE') || '').replace(/\/$/, '');
-  // Si el dashboard vive en el mismo dominio vía proxy, usar origen actual
   const DASH_BASE = (cfg.dashboardUrl || API_BASE || window.location.origin).replace(/\/$/, '');
+
+  const KEEPALIVE_MS = 5 * 60 * 1000;
+  const STATS_RETRIES = 6;
+  const STATS_RETRY_MS = 4000;
 
   function inviteUrl() {
     if (!CLIENT_ID) {
@@ -26,7 +27,7 @@
     const el = document.getElementById(id);
     if (el) el.href = inv;
   });
-  ['btn-dash', 'cta-dash'].forEach((id) => {
+  ['btn-dash', 'btn-dash-m', 'cta-dash'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.href = DASH_BASE + (DASH_BASE.includes('login') ? '' : '/login');
   });
@@ -53,43 +54,81 @@
       .join('');
   }
 
-  async function loadStats() {
-    // 1) API del bot
-    const urls = [];
-    if (API_BASE) urls.push(API_BASE + '/api/stats');
-    urls.push(window.location.origin + '/api/stats');
-
-    for (const url of urls) {
-      try {
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) continue;
-        const data = await res.json();
-        setStats(data);
-        return;
-      } catch {
-        /* try next */
-      }
-    }
-
-    // 2) Firestore public/stats (si firebase-init lo expone)
-    if (window.GOD_FIRESTORE_STATS) {
-      try {
-        const data = await window.GOD_FIRESTORE_STATS();
-        if (data) setStats(data);
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
   function setStats(data) {
     const g = document.getElementById('stat-guilds');
     const u = document.getElementById('stat-users');
     const p = document.getElementById('stat-ping');
     if (g && data.guilds != null) g.textContent = data.guilds;
     if (u && data.users != null) u.textContent = Number(data.users).toLocaleString('es-ES');
-    if (p && data.ping != null) p.textContent = data.ping + 'ms';
+    if (p && data.ping != null) p.textContent = data.ping >= 0 ? data.ping + 'ms' : '—';
+  }
+
+  function statsUrls() {
+    const urls = [];
+    if (API_BASE) urls.push(API_BASE + '/api/stats');
+    if (DASH_BASE && DASH_BASE !== API_BASE) urls.push(DASH_BASE + '/api/stats');
+    return urls;
+  }
+
+  async function fetchJson(url, timeoutMs) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function loadStatsFromApi() {
+    for (const url of statsUrls()) {
+      const data = await fetchJson(url, 25000);
+      if (data && data.guilds != null) {
+        setStats(data);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async function loadStatsFromFirestore() {
+    if (!window.GOD_FIRESTORE_STATS) return false;
+    try {
+      const data = await window.GOD_FIRESTORE_STATS();
+      if (data && data.guilds != null) {
+        setStats(data);
+        return true;
+      }
+    } catch {
+      /* ignore */
+    }
+    return false;
+  }
+
+  async function loadStats() {
+    for (let i = 0; i < STATS_RETRIES; i++) {
+      if (await loadStatsFromApi()) return;
+      if (await loadStatsFromFirestore()) return;
+      if (i < STATS_RETRIES - 1) {
+        await new Promise((r) => setTimeout(r, STATS_RETRY_MS));
+      }
+    }
+  }
+
+  function pingKeepAlive() {
+    const urls = [];
+    if (API_BASE) urls.push(API_BASE + '/health');
+    if (DASH_BASE && DASH_BASE !== API_BASE) urls.push(DASH_BASE + '/health');
+    urls.forEach((url) => {
+      fetch(url, { cache: 'no-store', mode: 'no-cors' }).catch(() => {});
+    });
   }
 
   loadStats();
+  pingKeepAlive();
+  setInterval(pingKeepAlive, KEEPALIVE_MS);
 })();

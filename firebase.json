@@ -20,6 +20,17 @@
         ]
       }
     ],
+    "redirects": [
+      { "source": "/login", "destination": "https://panel.botgod.pro/login", "type": 302 },
+      { "source": "/logout", "destination": "https://panel.botgod.pro/logout", "type": 302 },
+      { "source": "/auth/callback", "destination": "https://panel.botgod.pro/auth/callback", "type": 302 },
+      { "source": "/servers", "destination": "https://panel.botgod.pro/servers", "type": 302 },
+      { "source": "/servers/**", "destination": "https://panel.botgod.pro/servers/:splat", "type": 302 },
+      { "source": "/status", "destination": "https://panel.botgod.pro/status", "type": 302 },
+      { "source": "/health", "destination": "https://panel.botgod.pro/health", "type": 302 },
+      { "source": "/features", "destination": "https://panel.botgod.pro/features", "type": 302 },
+      { "source": "/api/**", "destination": "https://panel.botgod.pro/api/:splat", "type": 302 }
+    ],
     "rewrites": []
   },
   "firestore": {

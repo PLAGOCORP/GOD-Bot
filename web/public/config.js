@@ -1,7 +1,7 @@
 /** Generado por scripts/write-web-config.js — no editar a mano si usas el script */
 window.GOD_SITE = {
   clientId: "1525370055724892170",
-  apiBase: "https://god-bot-32zr.onrender.com",
+  apiBase: "https://panel.botgod.pro",
   dashboardUrl: "https://panel.botgod.pro",
 };
 window.FIREBASE_CONFIG = {

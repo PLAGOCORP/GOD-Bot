@@ -4,6 +4,8 @@
  */
 const express = require('express');
 const session = require('express-session');
+const FileStore = require('session-file-store')(session);
+const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 const db = require('../database/db');
@@ -75,10 +77,19 @@ function createDashboard(client) {
     };
   }
 
+  const sessionsDir = path.join(__dirname, '..', '..', 'data', 'sessions');
+  fs.mkdirSync(sessionsDir, { recursive: true });
+
   app.use(
     session({
       name: 'god.sid',
       secret: config.sessionSecret,
+      store: new FileStore({
+        path: sessionsDir,
+        ttl: 7 * 24 * 60 * 60,
+        retries: 1,
+        logFn: () => {},
+      }),
       resave: false,
       saveUninitialized: false,
       cookie: {

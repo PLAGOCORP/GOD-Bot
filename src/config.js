@@ -52,7 +52,7 @@ module.exports = {
   // OAuth2 / Web Dashboard — producción: https://botgod.pro
   clientSecret: process.env.CLIENT_SECRET || '',
   interactionsPublicKey: process.env.INTERACTIONS_PUBLIC_KEY || '',
-  dashboardPort: parseInt(process.env.DASHBOARD_PORT || '3847', 10),
+  dashboardPort: parseInt(process.env.PORT || process.env.DASHBOARD_PORT || '3847', 10),
   dashboardUrl: (process.env.DASHBOARD_URL || defaultDashboardUrl).replace(/\/$/, ''),
   sessionSecret: process.env.SESSION_SECRET || 'god-bot-change-me-in-production',
   cookieSecure:
