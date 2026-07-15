@@ -478,96 +478,75 @@ function createDashboard(client) {
     return { settings, modules, discordGuild, channels, roles };
   }
 
-  async function getGuildStats(guildId) {
+  async function fetchTopUsers(guildId, discordGuild) {
     try {
-      const discordGuild = client?.guilds.cache.get(guildId);
-      if (!discordGuild) {
+      const admin = require('firebase-admin');
+      const fDb = admin.firestore();
+      const usersSnap = await fDb.collection('users')
+        .where('guild_id', '==', guildId)
+        .orderBy('level_text', 'desc')
+        .limit(5)
+        .get();
+      return usersSnap.docs.map((d) => {
+        const data = d.data();
         return {
-          memberCount: 0,
-          channelCount: 0,
-          roleCount: 0,
-          openTickets: 0,
-          pendingConfessions: 0,
-          topUsers: [],
+          user_id: data.user_id,
+          level: data.level_text || 0,
+          balance: data.balance || 0,
+          username: discordGuild?.members.cache.get(data.user_id)?.user?.username
+            || discordGuild?.members.cache.get(data.user_id)?.displayName
+            || `Usuario ${data.user_id}`,
         };
-      }
-
-      try {
-        const admin = require('firebase-admin');
-        const fDb = admin.firestore();
-
-        // Top usuarios (nivel + economía)
-        let topUsers = [];
-        try {
-          const usersSnap = await fDb.collection('users')
-            .where('guild_id', '==', guildId)
-            .orderBy('level_text', 'desc')
-            .limit(5)
-            .get();
-          topUsers = usersSnap.docs.map(d => {
-            const data = d.data();
-            return {
-              user_id: data.user_id,
-              level: data.level_text || 0,
-              balance: data.balance || 0,
-              username: discordGuild.members.cache.get(data.user_id)?.user?.username || `Usuario ${data.user_id}`,
-            };
-          });
-        } catch (e) {
-          logger.warn('getGuildStats: topUsers error', e.message);
-        }
-
-        let openTickets = 0, pendingConfessions = 0;
-        try {
-          const ticketsSnap = await fDb.collection('tickets')
-            .where('guild_id', '==', guildId)
-            .where('status', 'in', ['open', 'claimed'])
-            .get();
-          openTickets = ticketsSnap.size;
-        } catch (e) {
-          logger.warn('getGuildStats: tickets error', e.message);
-        }
-
-        try {
-          const confSnap = await fDb.collection('confessions')
-            .where('guild_id', '==', guildId)
-            .where('status', '==', 'pending')
-            .get();
-          pendingConfessions = confSnap.size;
-        } catch (e) {
-          logger.warn('getGuildStats: confessions error', e.message);
-        }
-
-        return {
-          memberCount: discordGuild.memberCount || 0,
-          channelCount: discordGuild.channels.cache.size,
-          roleCount: discordGuild.roles.cache.size,
-          openTickets,
-          pendingConfessions,
-          topUsers,
-        };
-      } catch (e) {
-        logger.warn('getGuildStats: Firestore error', e.message);
-        return {
-          memberCount: discordGuild.memberCount || 0,
-          channelCount: discordGuild.channels.cache.size,
-          roleCount: discordGuild.roles.cache.size,
-          openTickets: 0,
-          pendingConfessions: 0,
-          topUsers: [],
-        };
-      }
+      });
     } catch (e) {
-      logger.error('getGuildStats critical error:', e.message);
-      return {
-        memberCount: 0,
-        channelCount: 0,
-        roleCount: 0,
-        openTickets: 0,
-        pendingConfessions: 0,
-        topUsers: [],
-      };
+      logger.warn('getGuildStats: topUsers error', e.message);
+      return [];
     }
+  }
+
+  async function getGuildStats(guildId) {
+    const discordGuild = client?.guilds.cache.get(guildId);
+    const botOnline = !!(client?.isReady?.() && discordGuild);
+
+    const [
+      dbUsers,
+      warns,
+      openTickets,
+      tags,
+      pendingConfessions,
+      pendingSuggestions,
+      topUsers,
+    ] = await Promise.all([
+      db.countUsers(guildId).catch(() => 0),
+      db.countActiveWarns(guildId).catch(() => 0),
+      db.countOpenTickets(guildId).catch(() => 0),
+      db.countTags(guildId).catch(() => 0),
+      db.countPendingConfessions(guildId).catch(() => 0),
+      db.countPendingSuggestions(guildId).catch(() => 0),
+      fetchTopUsers(guildId, discordGuild),
+    ]);
+
+    let onlineCount = 0;
+    if (discordGuild?.members?.cache) {
+      onlineCount = discordGuild.members.cache.filter(
+        (m) => !m.user.bot && ['online', 'idle', 'dnd'].includes(m.presence?.status || 'offline')
+      ).size;
+    }
+
+    return {
+      botOnline,
+      memberCount: discordGuild?.memberCount || 0,
+      onlineCount,
+      channelCount: discordGuild?.channels.cache.size || 0,
+      roleCount: discordGuild?.roles.cache.size || 0,
+      dbUsers,
+      warns,
+      openTickets,
+      tags,
+      pendingConfessions,
+      pendingSuggestions,
+      topUsers,
+    };
   }
 
   const PANELS = ['dashboard', 'general', 'members', 'audit', 'channels', 'roles', 'welcome', 'moderation', 'logging', 'tickets', 'leveling', 'economy', 'giveaways', 'starboard', 'music', 'automod', 'security', 'birthdays', 'tempvc', 'stats', 'tags', 'confessions', 'suggestions', 'invites'];
@@ -863,16 +842,9 @@ function createDashboard(client) {
 
   app.get('/api/guilds/:id/stats', requireAuth, async (req, res) => {
     const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
     try {
-      const [users, warns, tickets, tags, confessions, suggestions] = await Promise.all([
-        db.countUsers(guildId),
-        db.countActiveWarns(guildId),
-        db.countOpenTickets(guildId),
-        db.countTags(guildId),
-        db.countPendingConfessions(guildId),
-        db.countPendingSuggestions(guildId),
-      ]);
-      const stats = { users, warns, tickets, tags, confessions, suggestions };
+      const stats = await getGuildStats(guildId);
       res.json({ ok: true, stats });
     } catch (e) {
       res.status(500).json({ error: e.message });

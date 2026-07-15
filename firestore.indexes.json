@@ -11,6 +11,14 @@
       ]
     },
     {
+      "collectionGroup": "warns",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "active", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "logs",
       "queryScope": "COLLECTION",
       "fields": [
@@ -61,6 +69,15 @@
       ]
     },
     {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "creator_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
@@ -77,11 +94,54 @@
       ]
     },
     {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "xp_text", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "invites_count", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "confessions",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "guild_id", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "suggestions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inviteJoins",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "user_id", "order": "ASCENDING" },
+        { "fieldPath": "left_at", "order": "ASCENDING" },
+        { "fieldPath": "joined_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inviteJoins",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guild_id", "order": "ASCENDING" },
+        { "fieldPath": "inviter_id", "order": "ASCENDING" },
+        { "fieldPath": "is_fake", "order": "ASCENDING" }
       ]
     }
   ],

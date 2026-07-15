@@ -3,60 +3,66 @@
   const modulePct = modules.length ? Math.round((enabledCount / modules.length) * 100) : 0;
   const circumference = 2 * Math.PI * 18;
   const dashOffset = circumference - (modulePct / 100) * circumference;
+  const pendingTotal = (stats.openTickets || 0) + (stats.pendingConfessions || 0) + (stats.pendingSuggestions || 0);
 %>
 
-<div class="space-y-6 max-w-6xl">
-  <!-- Hero -->
+<div class="space-y-6 max-w-6xl" id="dashboardPanel" data-guild-id="<%= guild.id %>">
   <div class="dash-hero flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div class="relative z-10">
-      <p class="text-amber-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Panel de control</p>
+      <div class="flex flex-wrap items-center gap-2 mb-2">
+        <p class="text-amber-400/80 text-xs font-bold tracking-[0.2em] uppercase">Panel de control</p>
+        <span class="dash-bot-pill <%= stats.botOnline ? 'online' : 'offline' %>" id="botStatus">
+          <span class="dot"></span>
+          <span id="botStatusText"><%= stats.botOnline ? 'Bot en línea' : 'Bot desconectado' %></span>
+        </span>
+      </div>
       <h1 class="text-2xl sm:text-3xl font-black text-white mb-1"><%= guild.name %></h1>
       <p class="text-slate-500 text-sm font-mono"><%= guild.id %></p>
     </div>
-    <div class="relative z-10 flex items-center gap-4">
-      <div class="dash-progress-ring">
-        <svg width="72" height="72" viewBox="0 0 44 44">
-          <defs>
-            <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#fbbf24"/>
-              <stop offset="100%" stop-color="#d97706"/>
-            </linearGradient>
-          </defs>
-          <circle class="ring-bg" cx="22" cy="22" r="18" fill="none" stroke-width="3"/>
-          <circle class="ring-fg" cx="22" cy="22" r="18" fill="none" stroke-width="3"
-            stroke-dasharray="<%= circumference %>"
-            stroke-dashoffset="<%= dashOffset %>"/>
-        </svg>
-        <div>
-          <span class="text-lg font-black text-amber-400"><%= modulePct %>%</span>
+    <div class="relative z-10 flex items-center gap-3">
+      <button type="button" id="btnRefreshStats" class="text-xs px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition">↻ Actualizar</button>
+      <div class="flex items-center gap-4">
+        <div class="dash-progress-ring">
+          <svg width="72" height="72" viewBox="0 0 44 44">
+            <defs>
+              <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#fbbf24"/>
+                <stop offset="100%" stop-color="#d97706"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-bg" cx="22" cy="22" r="18" fill="none" stroke-width="3"/>
+            <circle class="ring-fg" cx="22" cy="22" r="18" fill="none" stroke-width="3"
+              stroke-dasharray="<%= circumference %>"
+              stroke-dashoffset="<%= dashOffset %>"/>
+          </svg>
+          <div><span class="text-lg font-black text-amber-400"><%= modulePct %>%</span></div>
         </div>
-      </div>
-      <div>
-        <div class="text-sm font-semibold text-slate-300">Módulos activos</div>
-        <div class="text-xs text-slate-500"><%= enabledCount %> de <%= modules.length %></div>
+        <div>
+          <div class="text-sm font-semibold text-slate-300">Módulos activos</div>
+          <div class="text-xs text-slate-500"><%= enabledCount %> de <%= modules.length %></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Stats -->
   <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
     <div class="dash-stat-card stat-amber">
       <div class="dash-stat-icon amber">👥</div>
       <div class="text-slate-400 text-xs font-semibold uppercase tracking-wide mb-1">Miembros</div>
-      <div class="text-3xl font-black text-amber-400"><%= stats.memberCount || 0 %></div>
-      <div class="text-slate-600 text-xs mt-1">usuarios activos</div>
+      <div class="text-3xl font-black text-amber-400" id="stat-members"><%= stats.memberCount || 0 %></div>
+      <div class="text-slate-600 text-xs mt-1"><span id="stat-online"><%= stats.onlineCount || 0 %></span> en línea (cache)</div>
     </div>
     <div class="dash-stat-card stat-blue">
-      <div class="dash-stat-icon blue">#️⃣</div>
-      <div class="text-slate-400 text-xs font-semibold uppercase tracking-wide mb-1">Canales</div>
-      <div class="text-3xl font-black text-blue-400"><%= stats.channelCount || 0 %></div>
-      <div class="text-slate-600 text-xs mt-1">canales de chat</div>
+      <div class="dash-stat-icon blue">🗄️</div>
+      <div class="text-slate-400 text-xs font-semibold uppercase tracking-wide mb-1">En Firestore</div>
+      <div class="text-3xl font-black text-blue-400" id="stat-dbusers"><%= stats.dbUsers || 0 %></div>
+      <div class="text-slate-600 text-xs mt-1">perfiles guardados</div>
     </div>
-    <div class="dash-stat-card stat-purple">
-      <div class="dash-stat-icon purple">🎯</div>
-      <div class="text-slate-400 text-xs font-semibold uppercase tracking-wide mb-1">Roles</div>
-      <div class="text-3xl font-black text-purple-400"><%= stats.roleCount || 0 %></div>
-      <div class="text-slate-600 text-xs mt-1">roles disponibles</div>
+    <div class="dash-stat-card stat-orange">
+      <div class="dash-stat-icon amber">⚠️</div>
+      <div class="text-slate-400 text-xs font-semibold uppercase tracking-wide mb-1">Warns activos</div>
+      <div class="text-3xl font-black text-orange-400" id="stat-warns"><%= stats.warns || 0 %></div>
+      <div class="text-slate-600 text-xs mt-1">en base de datos</div>
     </div>
     <div class="dash-stat-card stat-emerald">
       <div class="dash-stat-icon emerald">⚡</div>
@@ -66,30 +72,41 @@
     </div>
   </div>
 
-  <% if (stats.openTickets > 0 || stats.pendingConfessions > 0) { %>
-  <div class="dash-alert">
-    <div class="font-bold text-orange-400 mb-2 flex items-center gap-2">
-      <span>⚠️</span> Acciones pendientes
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="dash-stat-card stat-cyan">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Tickets abiertos</div>
+      <div class="text-2xl font-black text-cyan-400" id="stat-tickets"><%= stats.openTickets || 0 %></div>
     </div>
-    <div class="space-y-1 text-sm text-slate-300">
-      <% if (stats.openTickets > 0) { %>
-        <div>📋 <strong><%= stats.openTickets %></strong> ticket<%= stats.openTickets !== 1 ? 's' : '' %> abierto<%= stats.openTickets !== 1 ? 's' : '' %></div>
-      <% } %>
-      <% if (stats.pendingConfessions > 0) { %>
-        <div>💬 <strong><%= stats.pendingConfessions %></strong> confesión<%= stats.pendingConfessions !== 1 ? 'es' : '' %> por revisar</div>
-      <% } %>
+    <div class="dash-stat-card stat-purple">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Confesiones pend.</div>
+      <div class="text-2xl font-black text-purple-400" id="stat-confessions"><%= stats.pendingConfessions || 0 %></div>
+    </div>
+    <div class="dash-stat-card stat-amber">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Sugerencias pend.</div>
+      <div class="text-2xl font-black text-amber-400" id="stat-suggestions"><%= stats.pendingSuggestions || 0 %></div>
+    </div>
+    <div class="dash-stat-card stat-blue">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Tags / Canales</div>
+      <div class="text-2xl font-black text-blue-400"><span id="stat-tags"><%= stats.tags || 0 %></span> / <span id="stat-channels"><%= stats.channelCount || 0 %></span></div>
     </div>
   </div>
-  <% } %>
+
+  <div class="dash-alert" id="pendingAlert" <%= pendingTotal > 0 ? '' : 'hidden' %>>
+    <div class="font-bold text-orange-400 mb-2 flex items-center gap-2"><span>⚠️</span> Acciones pendientes</div>
+    <div class="space-y-1 text-sm text-slate-300" id="pendingList">
+      <% if (stats.openTickets > 0) { %><div id="alert-tickets">📋 <strong><%= stats.openTickets %></strong> ticket(s) abierto(s) — <a href="/servers/<%= guild.id %>/panel/tickets" class="text-amber-400/90 hover:text-amber-300">ver</a></div><% } %>
+      <% if (stats.pendingConfessions > 0) { %><div id="alert-confessions">💬 <strong><%= stats.pendingConfessions %></strong> confesión(es) — <a href="/servers/<%= guild.id %>/panel/confessions" class="text-amber-400/90 hover:text-amber-300">revisar</a></div><% } %>
+      <% if (stats.pendingSuggestions > 0) { %><div id="alert-suggestions">💡 <strong><%= stats.pendingSuggestions %></strong> sugerencia(s) — <a href="/servers/<%= guild.id %>/panel/suggestions" class="text-amber-400/90 hover:text-amber-300">revisar</a></div><% } %>
+    </div>
+  </div>
 
   <div class="grid lg:grid-cols-2 gap-6">
-    <!-- Top users -->
     <div class="dash-card p-6">
       <div class="flex items-center justify-between mb-5">
-        <h2 class="text-lg font-bold text-white">🏆 Usuarios más activos</h2>
-        <span class="text-xs font-semibold text-slate-500 bg-white/5 px-2.5 py-1 rounded-full">Top 5</span>
+        <h2 class="text-lg font-bold text-white">🏆 Top usuarios</h2>
+        <span class="text-xs font-semibold text-slate-500 bg-white/5 px-2.5 py-1 rounded-full">por nivel</span>
       </div>
-      <div class="space-y-2">
+      <div class="space-y-2" id="topUsersList">
         <% if (stats.topUsers && stats.topUsers.length > 0) { %>
           <% stats.topUsers.forEach((u, i) => { %>
             <div class="dash-rank-row">
@@ -115,51 +132,44 @@
       </div>
     </div>
 
-    <!-- Modules -->
     <div class="dash-card p-6">
       <div class="flex items-center justify-between mb-5">
         <h2 class="text-lg font-bold text-white">🔌 Módulos</h2>
         <a href="/servers/<%= guild.id %>/panel/general" class="text-xs text-amber-400 hover:text-amber-300 transition font-medium">Configurar →</a>
       </div>
-      <%
-        const enabled = modules.filter(m => m.enabled);
-        const disabled = modules.filter(m => !m.enabled);
-      %>
+      <% const enabled = modules.filter(m => m.enabled); const disabled = modules.filter(m => !m.enabled); %>
       <% if (enabled.length > 0) { %>
-        <div class="text-xs text-emerald-400/80 font-bold uppercase tracking-wide mb-3">Activos</div>
+        <div class="text-xs text-emerald-400/80 font-bold uppercase tracking-wide mb-3">Activos (<%= enabled.length %>)</div>
         <div class="flex flex-wrap gap-2 mb-5">
-          <% enabled.forEach(m => { %>
-            <span class="dash-module-pill on"><%= m.name %></span>
-          <% }); %>
+          <% enabled.forEach(m => { %><span class="dash-module-pill on"><%= m.name %></span><% }); %>
         </div>
       <% } %>
       <% if (disabled.length > 0) { %>
         <div class="text-xs text-slate-500 font-bold uppercase tracking-wide mb-3">Inactivos</div>
         <div class="flex flex-wrap gap-2">
-          <% disabled.slice(0, 8).forEach(m => { %>
-            <span class="dash-module-pill off"><%= m.name %></span>
-          <% }); %>
-          <% if (disabled.length > 8) { %>
-            <span class="text-xs text-slate-600 self-center">+<%= disabled.length - 8 %> más</span>
-          <% } %>
+          <% disabled.slice(0, 10).forEach(m => { %><span class="dash-module-pill off"><%= m.name %></span><% }); %>
+          <% if (disabled.length > 10) { %><span class="text-xs text-slate-600 self-center">+<%= disabled.length - 10 %> más</span><% } %>
         </div>
       <% } %>
     </div>
   </div>
 
-  <!-- Quick actions -->
   <div class="dash-card p-6">
     <h2 class="text-lg font-bold text-white mb-5">⚡ Acciones rápidas</h2>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <% const actions = [
-        { href:'general', icon:'⚙️', label:'Configuración' },
+        { href:'members', icon:'👥', label:'Miembros' },
         { href:'moderation', icon:'🛡️', label:'Moderación' },
-        { href:'tickets', icon:'📋', label:'Tickets' },
-        { href:'logging', icon:'📊', label:'Logs' },
+        { href:'audit', icon:'📋', label:'Auditoría' },
+        { href:'tickets', icon:'🎫', label:'Tickets' },
+        { href:'confessions', icon:'💬', label:'Confesiones' },
+        { href:'suggestions', icon:'💡', label:'Sugerencias' },
+        { href:'invites', icon:'📨', label:'Invites' },
+        { href:'channels', icon:'📢', label:'Canales' },
         { href:'economy', icon:'💰', label:'Economía' },
         { href:'leveling', icon:'📈', label:'Niveles' },
         { href:'security', icon:'🔐', label:'Seguridad' },
-        { href:'confessions', icon:'💬', label:'Confesiones' },
+        { href:'general', icon:'⚙️', label:'General' },
       ]; %>
       <% actions.forEach(function(a) { %>
         <a href="/servers/<%= guild.id %>/panel/<%= a.href %>" class="dash-quick-action">
@@ -169,15 +179,82 @@
       <% }) %>
     </div>
   </div>
-
-  <!-- Tips -->
-  <div class="dash-card p-6">
-    <h2 class="text-lg font-bold text-white mb-4">💡 Tips</h2>
-    <div class="grid sm:grid-cols-2 gap-3 text-sm text-slate-400">
-      <div class="flex gap-3 p-3 rounded-lg bg-white/[0.02]"><span class="text-amber-400 font-bold">1</span><span>Activa solo los módulos que uses desde <strong class="text-slate-300">General</strong>.</span></div>
-      <div class="flex gap-3 p-3 rounded-lg bg-white/[0.02]"><span class="text-amber-400 font-bold">2</span><span>Configura canales de bienvenida, logs y tickets para tu staff.</span></div>
-      <div class="flex gap-3 p-3 rounded-lg bg-white/[0.02]"><span class="text-amber-400 font-bold">3</span><span>Niveles y economía se actualizan en tiempo real.</span></div>
-      <div class="flex gap-3 p-3 rounded-lg bg-white/[0.02]"><span class="text-amber-400 font-bold">4</span><span>Tickets inactivos se cierran tras <strong class="text-slate-300">48h</strong>.</span></div>
-    </div>
-  </div>
 </div>
+
+<script>
+(function () {
+  const guildId = document.getElementById('dashboardPanel').dataset.guildId;
+  const guildPath = '/servers/' + guildId + '/panel/';
+
+  function renderTopUsers(users) {
+    const el = document.getElementById('topUsersList');
+    if (!users || !users.length) {
+      el.innerHTML = '<div class="text-center py-10 text-slate-500 text-sm"><div class="text-3xl mb-2 opacity-40">📊</div>Sin actividad registrada aún</div>';
+      return;
+    }
+    const medals = ['gold', 'silver', 'bronze'];
+    el.innerHTML = users.map((u, i) => `
+      <div class="dash-rank-row">
+        <div class="flex items-center gap-3">
+          <span class="dash-rank-num ${medals[i] || ''}">${i + 1}</span>
+          <div>
+            <div class="font-semibold text-slate-200 text-sm">${escapeHtml(u.username)}</div>
+            <div class="text-xs text-slate-500">Nivel <strong class="text-amber-400/80">${u.level}</strong></div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-emerald-400 font-bold text-sm font-mono">${Number(u.balance).toLocaleString('es-ES')}</div>
+          <div class="text-xs text-slate-600">coins</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderPending(s) {
+    const parts = [];
+    if (s.openTickets > 0) parts.push(`<div>📋 <strong>${s.openTickets}</strong> ticket(s) — <a href="${guildPath}tickets" class="text-amber-400/90">ver</a></div>`);
+    if (s.pendingConfessions > 0) parts.push(`<div>💬 <strong>${s.pendingConfessions}</strong> confesión(es) — <a href="${guildPath}confessions" class="text-amber-400/90">revisar</a></div>`);
+    if (s.pendingSuggestions > 0) parts.push(`<div>💡 <strong>${s.pendingSuggestions}</strong> sugerencia(s) — <a href="${guildPath}suggestions" class="text-amber-400/90">revisar</a></div>`);
+    const alert = document.getElementById('pendingAlert');
+    const list = document.getElementById('pendingList');
+    if (!parts.length) { alert.hidden = true; return; }
+    alert.hidden = false;
+    list.innerHTML = parts.join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  async function refreshStats() {
+    try {
+      const res = await fetch('/api/guilds/' + guildId + '/stats');
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      const s = data.stats;
+      document.getElementById('stat-members').textContent = s.memberCount || 0;
+      document.getElementById('stat-online').textContent = s.onlineCount || 0;
+      document.getElementById('stat-dbusers').textContent = s.dbUsers || 0;
+      document.getElementById('stat-warns').textContent = s.warns || 0;
+      document.getElementById('stat-tickets').textContent = s.openTickets || 0;
+      document.getElementById('stat-confessions').textContent = s.pendingConfessions || 0;
+      document.getElementById('stat-suggestions').textContent = s.pendingSuggestions || 0;
+      document.getElementById('stat-tags').textContent = s.tags || 0;
+      document.getElementById('stat-channels').textContent = s.channelCount || 0;
+      const pill = document.getElementById('botStatus');
+      const pillText = document.getElementById('botStatusText');
+      pill.classList.toggle('online', !!s.botOnline);
+      pill.classList.toggle('offline', !s.botOnline);
+      pillText.textContent = s.botOnline ? 'Bot en línea' : 'Bot desconectado';
+      renderTopUsers(s.topUsers);
+      renderPending(s);
+      showToast('Stats actualizadas');
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  document.getElementById('btnRefreshStats').addEventListener('click', refreshStats);
+  setInterval(refreshStats, 120000);
+})();
+</script>

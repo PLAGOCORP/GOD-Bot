@@ -484,6 +484,29 @@ main .bg-dark-900:hover,
 .dash-progress-ring .ring-bg { stroke: rgba(255,255,255,0.06); }
 .dash-progress-ring .ring-fg { stroke: url(#amberGrad); stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
 
+.dash-bot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dash-bot-pill.online { background: rgba(52, 211, 153, 0.1); color: #34d399; border-color: rgba(52, 211, 153, 0.25); }
+.dash-bot-pill.offline { background: rgba(248, 113, 113, 0.1); color: #f87171; border-color: rgba(248, 113, 113, 0.25); }
+
+.dash-bot-pill .dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 /* ─── Forms (all panel pages) ─────────────────────────────── */
 main input[type="text"],
 main input[type="number"],
