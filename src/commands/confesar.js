@@ -37,7 +37,7 @@ module.exports = {
       return interaction.showModal(conf.confessModal());
     }
     if (sub === 'config') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const pub = interaction.options.getChannel('publicacion');

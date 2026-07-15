@@ -1,28 +1,39 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Tickets</h2>
-    <form id="ticketsForm" class="space-y-4">
-      <label class="flex items-center gap-3">
+<div class="space-y-6 max-w-3xl" id="ticketsPanel" data-guild-id="<%= guild.id %>">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-cyan-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Soporte</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">🎫 Tickets</h1>
+      <p class="text-slate-500 text-sm">Canales, logs y auto-cierre por inactividad.</p>
+    </div>
+  </div>
+
+  <div class="dash-card p-6">
+    <form id="ticketsForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="tickets_enabled" <%= modules.find(m=>m.name==='tickets')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Tickets</span>
+        <div>
+          <span class="font-semibold text-slate-200">Activar Tickets</span>
+          <p class="text-xs text-slate-600 mt-0.5">Panel de apertura y canales privados de soporte</p>
+        </div>
       </label>
 
-      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div class="grid sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Categoría Tickets</label>
+          <label class="block text-xs text-slate-500 mb-1.5">Categoría Tickets</label>
           <%- channelSelect('ticketCategory', settings.ticketCategory) %>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
+          <label class="block text-xs text-slate-500 mb-1.5">Log Tickets</label>
           <%- channelSelect('ticketLog', settings.ticketLog) %>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Horas de inactividad</label>
-          <input type="number" name="inactiveHours" value="<%= settings.inactiveHours || 48 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        <div class="sm:col-span-2">
+          <label class="block text-xs text-slate-500 mb-1.5">Horas de inactividad (auto-cierre)</label>
+          <input type="number" name="inactiveHours" value="<%= settings.inactiveHours || 48 %>" min="1" max="720" class="servers-search w-full sm:w-48" style="padding-left:1rem"/>
+          <p class="text-xs text-slate-600 mt-1.5">Tickets sin actividad se cierran automáticamente tras este tiempo.</p>
         </div>
       </div>
 
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
   </div>
 </div>
@@ -34,7 +45,7 @@ document.getElementById('ticketsForm').addEventListener('submit', async (e) => {
   await saveSettings('/api/guilds/<%= guild.id %>/settings', {
     ticketCategory: fd.get('ticketCategory') || null,
     ticketLog: fd.get('ticketLog') || null,
-    inactiveHours: parseInt(fd.get('inactiveHours')) || 48,
+    inactiveHours: parseInt(fd.get('inactiveHours'), 10) || 48,
   });
   const mod = fd.get('tickets_enabled') === 'on';
   await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { tickets: mod } });

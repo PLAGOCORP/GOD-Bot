@@ -77,7 +77,7 @@ module.exports = {
     }
 
     if (sub === 'canales') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const sc = { ...(await db.getGuildSettings(interaction.guild.id).statsChannels || {}) };
@@ -94,7 +94,7 @@ module.exports = {
     }
 
     if (sub === 'actualizar') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       await stats.updateGuild(interaction.guild);

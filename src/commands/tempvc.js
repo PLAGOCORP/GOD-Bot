@@ -30,7 +30,7 @@ module.exports = {
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     if (sub === 'panel') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       await interaction.channel.send({
@@ -45,7 +45,7 @@ module.exports = {
       return interaction.reply({ content: '✅ Panel publicado.', ephemeral: true });
     }
     if (sub === 'config') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const cat = interaction.options.getChannel('categoria');

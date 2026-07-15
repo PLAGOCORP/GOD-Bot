@@ -79,7 +79,7 @@ module.exports = {
       return interaction.reply({ embeds: [embeds.god('🎂 Próximos cumpleaños', body)] });
     }
     if (sub === 'config') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const canal = interaction.options.getChannel('canal');

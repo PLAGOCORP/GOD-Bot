@@ -79,23 +79,27 @@ loadEvents(client);
 // Auto-close tickets inactivos (cada hora)
 setInterval(async () => {
   try {
-    const hours = config.tickets.inactiveHours || 48;
-    const cutoff = Date.now() - hours * 3600_000;
     const admin = require('firebase-admin');
     const fDb = admin.firestore();
     const staleSnap = await fDb.collection('tickets')
       .where('status', 'in', ['open', 'claimed'])
-      .where('created_at', '<', cutoff)
       .get();
-    const stale = staleSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((t) => !t.last_activity || t.last_activity < cutoff);
+    const now = Date.now();
+    const stale = [];
+    for (const doc of staleSnap.docs) {
+      const t = { id: doc.id, ...doc.data() };
+      const settings = await db.getGuildSettings(t.guild_id);
+      const hours = settings.inactiveHours ?? config.tickets.inactiveHours ?? 48;
+      const cutoff = now - hours * 3600_000;
+      const last = t.last_activity || t.created_at || 0;
+      if (last < cutoff) stale.push({ ...t, inactiveHours: hours });
+    }
     for (const t of stale) {
       if (!t.channel_id) continue;
       const ch = await client.channels.fetch(t.channel_id).catch(() => null);
       if (ch) {
         await ch
-          .send({ embeds: [require('./utils/embeds').warning('Auto-cierre', `Ticket inactivo ${hours}h. Cerrando...`)] })
+          .send({ embeds: [require('./utils/embeds').warning('Auto-cierre', `Ticket inactivo ${t.inactiveHours}h. Cerrando...`)] })
           .catch(() => {});
         setTimeout(() => ch.delete().catch(() => {}), 8000);
       }

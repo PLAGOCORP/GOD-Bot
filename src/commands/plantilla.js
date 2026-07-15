@@ -40,7 +40,7 @@ module.exports = {
         .addStringOption((o) => o.setName('descripcion').setDescription('Descripción'))
     ),
   async execute(interaction) {
-    if (!isAdmin(interaction.member)) {
+    if (!await isAdmin(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();

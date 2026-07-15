@@ -57,7 +57,7 @@ module.exports = {
         .addBooleanOption((o) => o.setName('activo').setDescription('ON/OFF').setRequired(true))
     ),
   async execute(interaction) {
-    if (!isAdmin(interaction.member)) {
+    if (!await isAdmin(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();

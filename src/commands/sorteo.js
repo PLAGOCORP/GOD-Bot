@@ -43,7 +43,7 @@ module.exports = {
     if (!await db.isModuleEnabled(interaction.guild.id, 'giveaways')) {
       return interaction.reply({ embeds: [embeds.error('Módulo sorteos desactivado')], ephemeral: true });
     }
-    if (!isAdmin(interaction.member) && !interaction.memberPermissions?.has('ManageGuild')) {
+    if (!await isAdmin(interaction.member) && !interaction.memberPermissions?.has('ManageGuild')) {
       return interaction.reply({ embeds: [embeds.error('Sin permisos')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();

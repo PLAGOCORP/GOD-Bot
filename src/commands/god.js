@@ -209,7 +209,7 @@ module.exports = {
     }
 
     if (sub === 'idioma') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
       const lang = interaction.options.getString('lang');
@@ -242,7 +242,7 @@ module.exports = {
     }
 
     if (sub === 'setup') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
       const setupWizard = require('../modules/setupWizard');
@@ -250,7 +250,7 @@ module.exports = {
     }
 
     if (sub === 'config') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
       const moduleStates = await Promise.all(MODULE_LIST.map(
@@ -277,7 +277,7 @@ module.exports = {
     }
 
     if (sub === 'logs') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
       const mod = interaction.options.getChannel('mod');
@@ -313,7 +313,7 @@ module.exports = {
     }
 
     if (sub === 'modrole') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
       }
       const role = interaction.options.getRole('rol');

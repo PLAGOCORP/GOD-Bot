@@ -95,7 +95,7 @@ module.exports = {
         .addRoleOption((o) => o.setName('rol').setDescription('Rol sticky').setRequired(true))
     ),
   async execute(interaction) {
-    if (!isAdmin(interaction.member) && !interaction.memberPermissions?.has('ManageRoles')) {
+    if (!await isAdmin(interaction.member) && !interaction.memberPermissions?.has('ManageRoles')) {
       return interaction.reply({ embeds: [embeds.error('Sin permisos')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();

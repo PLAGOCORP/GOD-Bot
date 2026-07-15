@@ -118,7 +118,7 @@ module.exports = {
     }
 
     if (sub === 'config') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const ch = interaction.options.getChannel('canal');
@@ -127,7 +127,7 @@ module.exports = {
     }
 
     if (sub === 'recompensa') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const nivel = interaction.options.getInteger('nivel');
@@ -139,7 +139,7 @@ module.exports = {
     }
 
     if (sub === 'no_xp_canal') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const ch = interaction.options.getChannel('canal');
@@ -154,7 +154,7 @@ module.exports = {
     }
 
     if (sub === 'no_xp_rol') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const rol = interaction.options.getRole('rol');
@@ -169,7 +169,7 @@ module.exports = {
     }
 
     if (sub === 'multiplicador') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const rol = interaction.options.getRole('rol');

@@ -50,7 +50,7 @@ module.exports = {
     )
     .addSubcommand((s) => s.setName('status').setDescription('Estado de seguridad')),
   async execute(interaction) {
-    if (!isAdmin(interaction.member)) {
+    if (!await isAdmin(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
     }
     const sub = interaction.options.getSubcommand();

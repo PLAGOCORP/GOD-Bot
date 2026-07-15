@@ -114,7 +114,7 @@ module.exports = {
       const user = interaction.options.getUser('usuario');
       const days = interaction.options.getInteger('dias_mensajes') ?? 0;
       const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-      if (member && (!canModerate(interaction.member, member) || !member.bannable)) {
+      if (member && (!await canModerate(interaction.member, member) || !member.bannable)) {
         return interaction.reply({ embeds: [embeds.error('No puedo banear a ese usuario')], ephemeral: true });
       }
       await interaction.guild.members.ban(user.id, {
@@ -134,7 +134,7 @@ module.exports = {
     if (sub === 'kick') {
       const user = interaction.options.getUser('usuario');
       const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-      if (!member || !canModerate(interaction.member, member) || !member.kickable) {
+      if (!member || !await canModerate(interaction.member, member) || !member.kickable) {
         return interaction.reply({ embeds: [embeds.error('No puedo expulsar a ese usuario')], ephemeral: true });
       }
       await member.kick(`${interaction.user.tag}: ${reason}`);
@@ -158,7 +158,7 @@ module.exports = {
         });
       }
       const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-      if (!member || !canModerate(interaction.member, member) || !member.moderatable) {
+      if (!member || !await canModerate(interaction.member, member) || !member.moderatable) {
         return interaction.reply({ embeds: [embeds.error('No puedo silenciar a ese usuario')], ephemeral: true });
       }
       await member.timeout(msVal, `${interaction.user.tag}: ${reason}`);

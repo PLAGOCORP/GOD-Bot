@@ -35,7 +35,7 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'crear') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const tipo = interaction.options.getString('tipo');

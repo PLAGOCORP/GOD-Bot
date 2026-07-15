@@ -38,6 +38,9 @@ const ts = () => Date.now();
 
 // ─── defaults ────────────────────────────────────────────────
 const DEFAULT_SETTINGS = {
+  prefix: 'g!',
+  language: 'es',
+  ownerIds: '',
   welcomeChannel: null,
   leaveChannel: null,
   welcomeMessage: '¡Bienvenido {user} a **{server}**! Eres el miembro #{count}.',
@@ -47,6 +50,7 @@ const DEFAULT_SETTINGS = {
   levelChannel: null,
   ticketCategory: null,
   ticketLog: null,
+  inactiveHours: 48,
   verificationChannel: null,
   verifiedRole: null,
   unverifiedRole: null,
@@ -122,11 +126,15 @@ async function ensureGuild(guildId) {
 async function getGuildSettings(guildId) {
   await ensureGuild(guildId);
   const snap = await ref('guilds', guildId).get();
-  const raw = snap.data()?.settings_json || {};
+  const data = snap.data() || {};
+  const raw = data.settings_json || {};
   const settings = typeof raw === 'string' ? jparse(raw, {}) : raw;
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
+    prefix: settings.prefix ?? data.prefix ?? DEFAULT_SETTINGS.prefix,
+    language: settings.language ?? data.language ?? DEFAULT_SETTINGS.language,
+    ownerIds: settings.ownerIds ?? data.ownerIds ?? DEFAULT_SETTINGS.ownerIds,
     logChannels: { ...DEFAULT_SETTINGS.logChannels, ...(settings.logChannels || {}) },
   };
 }
@@ -134,10 +142,15 @@ async function getGuildSettings(guildId) {
 async function setGuildSettings(guildId, patch) {
   await ensureGuild(guildId);
   const cur = await getGuildSettings(guildId);
+  const normalized = { ...patch };
+  if (normalized.ownerIds !== undefined) {
+    const { parseOwnerIds } = require('../utils/permissions');
+    normalized.ownerIds = parseOwnerIds(normalized.ownerIds).join(',');
+  }
   const next = {
     ...cur,
-    ...patch,
-    logChannels: { ...cur.logChannels, ...(patch.logChannels || {}) },
+    ...normalized,
+    logChannels: { ...cur.logChannels, ...(normalized.logChannels || {}) },
   };
   await ref('guilds', guildId).set({ settings_json: next }, { merge: true });
   return next;

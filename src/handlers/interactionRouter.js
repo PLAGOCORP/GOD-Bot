@@ -58,7 +58,7 @@ async function handleButton(interaction, client) {
   const id = interaction.customId;
 
   if (id.startsWith('sw:')) {
-    if (!isAdmin(interaction.member)) {
+    if (!await isAdmin(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
     }
     return setupWizard.handleButton(interaction);
@@ -355,7 +355,7 @@ async function handleButton(interaction, client) {
 
 async function handleSelect(interaction, client) {
   if (interaction.customId.startsWith('sw:')) {
-    if (!isAdmin(interaction.member)) {
+    if (!await isAdmin(interaction.member)) {
       return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
     }
     return setupWizard.handleStringSelect(interaction);
@@ -435,7 +435,7 @@ async function handleSelect(interaction, client) {
 
 async function handleChannelSelect(interaction) {
   if (!interaction.customId.startsWith('sw:')) return;
-  if (!isAdmin(interaction.member)) {
+  if (!await isAdmin(interaction.member)) {
     return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
   }
   return setupWizard.handleChannelSelect(interaction);
@@ -443,7 +443,7 @@ async function handleChannelSelect(interaction) {
 
 async function handleRoleSelect(interaction) {
   if (!interaction.customId.startsWith('sw:')) return;
-  if (!isAdmin(interaction.member)) {
+  if (!await isAdmin(interaction.member)) {
     return interaction.reply({ embeds: [embeds.error('Solo administradores')], ephemeral: true });
   }
   return setupWizard.handleRoleSelect(interaction);

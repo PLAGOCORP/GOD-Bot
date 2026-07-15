@@ -41,7 +41,7 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'agregar') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const nombre = interaction.options.getString('nombre').replace(/:/g, '');
@@ -115,7 +115,7 @@ module.exports = {
     }
 
     if (sub === 'nqn') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const activo = interaction.options.getBoolean('activo');

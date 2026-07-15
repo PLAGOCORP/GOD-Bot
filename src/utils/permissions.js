@@ -2,13 +2,42 @@ const { PermissionFlagsBits } = require('discord.js');
 const config = require('../config');
 const db = require('../database/db');
 
-function isOwner(userId) {
+function parseOwnerIds(raw) {
+  if (Array.isArray(raw)) return raw.map((id) => String(id).trim()).filter(Boolean);
+  return String(raw || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function isGlobalOwner(userId) {
   return config.ownerIds.includes(String(userId));
 }
 
-function isAdmin(member) {
+function isOwnerInList(userId, ownerIdsRaw) {
+  return parseOwnerIds(ownerIdsRaw).includes(String(userId));
+}
+
+async function isOwner(userId, guildId = null) {
+  if (isGlobalOwner(userId)) return true;
+  if (!guildId) return false;
+  try {
+    const settings = await db.getGuildSettings(guildId);
+    return isOwnerInList(userId, settings.ownerIds);
+  } catch {
+    return false;
+  }
+}
+
+async function isAdmin(member) {
   if (!member) return false;
-  if (isOwner(member.id)) return true;
+  if (isGlobalOwner(member.id)) return true;
+  try {
+    const settings = await db.getGuildSettings(member.guild.id);
+    if (isOwnerInList(member.id, settings.ownerIds)) return true;
+  } catch {
+    /* db not ready */
+  }
   return (
     member.permissions.has(PermissionFlagsBits.Administrator) ||
     member.permissions.has(PermissionFlagsBits.ManageGuild)
@@ -17,7 +46,7 @@ function isAdmin(member) {
 
 async function isMod(member) {
   if (!member) return false;
-  if (isOwner(member.id) || isAdmin(member)) return true;
+  if (await isAdmin(member)) return true;
   if (
     member.permissions.has(PermissionFlagsBits.ModerateMembers) ||
     member.permissions.has(PermissionFlagsBits.KickMembers) ||
@@ -38,13 +67,14 @@ async function isMod(member) {
   return false;
 }
 
-function canModerate(moderator, target) {
+async function canModerate(moderator, target) {
   if (!moderator || !target) return false;
-  if (isOwner(moderator.id)) return true;
+  const guildId = moderator.guild?.id;
+  if (await isOwner(moderator.id, guildId)) return true;
   if (moderator.id === target.id) return false;
   if (target.id === moderator.guild.ownerId) return false;
-  if (isOwner(target.id)) return false;
+  if (await isOwner(target.id, guildId)) return false;
   return moderator.roles.highest.position > target.roles.highest.position;
 }
 
-module.exports = { isOwner, isAdmin, isMod, canModerate };
+module.exports = { isOwner, isAdmin, isMod, canModerate, parseOwnerIds, isGlobalOwner };

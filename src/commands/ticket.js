@@ -54,7 +54,7 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'panel') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const titulo = interaction.options.getString('titulo') || 'Centro de soporte — God';
@@ -86,7 +86,7 @@ module.exports = {
     }
 
     if (sub === 'categoria') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const cat = interaction.options.getChannel('categoria');
@@ -97,7 +97,7 @@ module.exports = {
     }
 
     if (sub === 'log') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const ch = interaction.options.getChannel('canal');

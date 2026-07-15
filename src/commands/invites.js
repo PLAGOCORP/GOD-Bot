@@ -54,7 +54,7 @@ module.exports = {
       return interaction.reply({ embeds: [embeds.god('📨 Top invites', lines.join('\n'))] });
     }
     if (sub === 'recompensa') {
-      if (!isAdmin(interaction.member)) {
+      if (!await isAdmin(interaction.member)) {
         return interaction.reply({ embeds: [embeds.error('Solo admins')], ephemeral: true });
       }
       const n = interaction.options.getInteger('cantidad');
