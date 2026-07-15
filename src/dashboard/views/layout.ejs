@@ -19,13 +19,13 @@
   </script>
   <link rel="stylesheet" href="/public/css/dashboard.css"/>
 </head>
-<body class="dashboard-body min-h-screen">
+<body class="dashboard-body min-h-screen" data-guild-id="<%= guild.id %>">
   <div id="dash-bg"></div>
   <canvas id="dash-stars"></canvas>
   <div id="dash-overlay" class="dash-overlay"></div>
 
   <div class="dash-shell flex min-h-screen">
-    <%- include('partials/sidebar', { guild, current: section, user, botVersion }) %>
+    <%- include('partials/sidebar', { guild, current: section, user, botVersion, notifications: typeof notifications !== 'undefined' ? notifications : { tickets: 0, confessions: 0, suggestions: 0, total: 0 } }) %>
 
     <div class="dash-main flex-1 flex flex-col">
       <header class="dash-header">

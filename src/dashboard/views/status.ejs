@@ -5,42 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Status — botgod.pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .status-pulse { animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
   <%- include('partials/nav', { inviteUrl: typeof inviteUrl !== 'undefined' ? inviteUrl : '/login' }) %>
-  <main class="max-w-3xl mx-auto px-6 py-16">
-    <h1 class="text-4xl font-bold mb-8">Status</h1>
-    <% if (botStats) { %>
-      <div class="flex items-center gap-3 mb-8">
-        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-emerald-400 font-semibold">Online</span>
+  <main class="max-w-4xl mx-auto px-6 py-16">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-10">
+      <div>
+        <h1 class="text-4xl font-bold">Status del servicio</h1>
+        <p class="text-slate-500 mt-2">Estado en tiempo real de BotGod</p>
       </div>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="text-slate-500 text-sm">Servidores</div>
-          <div class="text-2xl font-bold"><%= botStats.guilds %></div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="text-slate-500 text-sm">Usuarios (aprox.)</div>
-          <div class="text-2xl font-bold"><%= botStats.users.toLocaleString('es-ES') %></div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="text-slate-500 text-sm">Ping WebSocket</div>
-          <div class="text-2xl font-bold"><%= botStats.ping %>ms</div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="text-slate-500 text-sm">Uptime</div>
-          <div class="text-2xl font-bold"><%= Math.floor((botStats.uptime||0)/3600000) %>h <%= Math.floor(((botStats.uptime||0)%3600000)/60000) %>m</div>
-        </div>
+      <% const statusMap = { operational: ['Operativo', 'emerald'], degraded: ['Degradado', 'amber'], down: ['Caído', 'red'] };
+         const [label, color] = statusMap[health.status] || ['Desconocido', 'slate'];
+         const dotColor = color === 'emerald' ? 'bg-emerald-400' : color === 'amber' ? 'bg-amber-400' : 'bg-red-500'; %>
+      <div class="flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-900 border border-slate-800">
+        <span class="w-3 h-3 rounded-full <%= dotColor %> <%= health.status === 'operational' ? 'status-pulse' : '' %>"></span>
+        <span class="text-<%= color %>-400 font-semibold"><%= label %></span>
       </div>
-      <p class="text-slate-500 text-sm mt-6">v<%= botStats.version %> · API <a class="text-amber-400" href="/health">/health</a></p>
-    <% } else { %>
-      <div class="flex items-center gap-3">
-        <span class="w-3 h-3 rounded-full bg-red-500"></span>
-        <span class="text-red-400 font-semibold">Bot no conectado a esta instancia web</span>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="text-slate-500 text-sm">Servidores</div>
+        <div class="text-2xl font-bold"><%= health.services.discord.guilds %></div>
       </div>
-    <% } %>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="text-slate-500 text-sm">Usuarios (aprox.)</div>
+        <div class="text-2xl font-bold"><%= health.services.discord.users.toLocaleString('es-ES') %></div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="text-slate-500 text-sm">Ping Discord</div>
+        <div class="text-2xl font-bold"><%= health.services.discord.ping ?? '—' %><%= health.services.discord.ping != null ? 'ms' : '' %></div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="text-slate-500 text-sm">Uptime bot</div>
+        <% const botUp = health.uptime.botMs || 0; %>
+        <div class="text-2xl font-bold"><%= Math.floor(botUp/3600000) %>h <%= Math.floor((botUp%3600000)/60000) %>m</div>
+      </div>
+    </div>
+
+    <h2 class="text-lg font-semibold text-slate-300 mb-4">Servicios</h2>
+    <div class="space-y-3 mb-10">
+      <% const svcList = [
+        { key: 'discord', name: 'Discord Bot', svc: health.services.discord },
+        { key: 'firestore', name: 'Firestore', svc: health.services.firestore },
+        { key: 'lavalink', name: 'Lavalink (música)', svc: health.services.lavalink },
+      ]; %>
+      <% svcList.forEach(function(item) {
+        const svc = item.svc;
+        let stLabel, stColor;
+        if (item.key === 'lavalink' && !svc.configured) {
+          stLabel = 'No configurado'; stColor = 'slate';
+        } else if (svc.ok === true || svc.status === 'ready' || svc.status === 'connected') {
+          stLabel = 'OK'; stColor = 'emerald';
+        } else if (svc.status === 'connecting' || svc.status === 'disconnected') {
+          stLabel = svc.status === 'connecting' ? 'Conectando' : 'Desconectado'; stColor = 'amber';
+        } else {
+          stLabel = 'Error'; stColor = 'red';
+        }
+      %>
+      <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-5 py-4">
+        <div>
+          <div class="font-medium"><%= item.name %></div>
+          <% if (item.key === 'firestore' && svc.latencyMs != null) { %>
+            <div class="text-xs text-slate-500 mt-0.5">Latencia <%= svc.latencyMs %>ms</div>
+          <% } %>
+          <% if (item.key === 'lavalink' && svc.configured) { %>
+            <div class="text-xs text-slate-500 mt-0.5"><%= svc.host %>:<%= svc.port %></div>
+          <% } %>
+        </div>
+        <span class="text-sm font-semibold text-<%= stColor %>-400"><%= stLabel %></span>
+      </div>
+      <% }) %>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+      <span>v<%= health.version %></span>
+      <span>·</span>
+      <span>Actualizado <span id="status-ts"><%= new Date(health.timestamp).toLocaleString('es-ES') %></span></span>
+      <span>·</span>
+      <a class="text-amber-400 hover:text-amber-300" href="/health">API /health</a>
+    </div>
   </main>
   <%- include('partials/footer') %>
+  <script>
+    setInterval(async () => {
+      try {
+        const res = await fetch('/health', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.timestamp) {
+          document.getElementById('status-ts').textContent = new Date(data.timestamp).toLocaleString('es-ES');
+        }
+      } catch { /* */ }
+    }, 60000);
+  </script>
 </body>
 </html>

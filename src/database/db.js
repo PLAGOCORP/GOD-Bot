@@ -746,6 +746,25 @@ async function countPendingSuggestions(guildId) {
   return (await col('suggestions').where('guild_id', '==', guildId).where('status', '==', 'pending').count().get()).data().count;
 }
 
+async function ping() {
+  await col('guilds').limit(1).get();
+  return true;
+}
+
+async function getGuildNotifications(guildId) {
+  const [tickets, confessions, suggestions] = await Promise.all([
+    countOpenTickets(guildId),
+    countPendingConfessions(guildId),
+    countPendingSuggestions(guildId),
+  ]);
+  return {
+    tickets,
+    confessions,
+    suggestions,
+    total: tickets + confessions + suggestions,
+  };
+}
+
 // ─── EXPORTS ─────────────────────────────────────────────────
 module.exports = {
   jparse, jstr, DEFAULT_SETTINGS, DEFAULT_MODULES,
@@ -779,4 +798,5 @@ module.exports = {
   addMusicHistory,
   countUsers, countActiveWarns, countOpenTickets, countTags,
   countPendingConfessions, countPendingSuggestions,
+  ping, getGuildNotifications,
 };

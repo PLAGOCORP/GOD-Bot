@@ -49,6 +49,39 @@
 
   overlay?.addEventListener('click', closeSidebar);
 
+  function formatBadge(n) {
+    return n > 99 ? '99+' : String(n);
+  }
+
+  function updateNavBadges(notifications) {
+    if (!notifications) return;
+    document.querySelectorAll('[data-notif]').forEach((el) => {
+      const key = el.dataset.notif;
+      const count = key === 'total' ? notifications.total : notifications[key];
+      if (count > 0) {
+        el.textContent = formatBadge(count);
+        el.classList.remove('hidden');
+      } else {
+        el.textContent = '';
+        el.classList.add('hidden');
+      }
+    });
+  }
+
+  const guildId = document.body.dataset.guildId;
+  if (guildId) {
+    async function pollNotifications() {
+      try {
+        const res = await fetch(`/api/guilds/${guildId}/notifications`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok) updateNavBadges(data.notifications);
+      } catch { /* */ }
+    }
+    pollNotifications();
+    setInterval(pollNotifications, 60000);
+  }
+
   window.showToast = function (msg, type) {
     type = type || 'success';
     let t = document.getElementById('dash-toast');

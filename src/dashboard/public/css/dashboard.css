@@ -124,6 +124,7 @@ body.dashboard-body {
 }
 
 .dash-nav-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -190,6 +191,25 @@ body.dashboard-body {
   font-weight: 700;
   font-size: 0.75rem;
   color: #020612;
+}
+
+.dash-nav-badge {
+  margin-left: auto;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+.dash-nav-badge.hidden {
+  display: none;
 }
 
 .dash-status-dot {

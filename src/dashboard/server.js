@@ -17,6 +17,7 @@ const auditLog = require('./auditLog');
 const confessionsApi = require('./confessionsApi');
 const suggestionsApi = require('./suggestionsApi');
 const invitesApi = require('./invitesApi');
+const { getHealthStatus } = require('./healthCheck');
 
 const expressLayouts = require('express-ejs-layouts');
 
@@ -189,23 +190,24 @@ function createDashboard(client) {
     res.render('features', { layout: false, bot: config.bot, site, user: req.session.user || null, inviteUrl: inviteUrl() });
   });
 
-  app.get('/status', (req, res) => {
-    res.render('status', {
-      layout: false,
-      bot: config.bot,
-      site,
-      user: req.session.user || null,
-      botStats: client
-        ? {
-            guilds: client.guilds.cache.size,
-            users: client.guilds.cache.reduce((a, g) => a + (g.memberCount || 0), 0),
-            ping: Math.round(client.ws.ping),
-            uptime: client.uptime,
-            ready: true,
-            version: config.bot.version,
-          }
-        : null,
-    });
+  app.get('/status', async (req, res) => {
+    try {
+      const health = await getHealthStatus(client);
+      res.render('status', {
+        layout: false,
+        bot: config.bot,
+        site,
+        user: req.session.user || null,
+        health,
+      });
+    } catch (e) {
+      res.status(500).render('error', {
+        layout: false,
+        bot: config.bot,
+        site,
+        message: 'No se pudo cargar el estado del servicio.',
+      });
+    }
   });
 
   app.get('/privacy', (req, res) => {
@@ -564,6 +566,11 @@ function createDashboard(client) {
 
       let stats = null;
       let panelStats = {};
+      let notifications = { tickets: 0, confessions: 0, suggestions: 0, total: 0 };
+      try {
+        notifications = await db.getGuildNotifications(guildId);
+      } catch { /* */ }
+
       if (panel === 'dashboard') {
         try { stats = await getGuildStats(guildId); } catch { /* */ }
       } else if (panel === 'moderation') {
@@ -595,6 +602,7 @@ function createDashboard(client) {
         ...makeSelectHelpers(ctx.channels, ctx.roles),
         stats: stats || {},
         panelStats,
+        notifications,
         automodConfig,
         tags,
       });
@@ -851,6 +859,17 @@ function createDashboard(client) {
     }
   });
 
+  app.get('/api/guilds/:id/notifications', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const notifications = await db.getGuildNotifications(guildId);
+      res.json({ ok: true, notifications });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ─── Discord Interactions Endpoint ─────────────────────────
   app.post('/interactions', (req, res, next) => {
     req.rawBody = req.body.toString('utf8');
@@ -861,14 +880,20 @@ function createDashboard(client) {
   // ─── Role Connections Verification ────────────────────────
   app.post('/role-connections/verify', handleRoleConnectionsVerification(client));
 
-  app.get('/health', (_req, res) => {
-    res.json({
-      ok: true,
-      domain: config.domain,
-      version: config.bot.version,
-      ready: Boolean(client?.isReady?.() ?? client?.ws?.status === 0),
-      guilds: client?.guilds?.cache?.size || 0,
-    });
+  app.get('/health', async (_req, res) => {
+    try {
+      const health = await getHealthStatus(client);
+      const code = health.ok ? 200 : 503;
+      res.status(code).json(health);
+    } catch (e) {
+      res.status(503).json({
+        ok: false,
+        status: 'down',
+        error: e.message,
+        version: config.bot.version,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 
   app.get('/api/stats', (_req, res) => {
