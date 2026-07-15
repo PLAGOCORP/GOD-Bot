@@ -14,6 +14,7 @@ const { handleInteractions } = require('./interactions');
 const { handleRoleConnectionsVerification } = require('./roleConnections');
 const membersApi = require('./membersApi');
 const auditLog = require('./auditLog');
+const confessionsApi = require('./confessionsApi');
 
 const expressLayouts = require('express-ejs-layouts');
 
@@ -71,7 +72,7 @@ function createDashboard(client) {
           return `<option value="${item.id}"${sel}>${prefix} ${escapeHtml(item.name)}</option>`;
         })
         .join('');
-      return `<select name="${escapeHtml(name)}" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full text-sm"><option value="">Ninguno</option>${opts}</select>`;
+      return `<select name="${escapeHtml(name)}" class="servers-search w-full text-sm" style="padding-left:1rem"><option value="">Ninguno</option>${opts}</select>`;
     };
     return {
       channelSelect: (name, selected) => build(name, selected, channels, '#'),
@@ -581,8 +582,21 @@ function createDashboard(client) {
       try { tags = await db.listTags(guildId); } catch { /* */ }
 
       let stats = null;
+      let panelStats = {};
       if (panel === 'dashboard') {
         try { stats = await getGuildStats(guildId); } catch { /* */ }
+      } else if (panel === 'moderation') {
+        try {
+          const [warns, tickets] = await Promise.all([
+            db.countActiveWarns(guildId),
+            db.countOpenTickets(guildId),
+          ]);
+          panelStats = { warns, tickets };
+        } catch { /* */ }
+      } else if (panel === 'confessions') {
+        try {
+          panelStats = { pending: await db.countPendingConfessions(guildId) };
+        } catch { /* */ }
       }
 
       res.render(`panel/${panel}`, {
@@ -595,6 +609,7 @@ function createDashboard(client) {
         ...ctx,
         ...makeSelectHelpers(ctx.channels, ctx.roles),
         stats: stats || {},
+        panelStats,
         automodConfig,
         tags,
       });
@@ -734,6 +749,41 @@ function createDashboard(client) {
         userId,
         action,
         { reason, durationMinutes },
+        req.session.user.id
+      );
+      res.json({ ok: true, message: result.message });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/guilds/:id/confessions', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const data = await confessionsApi.listConfessions(guildId, {
+        status: req.query.status || 'pending',
+        page: parseInt(req.query.page || '1', 10),
+        limit: Math.min(parseInt(req.query.limit || '10', 10), 25),
+      });
+      res.json({ ok: true, ...data });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/confessions/:cid/moderate', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    const { cid } = req.params;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    if (!client) return res.status(503).json({ error: 'Bot no conectado' });
+    try {
+      const { action } = req.body || {};
+      const result = await confessionsApi.moderateConfession(
+        client,
+        guildId,
+        cid,
+        action,
         req.session.user.id
       );
       res.json({ ok: true, message: result.message });

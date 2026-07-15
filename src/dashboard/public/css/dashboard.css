@@ -326,6 +326,8 @@ main .bg-dark-900:hover,
 .dash-stat-card.stat-purple::after { background: #a78bfa; }
 .dash-stat-card.stat-emerald::after { background: #34d399; }
 .dash-stat-card.stat-red::after { background: #f87171; }
+.dash-stat-card.stat-orange::after { background: #fb923c; }
+.dash-stat-card.stat-cyan::after { background: #22d3ee; }
 
 .dash-stat-card:hover {
   transform: translateY(-2px);

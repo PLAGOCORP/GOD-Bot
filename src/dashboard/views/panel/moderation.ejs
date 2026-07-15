@@ -1,128 +1,113 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">AutoMod</h2>
-    <form id="automodForm" class="space-y-4">
-      <label class="flex items-center gap-3">
-        <input type="checkbox" name="automod_enabled" <%= modules.find(m=>m.name==='automod')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar AutoMod</span>
+<div class="space-y-6 max-w-4xl" id="moderationPanel" data-guild-id="<%= guild.id %>">
+  <div class="dash-hero">
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <p class="text-orange-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Staff</p>
+        <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">🛡️ Moderación</h1>
+        <p class="text-slate-500 text-sm">Roles del staff, canal de logs y acceso rápido a herramientas.</p>
+      </div>
+      <a href="/servers/<%= guild.id %>/panel/members" class="dash-btn-primary self-start sm:self-center text-center no-underline">👥 Gestionar miembros</a>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div class="dash-stat-card stat-orange">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Warns activos</div>
+      <div class="text-2xl font-black text-orange-400"><%= panelStats.warns ?? '—' %></div>
+    </div>
+    <div class="dash-stat-card stat-cyan">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Tickets abiertos</div>
+      <div class="text-2xl font-black text-cyan-400"><%= panelStats.tickets ?? '—' %></div>
+    </div>
+  </div>
+
+  <div class="dash-card p-6">
+    <form id="moderationForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
+        <input type="checkbox" name="moderation_enabled" <%= modules.find(m=>m.name==='moderation')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <div>
+          <span class="font-semibold text-slate-200">Activar módulo Moderación</span>
+          <p class="text-xs text-slate-600 mt-0.5">Comandos /moderacion: ban, kick, warn, timeout, purge…</p>
+        </div>
       </label>
 
-      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div class="grid sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Máx. menciones</label>
-          <input type="number" name="maxMentions" value="<%= automodConfig.maxMentions || 5 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+          <label class="block text-xs text-slate-500 mb-1.5">Rol moderador</label>
+          <%- roleSelect('modRole', settings.modRole) %>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Máx. emojis</label>
-          <input type="number" name="maxEmojis" value="<%= automodConfig.maxEmojis || 15 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+          <label class="block text-xs text-slate-500 mb-1.5">Rol mute</label>
+          <%- roleSelect('muteRole', settings.muteRole) %>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Ventana spam (ms)</label>
-          <input type="number" name="spamWindowMs" value="<%= automodConfig.spamWindowMs || 5000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Máx. msgs en ventana spam</label>
-          <input type="number" name="spamMaxMessages" value="<%= automodConfig.spamMaxMessages || 5 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
+        <div class="sm:col-span-2">
+          <label class="block text-xs text-slate-500 mb-1.5">Canal log moderación</label>
+          <%- channelSelect('logMod', settings.logChannels?.mod) %>
         </div>
       </div>
 
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar AutoMod</button>
+      <div>
+        <label class="block text-xs text-slate-500 mb-2">Roles staff adicionales</label>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-52 overflow-y-auto pr-1">
+          <% if (!roles.length) { %>
+            <p class="text-sm text-slate-600 col-span-full">Bot sin acceso al servidor o sin roles cargados.</p>
+          <% } %>
+          <% roles.forEach(function(r) { %>
+            <label class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-orange-500/20 transition cursor-pointer">
+              <input type="checkbox" name="staffRole_<%= r.id %>" <%= (settings.staffRoles || []).includes(r.id) ? 'checked' : '' %> class="rounded accent-amber-400"/>
+              <span class="text-xs text-slate-300 truncate">@<%= r.name %></span>
+            </label>
+          <% }) %>
+        </div>
+        <p class="text-xs text-slate-600 mt-1.5">Usuarios con estos roles pueden usar comandos de mod aunque no tengan permisos de Discord.</p>
+      </div>
+
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
   </div>
 
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Anti-Raid</h2>
-    <form id="antiraidForm" class="space-y-4">
-      <label class="flex items-center gap-3">
-        <input type="checkbox" name="antiraid_enabled" <%= modules.find(m=>m.name==='antiraid')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Anti-Raid</span>
-      </label>
-      <div class="grid sm:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Threshold (joins)</label>
-          <input type="number" name="antiraidThreshold" value="<%= settings.antiraidThreshold || 8 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Ventana (ms)</label>
-          <input type="number" name="antiraidWindowMs" value="<%= settings.antiraidWindowMs || 15000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Lockdown (minutos)</label>
-          <input type="number" name="antiraidLockMinutes" value="<%= settings.antiraidLockMinutes || 10 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Edad mín. cuenta (horas)</label>
-          <input type="number" name="minAccountAgeHours" value="<%= settings.minAccountAgeHours || 0 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-      </div>
-      <label class="flex items-center gap-3">
-        <input type="checkbox" name="antiraidKick" <%= settings.antiraidKick ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="text-sm">Expulsar cuentas nuevas</span>
-      </label>
-      <label class="flex items-center gap-3">
-        <input type="checkbox" name="kickNewAccounts" <%= settings.kickNewAccounts ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="text-sm">Expulsar si no cumple edad mínima</span>
-      </label>
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar Anti-Raid</button>
-    </form>
-  </div>
-
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Anti-Nuke</h2>
-    <form id="antinukeForm" class="space-y-4">
-      <label class="flex items-center gap-3">
-        <input type="checkbox" name="antinuke_enabled" <%= modules.find(m=>m.name==='antinuke')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Anti-Nuke</span>
-      </label>
-      <div class="grid sm:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Threshold (acciones)</label>
-          <input type="number" name="antinukeThreshold" value="<%= settings.antinukeThreshold || 3 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Ventana (ms)</label>
-          <input type="number" name="antinukeWindowMs" value="<%= settings.antinukeWindowMs || 10000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-      </div>
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar Anti-Nuke</button>
-    </form>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <a href="/servers/<%= guild.id %>/panel/audit" class="dash-card p-4 hover:border-amber-500/20 transition no-underline block">
+      <div class="text-lg mb-1">📋</div>
+      <div class="text-sm font-semibold text-slate-200">Auditoría</div>
+      <div class="text-xs text-slate-600">Historial de acciones</div>
+    </a>
+    <a href="/servers/<%= guild.id %>/panel/logging" class="dash-card p-4 hover:border-amber-500/20 transition no-underline block">
+      <div class="text-lg mb-1">📝</div>
+      <div class="text-sm font-semibold text-slate-200">Logs</div>
+      <div class="text-xs text-slate-600">Todos los canales de log</div>
+    </a>
+    <a href="/servers/<%= guild.id %>/panel/automod" class="dash-card p-4 hover:border-amber-500/20 transition no-underline block">
+      <div class="text-lg mb-1">🤖</div>
+      <div class="text-sm font-semibold text-slate-200">AutoMod</div>
+      <div class="text-xs text-slate-600">Filtros automáticos</div>
+    </a>
+    <a href="/servers/<%= guild.id %>/panel/security" class="dash-card p-4 hover:border-amber-500/20 transition no-underline block">
+      <div class="text-lg mb-1">🔐</div>
+      <div class="text-sm font-semibold text-slate-200">Seguridad</div>
+      <div class="text-xs text-slate-600">Anti-raid y anti-nuke</div>
+    </a>
   </div>
 </div>
 
 <script>
-document.getElementById('automodForm').addEventListener('submit', async (e) => {
+document.getElementById('moderationForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  await saveSettings('/api/guilds/<%= guild.id %>/automod', {
-    enabled: fd.get('automod_enabled') === 'on',
-    maxMentions: parseInt(fd.get('maxMentions')) || 5,
-    maxEmojis: parseInt(fd.get('maxEmojis')) || 15,
-    spamWindowMs: parseInt(fd.get('spamWindowMs')) || 5000,
-    spamMaxMessages: parseInt(fd.get('spamMaxMessages')) || 5,
-  });
-});
-document.getElementById('antiraidForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
+  const staffRoles = [];
+  <% roles.forEach(function(r) { %>
+  if (fd.get('staffRole_<%= r.id %>') === 'on') staffRoles.push('<%= r.id %>');
+  <% }) %>
+
   await saveSettings('/api/guilds/<%= guild.id %>/settings', {
-    antiraidThreshold: parseInt(fd.get('antiraidThreshold')) || 8,
-    antiraidWindowMs: parseInt(fd.get('antiraidWindowMs')) || 15000,
-    antiraidLockMinutes: parseInt(fd.get('antiraidLockMinutes')) || 10,
-    minAccountAgeHours: parseInt(fd.get('minAccountAgeHours')) || 0,
-    antiraidKick: fd.get('antiraidKick') === 'on',
-    kickNewAccounts: fd.get('kickNewAccounts') === 'on',
+    modRole: fd.get('modRole') || null,
+    muteRole: fd.get('muteRole') || null,
+    logChannels: {
+      mod: fd.get('logMod') || null,
+    },
+    staffRoles,
   });
-  const mod = fd.get('antiraid_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { antiraid: mod } });
-});
-document.getElementById('antinukeForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
-    antinukeThreshold: parseInt(fd.get('antinukeThreshold')) || 3,
-    antinukeWindowMs: parseInt(fd.get('antinukeWindowMs')) || 10000,
-  });
-  const mod = fd.get('antinuke_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { antinuke: mod } });
+  const mod = fd.get('moderation_enabled') === 'on';
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { moderation: mod } });
 });
 </script>

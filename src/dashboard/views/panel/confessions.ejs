@@ -1,37 +1,162 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Confesiones</h2>
-    <form id="confessionsForm" class="space-y-4">
-      <label class="flex items-center gap-3">
+<div class="space-y-6 max-w-4xl" id="confessionsPanel" data-guild-id="<%= guild.id %>">
+  <div class="dash-hero">
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <p class="text-pink-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Comunidad</p>
+        <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">💬 Confesiones</h1>
+        <p class="text-slate-500 text-sm">Canal anónimo con revisión del staff antes de publicar.</p>
+      </div>
+      <div class="dash-stat-card stat-purple self-start sm:self-center" style="padding:0.85rem 1.1rem">
+        <div class="text-slate-500 text-xs uppercase font-semibold">Pendientes</div>
+        <div class="text-2xl font-black text-purple-400" id="stat-pending"><%= panelStats.pending ?? 0 %></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-card p-6">
+    <form id="confessionsForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="confessions_enabled" <%= modules.find(m=>m.name==='confessions')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Confesiones</span>
+        <div>
+          <span class="font-semibold text-slate-200">Activar Confesiones</span>
+          <p class="text-xs text-slate-600 mt-0.5">Los usuarios envían confesiones anónimas vía botón/modal en Discord</p>
+        </div>
       </label>
 
-      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div class="grid sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Confesiones</label>
+          <label class="block text-xs text-slate-500 mb-1.5">Canal publicación</label>
           <%- channelSelect('confessionChannel', settings.confessionChannel) %>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Revisión</label>
+          <label class="block text-xs text-slate-500 mb-1.5">Canal revisión (staff)</label>
           <%- channelSelect('confessionReviewChannel', settings.confessionReviewChannel) %>
         </div>
       </div>
 
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+      <button type="submit" class="dash-btn-primary">Guardar configuración</button>
     </form>
+  </div>
+
+  <div class="dash-card overflow-hidden">
+    <div class="p-5 border-b border-white/5 flex items-center justify-between gap-3">
+      <h2 class="text-sm font-bold text-slate-300">Cola de revisión</h2>
+      <button type="button" id="btnRefresh" class="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition">↻ Actualizar</button>
+    </div>
+    <div id="confessionsList" class="divide-y divide-white/5">
+      <p class="px-5 py-10 text-center text-slate-500 text-sm">Cargando...</p>
+    </div>
+    <div class="p-4 flex items-center justify-center gap-3 border-t border-white/5" id="pagination" hidden>
+      <button type="button" id="btnPrev" class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm disabled:opacity-40" disabled>←</button>
+      <span class="text-slate-500 text-xs" id="pageInfo">Página 1</span>
+      <button type="button" id="btnNext" class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm disabled:opacity-40" disabled>→</button>
+    </div>
   </div>
 </div>
 
 <script>
-document.getElementById('confessionsForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
-    confessionChannel: fd.get('confessionChannel') || null,
-    confessionReviewChannel: fd.get('confessionReviewChannel') || null,
+(function () {
+  const guildId = document.getElementById('confessionsPanel').dataset.guildId;
+  let state = { page: 1, pages: 1, loading: false };
+
+  const els = {
+    list: document.getElementById('confessionsList'),
+    pending: document.getElementById('stat-pending'),
+    pagination: document.getElementById('pagination'),
+    pageInfo: document.getElementById('pageInfo'),
+    prev: document.getElementById('btnPrev'),
+    next: document.getElementById('btnNext'),
+  };
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function formatDate(ts) {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function loadQueue() {
+    if (state.loading) return;
+    state.loading = true;
+    els.list.innerHTML = '<p class="px-5 py-10 text-center text-slate-500 text-sm">Cargando...</p>';
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/confessions?status=pending&page=${state.page}&limit=8`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Error');
+
+      state.pages = data.pages;
+      els.pending.textContent = data.total;
+      els.pageInfo.textContent = `Página ${data.page} de ${data.pages}`;
+      els.prev.disabled = data.page <= 1;
+      els.next.disabled = data.page >= data.pages;
+      els.pagination.hidden = data.pages <= 1;
+
+      if (!data.confessions.length) {
+        els.list.innerHTML = '<p class="px-5 py-10 text-center text-slate-500 text-sm">No hay confesiones pendientes 🎉</p>';
+        return;
+      }
+
+      els.list.innerHTML = data.confessions.map((c) => `
+        <div class="p-5 hover:bg-white/[0.02] transition" data-id="${c.id}">
+          <div class="flex items-start justify-between gap-3 mb-2">
+            <span class="text-xs font-mono text-purple-400/80">#${escapeHtml(c.id.slice(0, 8))}</span>
+            <span class="text-xs text-slate-600">${formatDate(c.createdAt)}</span>
+          </div>
+          <p class="text-sm text-slate-300 whitespace-pre-wrap break-words mb-4">${escapeHtml(c.preview)}${c.content.length > 280 ? '…' : ''}</p>
+          <div class="flex gap-2">
+            <button type="button" class="confess-action px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition" data-action="approve" data-id="${c.id}">✓ Publicar</button>
+            <button type="button" class="confess-action px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-300 hover:bg-red-500/20 transition" data-action="reject" data-id="${c.id}">✕ Rechazar</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      els.list.innerHTML = `<p class="px-5 py-10 text-center text-red-400 text-sm">${escapeHtml(e.message)}</p>`;
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  async function moderate(id, action) {
+    const label = action === 'approve' ? 'publicar' : 'rechazar';
+    if (!confirm(`¿Confirmas ${label} esta confesión?`)) return;
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/confessions/${id}/moderate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      showToast(data.message || 'Hecho');
+      loadQueue();
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  document.getElementById('confessionsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+      confessionChannel: fd.get('confessionChannel') || null,
+      confessionReviewChannel: fd.get('confessionReviewChannel') || null,
+    });
+    const mod = fd.get('confessions_enabled') === 'on';
+    await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { confessions: mod } });
   });
-  const mod = fd.get('confessions_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { confessions: mod } });
-});
+
+  document.getElementById('btnRefresh').addEventListener('click', () => loadQueue());
+  els.prev.addEventListener('click', () => { if (state.page > 1) { state.page--; loadQueue(); } });
+  els.next.addEventListener('click', () => { if (state.page < state.pages) { state.page++; loadQueue(); } });
+
+  document.getElementById('confessionsList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.confess-action');
+    if (!btn) return;
+    moderate(btn.dataset.id, btn.dataset.action);
+  });
+
+  loadQueue();
+})();
 </script>
