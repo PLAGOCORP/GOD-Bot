@@ -1,117 +1,240 @@
-<div class="space-y-6">
-  <div class="bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-dark-700 rounded-xl p-6">
-    <h1 class="text-3xl font-bold text-blue-400 mb-2">📋 Auditoría de Cambios</h1>
-    <p class="text-slate-400">Historial de configuración y acciones administrativas</p>
-  </div>
-
-  <!-- Tabla de auditoría simulada (en producción vendrá de BD) -->
-  <div class="bg-dark-900 border border-dark-700 rounded-xl overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-dark-700 bg-dark-800">
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Fecha</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Admin</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Acción</th>
-            <th class="px-4 py-3 text-left text-slate-300 font-semibold">Detalles</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Hoy 15:30</span></td>
-            <td class="px-4 py-3 text-slate-300"><strong>Admin#1234</strong></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">Config</span></td>
-            <td class="px-4 py-3 text-slate-400">Cambió prefijo de `!` a `g!`</td>
-          </tr>
-          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Hoy 14:12</span></td>
-            <td class="px-4 py-3 text-slate-300"><strong>Mod#5678</strong></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full">Módulo</span></td>
-            <td class="px-4 py-3 text-slate-400">Habilitó módulo <strong>automod</strong></td>
-          </tr>
-          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Hoy 13:45</span></td>
-            <td class="px-4 py-3 text-slate-300"><strong>Admin#1234</strong></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs rounded-full">Canal</span></td>
-            <td class="px-4 py-3 text-slate-400">Configuró canal de logs en #mod-logs</td>
-          </tr>
-          <tr class="border-b border-dark-800 hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Ayer 22:01</span></td>
-            <td class="px-4 py-3 text-slate-300"><strong>Admin#1234</strong></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded-full">Seguridad</span></td>
-            <td class="px-4 py-3 text-slate-400">Habilitó anti-raid con umbral de 5</td>
-          </tr>
-          <tr class="hover:bg-dark-800/50 transition">
-            <td class="px-4 py-3 text-slate-400"><span class="font-mono text-xs">Ayer 18:30</span></td>
-            <td class="px-4 py-3 text-slate-300"><strong>Mod#5678</strong></td>
-            <td class="px-4 py-3"><span class="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">Rol</span></td>
-            <td class="px-4 py-3 text-slate-400">Agregó role automático <strong>@Miembro</strong></td>
-          </tr>
-        </tbody>
-      </table>
+<div class="space-y-6 max-w-6xl" id="auditPanel" data-guild-id="<%= guild.id %>">
+  <div class="dash-hero">
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <p class="text-blue-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Seguridad</p>
+        <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">📋 Auditoría</h1>
+        <p class="text-slate-500 text-sm">Historial de cambios de configuración y acciones administrativas desde el panel.</p>
+      </div>
+      <button type="button" id="btnRefresh" class="dash-btn-primary self-start sm:self-center">↻ Actualizar</button>
     </div>
   </div>
 
-  <!-- Filtros y búsqueda -->
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-lg font-semibold mb-4">Filtrar Auditoría</h2>
-    <div class="grid sm:grid-cols-3 gap-4">
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="dash-stat-card stat-blue">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Total cambios</div>
+      <div class="text-2xl font-black text-blue-400" id="stat-total">—</div>
+      <div class="text-slate-600 text-xs mt-1" id="stat-period">últimos 30 días</div>
+    </div>
+    <div class="dash-stat-card stat-emerald">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Admins activos</div>
+      <div class="text-2xl font-black text-emerald-400" id="stat-admins">—</div>
+      <div class="text-slate-600 text-xs mt-1">han realizado cambios</div>
+    </div>
+    <div class="dash-stat-card stat-red">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Seguridad / mod</div>
+      <div class="text-2xl font-black text-red-400" id="stat-security">—</div>
+      <div class="text-slate-600 text-xs mt-1">acciones sensibles</div>
+    </div>
+    <div class="dash-stat-card stat-purple">
+      <div class="text-slate-500 text-xs uppercase font-semibold">Módulos</div>
+      <div class="text-2xl font-black text-purple-400" id="stat-modules">—</div>
+      <div class="text-slate-600 text-xs mt-1">activados/desactivados</div>
+    </div>
+  </div>
+
+  <div class="dash-card p-5">
+    <h2 class="text-sm font-bold text-slate-300 mb-4">Filtrar auditoría</h2>
+    <div class="grid sm:grid-cols-3 gap-3">
       <div>
-        <label class="block text-sm font-medium text-slate-400 mb-2">Admin</label>
-        <input type="text" placeholder="Buscar por usuario..." class="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300 placeholder-slate-500"/>
+        <label class="block text-xs text-slate-500 mb-1.5" for="filterAdmin">Admin (ID o nombre)</label>
+        <div class="servers-search-wrap mb-0">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="search" id="filterAdmin" class="servers-search w-full" placeholder="Buscar administrador..." autocomplete="off"/>
+        </div>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-400 mb-2">Tipo de Acción</label>
-        <select class="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300">
+        <label class="block text-xs text-slate-500 mb-1.5" for="filterCategory">Categoría</label>
+        <select id="filterCategory" class="servers-search w-full" style="padding-left:1rem">
           <option value="">Todas</option>
           <option value="config">Configuración</option>
           <option value="module">Módulos</option>
-          <option value="channel">Canales</option>
-          <option value="role">Roles</option>
           <option value="security">Seguridad</option>
+          <option value="moderation">Moderación</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-400 mb-2">Período</label>
-        <select class="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300">
+        <label class="block text-xs text-slate-500 mb-1.5" for="filterDays">Período</label>
+        <select id="filterDays" class="servers-search w-full" style="padding-left:1rem">
           <option value="7">Últimos 7 días</option>
-          <option value="30">Últimos 30 días</option>
+          <option value="30" selected>Últimos 30 días</option>
           <option value="90">Últimos 90 días</option>
           <option value="all">Todo el tiempo</option>
         </select>
       </div>
     </div>
-    <button class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg">🔍 Filtrar</button>
+    <p class="text-xs text-slate-500 mt-4" id="auditMeta">Cargando...</p>
   </div>
 
-  <!-- Estadísticas de auditoría -->
-  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
-      <div class="text-slate-400 text-sm font-medium mb-2">📝 Total Cambios</div>
-      <div class="text-3xl font-bold text-blue-400">127</div>
-      <div class="text-slate-500 text-xs mt-1">últimos 30 días</div>
-    </div>
-    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
-      <div class="text-slate-400 text-sm font-medium mb-2">👤 Admins Activos</div>
-      <div class="text-3xl font-bold text-emerald-400">5</div>
-      <div class="text-slate-500 text-xs mt-1">han realizado cambios</div>
-    </div>
-    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
-      <div class="text-slate-400 text-sm font-medium mb-2">🔐 Cambios Seguridad</div>
-      <div class="text-3xl font-bold text-red-400">12</div>
-      <div class="text-slate-500 text-xs mt-1">antirraids, antinukes</div>
-    </div>
-    <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
-      <div class="text-slate-400 text-sm font-medium mb-2">📦 Módulos Cambiados</div>
-      <div class="text-3xl font-bold text-purple-400">8</div>
-      <div class="text-slate-500 text-xs mt-1">activados/desactivados</div>
+  <div class="dash-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm" id="auditTable">
+        <thead>
+          <tr class="border-b border-white/5 text-left">
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Fecha</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Admin</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Acción</th>
+            <th class="px-4 py-3 text-slate-400 font-semibold text-xs uppercase tracking-wide">Detalles</th>
+          </tr>
+        </thead>
+        <tbody id="auditBody">
+          <tr><td colspan="4" class="px-4 py-12 text-center text-slate-500">Cargando registros...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Nota sobre privacidad -->
-  <div class="bg-blue-500/10 border border-blue-700/30 rounded-lg p-4">
-    <div class="text-sm text-blue-300">
-      <strong>ℹ️ Privacidad:</strong> Este registro de auditoría solo es visible para administradores. Se mantiene por seguridad y cumplimiento normativo.
-    </div>
+  <div class="flex items-center justify-center gap-3" id="pagination">
+    <button type="button" id="btnPrev" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-sm hover:border-blue-500/30 transition disabled:opacity-40" disabled>← Anterior</button>
+    <span class="text-slate-500 text-sm" id="pageInfo">Página 1</span>
+    <button type="button" id="btnNext" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-sm hover:border-blue-500/30 transition disabled:opacity-40" disabled>Siguiente →</button>
+  </div>
+
+  <div class="dash-card p-4 border-blue-500/20 bg-blue-500/5">
+    <p class="text-sm text-blue-300/90">
+      <strong class="text-blue-200">Privacidad:</strong> Este registro solo es visible para administradores del servidor. Se conserva para seguridad y trazabilidad de cambios.
+    </p>
   </div>
 </div>
+
+<script>
+(function () {
+  const root = document.getElementById('auditPanel');
+  const guildId = root.dataset.guildId;
+  let state = { page: 1, pages: 1, admin: '', category: '', days: '30', loading: false };
+  let searchTimer;
+
+  const els = {
+    body: document.getElementById('auditBody'),
+    meta: document.getElementById('auditMeta'),
+    total: document.getElementById('stat-total'),
+    admins: document.getElementById('stat-admins'),
+    security: document.getElementById('stat-security'),
+    modules: document.getElementById('stat-modules'),
+    period: document.getElementById('stat-period'),
+    pageInfo: document.getElementById('pageInfo'),
+    prev: document.getElementById('btnPrev'),
+    next: document.getElementById('btnNext'),
+    admin: document.getElementById('filterAdmin'),
+    category: document.getElementById('filterCategory'),
+    days: document.getElementById('filterDays'),
+  };
+
+  const CATEGORY_BADGE = {
+    config: ['bg-blue-500/15 text-blue-300', 'Config'],
+    module: ['bg-emerald-500/15 text-emerald-300', 'Módulo'],
+    security: ['bg-red-500/15 text-red-300', 'Seguridad'],
+    moderation: ['bg-orange-500/15 text-orange-300', 'Moderación'],
+  };
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function formatTimestamp(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = d.toDateString() === yesterday.toDateString();
+    const time = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Hoy ${time}`;
+    if (isYesterday) return `Ayer ${time}`;
+    return d.toLocaleString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function periodLabel(days) {
+    if (days === 'all') return 'todo el tiempo';
+    return `últimos ${days} días`;
+  }
+
+  function categoryBadge(cat, label) {
+    const [cls, fallback] = CATEGORY_BADGE[cat] || ['bg-slate-500/15 text-slate-300', 'Otro'];
+    return `<span class="px-2 py-0.5 rounded-full text-xs font-semibold ${cls}">${escapeHtml(label || fallback)}</span>`;
+  }
+
+  function detailText(log) {
+    let text = log.summary || log.label || '—';
+    if (log.targetId) text += ` · <span class="font-mono text-slate-600">${escapeHtml(log.targetId)}</span>`;
+    return text;
+  }
+
+  async function loadAudit() {
+    if (state.loading) return;
+    state.loading = true;
+    els.body.innerHTML = '<tr><td colspan="4" class="px-4 py-12 text-center text-slate-500">Cargando...</td></tr>';
+    try {
+      const params = new URLSearchParams({
+        page: state.page,
+        days: state.days,
+        limit: 25,
+      });
+      if (state.admin) params.set('admin', state.admin);
+      if (state.category) params.set('category', state.category);
+
+      const res = await fetch(`/api/guilds/${guildId}/audit?${params}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Error al cargar auditoría');
+
+      state.pages = data.pages;
+      const stats = data.stats || {};
+      els.total.textContent = stats.total ?? data.total ?? 0;
+      els.admins.textContent = stats.admins ?? '—';
+      els.security.textContent = stats.security ?? '—';
+      els.modules.textContent = stats.modules ?? '—';
+      els.period.textContent = periodLabel(state.days);
+
+      const from = data.total ? (data.page - 1) * data.limit + 1 : 0;
+      const to = Math.min(data.page * data.limit, data.total);
+      els.meta.textContent = `Mostrando ${from}-${to} de ${data.total} registros`;
+      els.pageInfo.textContent = `Página ${data.page} de ${data.pages}`;
+      els.prev.disabled = data.page <= 1;
+      els.next.disabled = data.page >= data.pages;
+
+      if (!data.logs.length) {
+        els.body.innerHTML = '<tr><td colspan="4" class="px-4 py-12 text-center text-slate-500">No hay registros para estos filtros</td></tr>';
+        return;
+      }
+
+      els.body.innerHTML = data.logs.map((log) => `
+        <tr class="border-b border-white/5 hover:bg-white/[0.02] transition">
+          <td class="px-4 py-3 text-slate-500 text-xs whitespace-nowrap font-mono">${formatTimestamp(log.timestamp)}</td>
+          <td class="px-4 py-3">
+            <div class="font-semibold text-slate-200">${escapeHtml(log.adminName)}</div>
+            ${log.adminId ? `<div class="text-[10px] font-mono text-slate-600">${escapeHtml(log.adminId)}</div>` : ''}
+          </td>
+          <td class="px-4 py-3">${categoryBadge(log.category, log.label)}</td>
+          <td class="px-4 py-3 text-slate-400 text-sm">${detailText(log)}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      els.body.innerHTML = `<tr><td colspan="4" class="px-4 py-12 text-center text-red-400">${escapeHtml(e.message)}</td></tr>`;
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  function applyFilters() {
+    state.admin = els.admin.value.trim();
+    state.category = els.category.value;
+    state.days = els.days.value;
+    state.page = 1;
+    loadAudit();
+  }
+
+  els.admin.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, 400);
+  });
+
+  els.category.addEventListener('change', applyFilters);
+  els.days.addEventListener('change', applyFilters);
+  document.getElementById('btnRefresh').addEventListener('click', () => loadAudit());
+  els.prev.addEventListener('click', () => { if (state.page > 1) { state.page--; loadAudit(); } });
+  els.next.addEventListener('click', () => { if (state.page < state.pages) { state.page++; loadAudit(); } });
+
+  loadAudit();
+})();
+</script>

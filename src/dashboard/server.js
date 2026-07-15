@@ -13,6 +13,7 @@ const logger = require('../utils/logger');
 const { handleInteractions } = require('./interactions');
 const { handleRoleConnectionsVerification } = require('./roleConnections');
 const membersApi = require('./membersApi');
+const auditLog = require('./auditLog');
 
 const expressLayouts = require('express-ejs-layouts');
 
@@ -603,10 +604,13 @@ function createDashboard(client) {
   // ─── API REST ───────────────────────────────────────────────
   app.post('/api/guilds/:id/settings', requireAuth, async (req, res) => {
     const guildId = req.params.id;
-    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
-    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    if (!requireGuildAdminApi(req, res, guildId)) return;
     try {
       await db.setGuildSettings(guildId, req.body);
+      await auditLog.recordAudit(guildId, req.session.user.id, 'dashboard_settings', {
+        summary: auditLog.summarizeSettings(req.body),
+        details: { keys: Object.keys(req.body || {}) },
+      });
       res.json({ ok: true, message: 'Configuración guardada' });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -615,8 +619,7 @@ function createDashboard(client) {
 
   app.post('/api/guilds/:id/modules', requireAuth, async (req, res) => {
     const guildId = req.params.id;
-    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
-    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    if (!requireGuildAdminApi(req, res, guildId)) return;
     try {
       const { modules } = req.body;
       if (modules && typeof modules === 'object') {
@@ -624,6 +627,10 @@ function createDashboard(client) {
           await db.setModuleEnabled(guildId, mod, !!enabled);
         }
       }
+      await auditLog.recordAudit(guildId, req.session.user.id, 'dashboard_modules', {
+        summary: auditLog.summarizeModules(modules),
+        details: { modules },
+      });
       res.json({ ok: true, message: 'Módulos actualizados' });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -632,12 +639,15 @@ function createDashboard(client) {
 
   app.post('/api/guilds/:id/automod', requireAuth, async (req, res) => {
     const guildId = req.params.id;
-    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
-    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    if (!requireGuildAdminApi(req, res, guildId)) return;
     try {
       const { enabled, ...cfg } = req.body;
       await db.setModuleConfig(guildId, 'automod', cfg);
       await db.setModuleEnabled(guildId, 'automod', !!enabled);
+      await auditLog.recordAudit(guildId, req.session.user.id, 'dashboard_automod', {
+        summary: auditLog.summarizeAutomod(req.body),
+        details: { enabled: !!enabled, cfg },
+      });
       res.json({ ok: true, message: 'AutoMod guardado' });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -646,8 +656,7 @@ function createDashboard(client) {
 
   app.post('/api/guilds/:id/tags', requireAuth, async (req, res) => {
     const guildId = req.params.id;
-    const g = (req.session.user.guilds || []).find((x) => x.id === guildId);
-    if (!g || (BigInt(g.permissions || 0) & 0x8n) !== 0x8n) return res.status(403).json({ error: 'Forbidden' });
+    if (!requireGuildAdminApi(req, res, guildId)) return;
     try {
       const { action, name, content } = req.body;
       if (action === 'delete') {
@@ -655,7 +664,28 @@ function createDashboard(client) {
       } else if (action === 'add' && name && content) {
         await db.setTag(guildId, name, content, req.session.user.id);
       }
+      await auditLog.recordAudit(guildId, req.session.user.id, 'dashboard_tags', {
+        summary: auditLog.summarizeTags(action, name),
+        details: { action, name },
+      });
       res.json({ ok: true, message: 'Tag actualizado' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/guilds/:id/audit', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const data = await auditLog.listAuditLogs(client, guildId, {
+        category: req.query.category || '',
+        admin: req.query.admin || '',
+        days: req.query.days || '30',
+        page: parseInt(req.query.page || '1', 10),
+        limit: Math.min(parseInt(req.query.limit || '25', 10), 50),
+      });
+      res.json({ ok: true, ...data });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }

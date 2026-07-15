@@ -1,6 +1,18 @@
 const db = require('../database/db');
 const config = require('../config');
 const { randomInt, levelFromXp } = require('../utils/helpers');
+
+async function getLevelingConfig(guildId) {
+  const settings = await db.getGuildSettings(guildId);
+  const c = config.leveling;
+  return {
+    xpMin: settings.xpMin ?? c.xpMin,
+    xpMax: settings.xpMax ?? c.xpMax,
+    cooldown: settings.cooldown ?? c.cooldown,
+    voiceXpPerMinute: settings.voiceXpPerMinute ?? c.voiceXpPerMinute,
+    voiceIntervalMs: c.voiceIntervalMs,
+  };
+}
 const embeds = require('../utils/embeds');
 const { rankCard } = require('../utils/canvas');
 const { AttachmentBuilder } = require('discord.js');
@@ -34,12 +46,13 @@ async function addTextXp(guildId, userId, message) {
   if (!await db.isModuleEnabled(guildId, 'leveling')) return null;
   if (message && await isNoXp(message)) return null;
 
+  const lv = await getLevelingConfig(guildId);
   const user = await db.ensureUser(guildId, userId);
   const now = Date.now();
-  if (now - (user.last_xp || 0) < config.leveling.cooldown) return null;
+  if (now - (user.last_xp || 0) < lv.cooldown) return null;
 
   const mult = message?.member ? await xpMultiplier(message.member) : 1;
-  const amount = Math.floor(randomInt(config.leveling.xpMin, config.leveling.xpMax) * mult);
+  const amount = Math.floor(randomInt(lv.xpMin, lv.xpMax) * mult);
   const before = levelFromXp(user.xp_text);
   const xp_text = user.xp_text + amount;
   const after = levelFromXp(xp_text);
@@ -132,4 +145,4 @@ async function announceLevelUp(message, result) {
     .catch(() => {});
 }
 
-module.exports = { addTextXp, leaderboard, rankOf, announceLevelUp, isNoXp, xpMultiplier };
+module.exports = { addTextXp, leaderboard, rankOf, announceLevelUp, isNoXp, xpMultiplier, getLevelingConfig };

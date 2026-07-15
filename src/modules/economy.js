@@ -2,6 +2,22 @@ const db = require('../database/db');
 const config = require('../config');
 const { randomInt } = require('../utils/helpers');
 
+async function getEconomyConfig(guildId) {
+  const settings = await db.getGuildSettings(guildId);
+  const c = config.economy;
+  return {
+    symbol: c.symbol,
+    currency: c.currency,
+    dailyMin: settings.dailyMin ?? c.dailyMin,
+    dailyMax: settings.dailyMax ?? c.dailyMax,
+    workMin: settings.workMin ?? c.workMin,
+    workMax: settings.workMax ?? c.workMax,
+    dailyCooldown: settings.dailyCooldown ?? c.dailyCooldown,
+    workCooldown: settings.workCooldown ?? c.workCooldown,
+    startingBalance: settings.startingBalance ?? c.startingBalance,
+  };
+}
+
 // Anti-doble-gasto: locks temporales por usuario (100ms)
 const txLocks = new Map(); // "guildId:userId" => release timestamp
 
@@ -44,12 +60,13 @@ async function claimDaily(guildId, userId) {
     return { ok: false, remaining: 1, locked: true };
   }
   try {
+    const econ = await getEconomyConfig(guildId);
     const p = await getProfile(guildId, userId);
     const now = Date.now();
-    if (now - (p.lastDaily || 0) < config.economy.dailyCooldown) {
-      return { ok: false, remaining: config.economy.dailyCooldown - (now - p.lastDaily) };
+    if (now - (p.lastDaily || 0) < econ.dailyCooldown) {
+      return { ok: false, remaining: econ.dailyCooldown - (now - p.lastDaily) };
     }
-    const amount = randomInt(config.economy.dailyMin, config.economy.dailyMax);
+    const amount = randomInt(econ.dailyMin, econ.dailyMax);
     const balance = p.balance + amount;
     await saveMoney(guildId, userId, { balance, lastDaily: now });
     return { ok: true, amount, balance };
@@ -63,12 +80,13 @@ async function claimWork(guildId, userId) {
     return { ok: false, remaining: 1, locked: true };
   }
   try {
+    const econ = await getEconomyConfig(guildId);
     const p = await getProfile(guildId, userId);
     const now = Date.now();
-    if (now - (p.lastWork || 0) < config.economy.workCooldown) {
-      return { ok: false, remaining: config.economy.workCooldown - (now - p.lastWork) };
+    if (now - (p.lastWork || 0) < econ.workCooldown) {
+      return { ok: false, remaining: econ.workCooldown - (now - p.lastWork) };
     }
-    const amount = randomInt(config.economy.workMin, config.economy.workMax);
+    const amount = randomInt(econ.workMin, econ.workMax);
     const balance = p.balance + amount;
     await saveMoney(guildId, userId, { balance, lastWork: now });
     return { ok: true, amount, balance };
@@ -122,4 +140,4 @@ const SHOP = [
   { id: 'title_god', name: 'Título: Siervo de God', price: 10000, emoji: '⚡' },
 ];
 
-module.exports = { getProfile, saveMoney, claimDaily, claimWork, transfer, leaderboard, SHOP };
+module.exports = { getProfile, saveMoney, claimDaily, claimWork, transfer, leaderboard, SHOP, getEconomyConfig };

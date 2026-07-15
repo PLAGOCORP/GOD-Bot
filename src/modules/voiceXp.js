@@ -24,7 +24,7 @@ function onLeave(guildId, userId) {
 async function tick(client) {
   for (const guild of client.guilds.cache.values()) {
     if (!await db.isModuleEnabled(guild.id, 'leveling')) continue;
-    const settings = await db.getGuildSettings(guild.id);
+    const lv = await require('./leveling').getLevelingConfig(guild.id);
 
     for (const [, channel] of guild.channels.cache.filter((c) => c.isVoiceBased())) {
       if (channel.id === guild.afkChannelId) continue;
@@ -34,9 +34,9 @@ async function tick(client) {
 
         const user = await db.ensureUser(guild.id, member.id);
         const now = Date.now();
-        if (now - (user.last_voice_xp || 0) < config.leveling.voiceIntervalMs) continue;
+        if (now - (user.last_voice_xp || 0) < lv.voiceIntervalMs) continue;
 
-        const amount = config.leveling.voiceXpPerMinute || 5;
+        const amount = lv.voiceXpPerMinute || 5;
         const before = levelFromXp(user.xp_voice);
         const xp_voice = (user.xp_voice || 0) + amount;
         const after = levelFromXp(xp_voice);

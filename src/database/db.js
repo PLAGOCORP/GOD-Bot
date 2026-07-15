@@ -77,6 +77,17 @@ const DEFAULT_SETTINGS = {
   stickyRoleIds: [],
   verifyQuiz: null,
   dashboardEnabled: true,
+  startingBalance: 200,
+  dailyMin: 100,
+  dailyMax: 500,
+  workMin: 50,
+  workMax: 250,
+  dailyCooldown: 86_400_000,
+  workCooldown: 3_600_000,
+  xpMin: 15,
+  xpMax: 25,
+  cooldown: 60_000,
+  voiceXpPerMinute: 5,
 };
 
 const DEFAULT_MODULES = {
@@ -170,12 +181,13 @@ async function ensureUser(guildId, userId) {
   const docId = `${guildId}_${userId}`;
   const snap = await ref('users', docId).get();
   if (snap.exists) return { user_id: userId, guild_id: guildId, ...snap.data() };
+  const settings = await getGuildSettings(guildId);
   const data = {
     user_id: userId, guild_id: guildId,
     xp_text: 0, xp_voice: 0, level_text: 0, level_voice: 0,
     last_xp: 0, last_voice_xp: 0, warns_count: 0, messages_count: 0,
     invites_count: 0, inviter_id: null, joined_at: ts(),
-    balance: 200, bank: 0, last_daily: 0, last_work: 0,
+    balance: settings.startingBalance ?? 200, bank: 0, last_daily: 0, last_work: 0,
     inventory_json: {}, voice_minutes: 0,
   };
   await ref('users', docId).set(data, { merge: true });

@@ -1,5 +1,6 @@
 const db = require('../database/db');
 const logging = require('../modules/logging');
+const auditLog = require('./auditLog');
 
 function formatMember(member, userData) {
   const status = member.presence?.status || 'offline';
@@ -134,9 +135,9 @@ async function moderateMember(client, guildId, userId, action, { reason, duratio
         reason: modReason,
         extra: `Warn #${id} · Total: ${total} · vía dashboard`,
       });
-      await db.insertLog(guildId, 'dashboard_warn', {
-        userId: modUserId,
+      await auditLog.recordAudit(guildId, modUserId, 'dashboard_warn', {
         targetId: userId,
+        summary: `Warn #${id} a usuario · Total: ${total}`,
         details: { warnId: id, total, reason: modReason },
       });
       return { message: `Advertencia emitida (#${id}). Total: ${total}` };
@@ -148,21 +149,32 @@ async function moderateMember(client, guildId, userId, action, { reason, duratio
         target: targetUser,
         reason: 'Warns limpiados desde dashboard',
       });
-      await db.insertLog(guildId, 'dashboard_clearwarns', { userId: modUserId, targetId: userId, details: {} });
+      await auditLog.recordAudit(guildId, modUserId, 'dashboard_clearwarns', {
+        targetId: userId,
+        summary: 'Warnings eliminados',
+      });
       return { message: 'Warnings eliminados' };
     }
     case 'kick': {
       if (!member?.kickable) throw new Error('No puedo expulsar a este usuario');
       await member.kick(`${moderator.tag}: ${modReason}`);
       await logging.logModAction(guild, 'kick', { moderator, target: targetUser, reason: modReason });
-      await db.insertLog(guildId, 'dashboard_kick', { userId: modUserId, targetId: userId, details: { reason: modReason } });
+      await auditLog.recordAudit(guildId, modUserId, 'dashboard_kick', {
+        targetId: userId,
+        summary: modReason,
+        details: { reason: modReason },
+      });
       return { message: 'Usuario expulsado' };
     }
     case 'ban': {
       if (member && !member.bannable) throw new Error('No puedo banear a este usuario');
       await guild.members.ban(userId, { reason: `${moderator.tag}: ${modReason}`, deleteMessageSeconds: 0 });
       await logging.logModAction(guild, 'ban', { moderator, target: targetUser, reason: modReason });
-      await db.insertLog(guildId, 'dashboard_ban', { userId: modUserId, targetId: userId, details: { reason: modReason } });
+      await auditLog.recordAudit(guildId, modUserId, 'dashboard_ban', {
+        targetId: userId,
+        summary: modReason,
+        details: { reason: modReason },
+      });
       return { message: 'Usuario baneado' };
     }
     case 'timeout': {
@@ -176,9 +188,9 @@ async function moderateMember(client, guildId, userId, action, { reason, duratio
         reason: modReason,
         extra: `${mins} min · vía dashboard`,
       });
-      await db.insertLog(guildId, 'dashboard_timeout', {
-        userId: modUserId,
+      await auditLog.recordAudit(guildId, modUserId, 'dashboard_timeout', {
         targetId: userId,
+        summary: `Timeout ${mins} min · ${modReason}`,
         details: { reason: modReason, minutes: mins },
       });
       return { message: `Timeout de ${mins} min aplicado` };
