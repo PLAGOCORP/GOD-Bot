@@ -3,7 +3,7 @@
     <div class="relative z-10">
       <p class="text-emerald-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Recompensas</p>
       <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">💰 Economía</h1>
-      <p class="text-slate-500 text-sm">Balance inicial, daily, work y cooldowns — aplicados por servidor.</p>
+      <p class="text-slate-500 text-sm">Canal dedicado, balance inicial, daily, work y cooldowns.</p>
     </div>
   </div>
 
@@ -13,6 +13,21 @@
         <input type="checkbox" name="economy_enabled" <%= modules.find(m=>m.name==='economy')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
         <span class="font-semibold text-slate-200">Activar Economía</span>
       </label>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Canal de economía</label>
+          <%- channelSelect('economyChannel', settings.economyChannel) %>
+          <p class="text-xs text-slate-600 mt-1">Anuncios de daily, work, pagos y crimen. Opcional.</p>
+        </div>
+        <div class="flex items-end">
+          <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer w-full">
+            <input type="checkbox" name="economyRestrictChannel" <%= settings.economyRestrictChannel ? 'checked' : '' %> class="rounded accent-amber-400"/>
+            <span class="text-sm text-slate-300">Solo permitir <code class="text-amber-400/80">/economia</code> en ese canal</span>
+          </label>
+        </div>
+      </div>
+
       <div class="grid sm:grid-cols-2 gap-4">
         <div><label class="block text-xs text-slate-500 mb-1.5">Balance inicial</label><input type="number" name="startingBalance" value="<%= settings.startingBalance || 200 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
         <div><label class="block text-xs text-slate-500 mb-1.5">Daily mín</label><input type="number" name="dailyMin" value="<%= settings.dailyMin || 100 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
@@ -32,6 +47,8 @@ document.getElementById('economyForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
   await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+    economyChannel: fd.get('economyChannel') || null,
+    economyRestrictChannel: fd.get('economyRestrictChannel') === 'on',
     startingBalance: parseInt(fd.get('startingBalance'), 10) || 200,
     dailyMin: parseInt(fd.get('dailyMin'), 10) || 100,
     dailyMax: parseInt(fd.get('dailyMax'), 10) || 500,

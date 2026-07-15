@@ -60,6 +60,11 @@ module.exports = {
     const uid = interaction.user.id;
     const sym = config.economy.symbol;
 
+    const channelBlock = await econ.checkEconomyChannel(interaction);
+    if (channelBlock && sub !== 'balance') {
+      return interaction.reply({ embeds: [embeds.error('Canal incorrecto', channelBlock)], ephemeral: true });
+    }
+
     if (sub === 'balance') {
       const user = interaction.options.getUser('usuario') || interaction.user;
       const p = await econ.getProfile(gid, user.id);
@@ -86,6 +91,11 @@ module.exports = {
           ephemeral: true,
         });
       }
+      const dailyEmbed = embeds.success(
+        'Daily',
+        `${interaction.user} reclamó +**${formatNumber(r.amount)}** ${sym}\nBalance: **${formatNumber(r.balance)}**`
+      );
+      await econ.announceEconomy(interaction.guild, dailyEmbed);
       return interaction.reply({
         embeds: [
           embeds.success(
@@ -105,6 +115,11 @@ module.exports = {
           ephemeral: true,
         });
       }
+      const workEmbed = embeds.success(
+        'Trabajo',
+        `${interaction.user} ganó **${formatNumber(r.amount)}** ${sym}`
+      );
+      await econ.announceEconomy(interaction.guild, workEmbed);
       return interaction.reply({
         embeds: [
           embeds.success(
@@ -126,6 +141,11 @@ module.exports = {
         const msg = r.locked ? 'Demasiado rápido. Espera un momento.' : 'Fondos insuficientes';
         return interaction.reply({ embeds: [embeds.error(msg)], ephemeral: true });
       }
+      const payEmbed = embeds.success(
+        'Pago',
+        `${interaction.user} envió **${formatNumber(amount)}** ${sym} a ${target}`
+      );
+      await econ.announceEconomy(interaction.guild, payEmbed);
       return interaction.reply({
         embeds: [embeds.success('Pago', `Enviaste **${formatNumber(amount)}** ${sym} a ${target}.`)],
       });
@@ -209,6 +229,11 @@ module.exports = {
       if (Math.random() > 0.45) {
         const amount = randomInt(50, 400);
         await econ.saveMoney(gid, uid, { balance: p.balance + amount });
+        const crimeWin = embeds.success(
+          'Crimen exitoso',
+          `${interaction.user} ganó **${formatNumber(amount)}** ${sym}`
+        );
+        await econ.announceEconomy(interaction.guild, crimeWin);
         return interaction.reply({
           embeds: [
             embeds.success(
@@ -220,6 +245,11 @@ module.exports = {
       }
       const fine = Math.min(p.balance, randomInt(30, 200));
       await econ.saveMoney(gid, uid, { balance: p.balance - fine });
+      const crimeFail = embeds.error(
+        'Crimen fallido',
+        `${interaction.user} fue multado con **${formatNumber(fine)}** ${sym}`
+      );
+      await econ.announceEconomy(interaction.guild, crimeFail);
       return interaction.reply({
         embeds: [embeds.error('Te atraparon', `Multa: **${formatNumber(fine)}** ${sym}`)],
       });

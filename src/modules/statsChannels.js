@@ -13,7 +13,7 @@ async function updateGuild(guild) {
 
   const total = guild.memberCount;
   const online = guild.members.cache.filter(
-    (m) => m.presence && m.presence.status !== 'offline'
+    (m) => !m.user.bot && m.presence && ['online', 'idle', 'dnd'].includes(m.presence.status)
   ).size;
   const boosts = guild.premiumSubscriptionCount || 0;
 

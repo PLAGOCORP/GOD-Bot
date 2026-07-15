@@ -140,4 +140,24 @@ const SHOP = [
   { id: 'title_god', name: 'Título: Siervo de God', price: 10000, emoji: '⚡' },
 ];
 
-module.exports = { getProfile, saveMoney, claimDaily, claimWork, transfer, leaderboard, SHOP, getEconomyConfig };
+async function checkEconomyChannel(interaction) {
+  const settings = await db.getGuildSettings(interaction.guild.id);
+  if (!settings.economyChannel) return null;
+  if (settings.economyRestrictChannel && interaction.channelId !== settings.economyChannel) {
+    const ch = interaction.guild.channels.cache.get(settings.economyChannel);
+    return ch ? `Usa los comandos de economía en ${ch}.` : 'Este comando solo funciona en el canal de economía configurado.';
+  }
+  return null;
+}
+
+async function announceEconomy(guild, embed) {
+  const settings = await db.getGuildSettings(guild.id);
+  if (!settings.economyChannel) return;
+  const ch = guild.channels.cache.get(settings.economyChannel);
+  if (ch?.isTextBased?.()) await ch.send({ embeds: [embed] }).catch(() => {});
+}
+
+module.exports = {
+  getProfile, saveMoney, claimDaily, claimWork, transfer, leaderboard, SHOP,
+  getEconomyConfig, checkEconomyChannel, announceEconomy,
+};

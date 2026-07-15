@@ -3,9 +3,15 @@
     <div class="relative z-10">
       <p class="text-blue-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Contadores</p>
       <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">📊 Estadísticas</h1>
-      <p class="text-slate-500 text-sm">Canales de voz con nombre dinámico (miembros, online, boosts).</p>
+      <p class="text-slate-500 text-sm">Renombra canales de <strong class="text-slate-400">voz</strong> con el total de miembros, en línea y boosts.</p>
     </div>
   </div>
+
+  <div class="dash-alert text-sm mb-0">
+    <strong>¿Cómo funciona?</strong> Crea 3 canales de voz (ej. «📊 Miembros», «🟢 Online», «💎 Boosts») y selecciónalos aquí.
+    El bot actualiza su <em>nombre</em> cada 10 minutos. No son canales de texto ni mensajes automáticos.
+  </div>
+
   <div class="dash-card p-6">
     <form id="statsForm" class="space-y-5">
       <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
@@ -13,25 +19,47 @@
         <span class="font-semibold text-slate-200">Activar Stats dinámicos</span>
       </label>
       <div class="grid sm:grid-cols-3 gap-4">
-        <div><label class="block text-xs text-slate-500 mb-1.5">Canal miembros</label><%- channelSelect('statsChannels.members', settings.statsChannels?.members) %></div>
-        <div><label class="block text-xs text-slate-500 mb-1.5">Canal en línea</label><%- channelSelect('statsChannels.online', settings.statsChannels?.online) %></div>
-        <div><label class="block text-xs text-slate-500 mb-1.5">Canal boosts</label><%- channelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %></div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Canal voz — miembros</label>
+          <%- voiceChannelSelect('statsChannels.members', settings.statsChannels?.members) %>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Canal voz — en línea</label>
+          <%- voiceChannelSelect('statsChannels.online', settings.statsChannels?.online) %>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Canal voz — boosts</label>
+          <%- voiceChannelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %>
+        </div>
       </div>
-      <button type="submit" class="dash-btn-primary">Guardar</button>
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="dash-btn-primary">Guardar</button>
+        <button type="button" id="refreshStatsBtn" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 border border-white/10 hover:border-amber-400/30 hover:text-amber-400 transition">Actualizar ahora</button>
+      </div>
     </form>
   </div>
 </div>
 <script>
+const guildId = '<%= guild.id %>';
+
 document.getElementById('statsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+  await saveSettings(`/api/guilds/${guildId}/settings`, {
     statsChannels: {
       members: fd.get('statsChannels.members') || null,
       online: fd.get('statsChannels.online') || null,
       boosts: fd.get('statsChannels.boosts') || null,
     },
   });
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { stats: fd.get('stats_enabled') === 'on' } });
+  await saveSettings(`/api/guilds/${guildId}/modules`, { modules: { stats: fd.get('stats_enabled') === 'on' } });
+  await fetch(`/api/guilds/${guildId}/stats/refresh`, { method: 'POST' });
+  showToast('Guardado y contadores actualizados');
+});
+
+document.getElementById('refreshStatsBtn').addEventListener('click', async () => {
+  const res = await fetch(`/api/guilds/${guildId}/stats/refresh`, { method: 'POST' });
+  const json = await res.json();
+  showToast(json.ok ? (json.message || 'Actualizado') : (json.error || 'Error'), json.ok ? 'success' : 'error');
 });
 </script>

@@ -78,8 +78,10 @@ function createDashboard(client) {
         .join('');
       return `<select name="${escapeHtml(name)}" class="servers-search w-full text-sm" style="padding-left:1rem"><option value="">Ninguno</option>${opts}</select>`;
     };
+    const voiceChannels = (channels || []).filter((c) => c.type === 2);
     return {
       channelSelect: (name, selected) => build(name, selected, channels, '#'),
+      voiceChannelSelect: (name, selected) => build(name, selected, voiceChannels, '🔊'),
       roleSelect: (name, selected) => build(name, selected, roles, '@'),
     };
   }
@@ -530,7 +532,10 @@ function createDashboard(client) {
     ]);
 
     let onlineCount = 0;
-    if (discordGuild?.members?.cache) {
+    if (discordGuild) {
+      if (discordGuild.members.cache.size < Math.min(discordGuild.memberCount, 1000)) {
+        await discordGuild.members.fetch({ withPresences: true, limit: 1000 }).catch(() => {});
+      }
       onlineCount = discordGuild.members.cache.filter(
         (m) => !m.user.bot && ['online', 'idle', 'dnd'].includes(m.presence?.status || 'offline')
       ).size;
@@ -623,6 +628,20 @@ function createDashboard(client) {
       res.json({ ok: true, message: 'Configuración guardada' });
     } catch (e) {
       res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/stats/refresh', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const guild = client?.guilds?.cache?.get(guildId);
+      if (!guild) throw new Error('El bot no está en este servidor');
+      const statsChannels = require('../modules/statsChannels');
+      await statsChannels.updateGuild(guild);
+      res.json({ ok: true, message: 'Contadores actualizados' });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
     }
   });
 

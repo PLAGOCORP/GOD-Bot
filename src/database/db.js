@@ -48,6 +48,8 @@ const DEFAULT_SETTINGS = {
   welcomeDm: false,
   logChannels: { mod: null, message: null, member: null, server: null, ticket: null },
   levelChannel: null,
+  economyChannel: null,
+  economyRestrictChannel: false,
   ticketCategory: null,
   ticketLog: null,
   inactiveHours: 48,
@@ -139,6 +141,7 @@ async function getGuildSettings(guildId) {
     language: settings.language ?? data.language ?? DEFAULT_SETTINGS.language,
     ownerIds: settings.ownerIds ?? data.ownerIds ?? DEFAULT_SETTINGS.ownerIds,
     logChannels: { ...DEFAULT_SETTINGS.logChannels, ...(settings.logChannels || {}) },
+    statsChannels: { ...DEFAULT_SETTINGS.statsChannels, ...(settings.statsChannels || {}) },
   };
 }
 
@@ -154,6 +157,7 @@ async function setGuildSettings(guildId, patch) {
     ...cur,
     ...normalized,
     logChannels: { ...cur.logChannels, ...(normalized.logChannels || {}) },
+    statsChannels: { ...cur.statsChannels, ...(normalized.statsChannels || {}) },
   };
   await ref('guilds', guildId).set({ settings_json: next }, { merge: true });
   return next;

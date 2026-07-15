@@ -14,6 +14,8 @@
         <div><label class="block text-xs text-slate-500 mb-1.5">Bienvenida</label><%- channelSelect('welcomeChannel', settings.welcomeChannel) %></div>
         <div><label class="block text-xs text-slate-500 mb-1.5">Despedida</label><%- channelSelect('leaveChannel', settings.leaveChannel) %></div>
         <div><label class="block text-xs text-slate-500 mb-1.5">Nivel up</label><%- channelSelect('levelChannel', settings.levelChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Economía</label><%- channelSelect('economyChannel', settings.economyChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Verificación</label><%- channelSelect('verificationChannel', settings.verificationChannel) %></div>
         <div><label class="block text-xs text-slate-500 mb-1.5">Starboard</label><%- channelSelect('starboardChannel', settings.starboardChannel) %></div>
         <div><label class="block text-xs text-slate-500 mb-1.5">Confesiones</label><%- channelSelect('confessionChannel', settings.confessionChannel) %></div>
         <div><label class="block text-xs text-slate-500 mb-1.5">Revisión confesiones</label><%- channelSelect('confessionReviewChannel', settings.confessionReviewChannel) %></div>
@@ -38,11 +40,11 @@
         <div><label class="block text-xs text-slate-500 mb-1.5">Tickets</label><%- channelSelect('logChannels.ticket', settings.logChannels?.ticket) %></div>
       </div>
 
-      <p class="dash-section-title">Stats dinámicos</p>
+      <p class="dash-section-title">Stats dinámicos <span class="text-slate-600 font-normal text-xs">(canales de voz)</span></p>
       <div class="grid sm:grid-cols-3 gap-4">
-        <div><label class="block text-xs text-slate-500 mb-1.5">Miembros</label><%- channelSelect('statsChannels.members', settings.statsChannels?.members) %></div>
-        <div><label class="block text-xs text-slate-500 mb-1.5">En línea</label><%- channelSelect('statsChannels.online', settings.statsChannels?.online) %></div>
-        <div><label class="block text-xs text-slate-500 mb-1.5">Boosts</label><%- channelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Voz — miembros</label><%- voiceChannelSelect('statsChannels.members', settings.statsChannels?.members) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Voz — en línea</label><%- voiceChannelSelect('statsChannels.online', settings.statsChannels?.online) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Voz — boosts</label><%- voiceChannelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %></div>
       </div>
 
       <button type="submit" class="dash-btn-primary mt-6">Guardar canales</button>
@@ -58,6 +60,8 @@ document.getElementById('channelsForm').addEventListener('submit', async (e) => 
     welcomeChannel: fd.get('welcomeChannel') || null,
     leaveChannel: fd.get('leaveChannel') || null,
     levelChannel: fd.get('levelChannel') || null,
+    economyChannel: fd.get('economyChannel') || null,
+    verificationChannel: fd.get('verificationChannel') || null,
     starboardChannel: fd.get('starboardChannel') || null,
     ticketCategory: fd.get('ticketCategory') || null,
     ticketLog: fd.get('ticketLog') || null,
