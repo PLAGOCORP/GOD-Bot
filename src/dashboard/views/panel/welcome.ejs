@@ -42,7 +42,16 @@
   </div>
 
   <div class="dash-card p-6">
-    <h2 class="text-sm font-bold text-slate-300 mb-4">Verificación</h2>
+    <h2 class="text-sm font-bold text-slate-300 mb-1">Verificación</h2>
+    <p class="text-slate-500 text-sm mb-4">Publica un mensaje en el canal elegido. Los nuevos miembros reaccionan con el emoji para recibir el rol verificado.</p>
+
+    <% if (settings.verificationMessageId) { %>
+      <div class="dash-alert mb-4 text-sm">
+        Panel activo — mensaje <code class="text-amber-400/90"><%= settings.verificationMessageId %></code>
+        <% if (settings.verificationChannel) { %> en <strong class="text-slate-200">#<%= channels.find(c => c.id === settings.verificationChannel)?.name || settings.verificationChannel %></strong><% } %>
+      </div>
+    <% } %>
+
     <form id="verifyForm" class="space-y-4">
       <div class="grid sm:grid-cols-2 gap-4">
         <div>
@@ -56,23 +65,49 @@
         <div>
           <label class="block text-xs text-slate-500 mb-1.5">Rol no verificado</label>
           <%- roleSelect('unverifiedRole', settings.unverifiedRole) %>
+          <p class="text-xs text-slate-600 mt-1">Se asigna automáticamente a quien entra sin verificar.</p>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Emoji de reacción</label>
+          <input type="text" name="verificationEmoji" value="<%= settings.verificationEmoji || '✅' %>" class="servers-search w-full" style="padding-left:1rem" placeholder="✅ o :white_check_mark:" maxlength="80"/>
+          <p class="text-xs text-slate-600 mt-1">Unicode, emoji estándar de Discord o emoji personalizado del servidor.</p>
         </div>
       </div>
       <div>
-        <label class="block text-xs text-slate-500 mb-1.5">Quiz (JSON)</label>
-        <textarea name="verifyQuiz" rows="4" class="dash-textarea font-mono text-xs"><%= JSON.stringify(settings.verifyQuiz, null, 2) %></textarea>
-        <p class="text-xs text-slate-600 mt-1">Formato: [{"q":"pregunta","a":"respuesta"}]</p>
+        <label class="block text-xs text-slate-500 mb-1.5">Mensaje del panel</label>
+        <textarea name="verificationMessage" rows="4" class="dash-textarea"><%= settings.verificationMessage || 'Pulsa la reacción de abajo para aceptar las reglas y obtener acceso al servidor.\n¡Por el poder de God!' %></textarea>
       </div>
-      <button type="submit" class="dash-btn-primary">Guardar verificación</button>
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
+        <input type="checkbox" name="publishPanel" checked class="rounded accent-amber-400"/>
+        <span class="text-sm text-slate-300">Publicar o actualizar el mensaje en el canal al guardar</span>
+      </label>
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="dash-btn-primary">Guardar verificación</button>
+        <button type="button" id="publishVerifyBtn" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 border border-white/10 hover:border-amber-400/30 hover:text-amber-400 transition">Republicar panel</button>
+      </div>
     </form>
   </div>
 </div>
 
 <script>
+const guildId = '<%= guild.id %>';
+
+async function publishVerificationPanel() {
+  const res = await fetch(`/api/guilds/${guildId}/verification/publish`, { method: 'POST' });
+  const json = await res.json();
+  if (json.ok) {
+    showToast(json.message || 'Panel publicado');
+    if (json.url) setTimeout(() => window.open(json.url, '_blank'), 600);
+  } else {
+    showToast(json.error || 'Error al publicar', 'error');
+  }
+  return json.ok;
+}
+
 document.getElementById('welcomeForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+  await saveSettings(`/api/guilds/${guildId}/settings`, {
     welcomeChannel: fd.get('welcomeChannel') || null,
     leaveChannel: fd.get('leaveChannel') || null,
     welcomeMessage: fd.get('welcomeMessage'),
@@ -80,18 +115,23 @@ document.getElementById('welcomeForm').addEventListener('submit', async (e) => {
     welcomeDm: fd.get('welcomeDm') === 'on',
   });
   const mod = fd.get('welcome_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { welcome: mod } });
+  await saveSettings(`/api/guilds/${guildId}/modules`, { modules: { welcome: mod } });
 });
+
 document.getElementById('verifyForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  let quiz = null;
-  try { quiz = JSON.parse(fd.get('verifyQuiz')); } catch { showToast('JSON de quiz inválido', 'error'); return; }
-  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
+  await saveSettings(`/api/guilds/${guildId}/settings`, {
     verificationChannel: fd.get('verificationChannel') || null,
     verifiedRole: fd.get('verifiedRole2') || null,
     unverifiedRole: fd.get('unverifiedRole') || null,
-    verifyQuiz: quiz,
+    verificationMessage: fd.get('verificationMessage'),
+    verificationEmoji: fd.get('verificationEmoji') || '✅',
   });
+  if (fd.get('publishPanel') === 'on') {
+    await publishVerificationPanel();
+  }
 });
+
+document.getElementById('publishVerifyBtn').addEventListener('click', publishVerificationPanel);
 </script>

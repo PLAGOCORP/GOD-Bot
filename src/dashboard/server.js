@@ -18,6 +18,7 @@ const confessionsApi = require('./confessionsApi');
 const suggestionsApi = require('./suggestionsApi');
 const invitesApi = require('./invitesApi');
 const { getHealthStatus } = require('./healthCheck');
+const verificationApi = require('./verificationApi');
 
 const expressLayouts = require('express-ejs-layouts');
 
@@ -622,6 +623,21 @@ function createDashboard(client) {
       res.json({ ok: true, message: 'Configuración guardada' });
     } catch (e) {
       res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/verification/publish', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const result = await verificationApi.publishVerificationPanel(client, guildId);
+      await auditLog.recordAudit(guildId, req.session.user.id, 'dashboard_verification', {
+        summary: 'Panel de verificación publicado',
+        details: result,
+      });
+      res.json({ ok: true, message: 'Panel publicado en el canal', ...result });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
     }
   });
 

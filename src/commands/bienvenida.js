@@ -2,9 +2,6 @@ const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   ChannelType,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
 } = require('discord.js');
 const embeds = require('../utils/embeds');
 const db = require('../database/db');
@@ -91,23 +88,12 @@ module.exports = {
         unverifiedRole: unverified?.id || null,
         verificationChannel: interaction.channel.id,
       });
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('verify_me')
-          .setLabel('Verificarme')
-          .setStyle(ButtonStyle.Success)
-          .setEmoji('✅')
-      );
-      await interaction.channel.send({
-        embeds: [
-          embeds.god(
-            'Verificación',
-            'Pulsa el botón para aceptar las reglas y obtener acceso al servidor.\n¡Por el poder de God!'
-          ),
-        ],
-        components: [row],
+      const verification = require('../modules/verification');
+      const result = await verification.publishPanel(interaction.client, gid);
+      return interaction.reply({
+        content: `✅ Panel de verificación publicado: ${result.url}`,
+        ephemeral: true,
       });
-      return interaction.reply({ content: '✅ Panel de verificación publicado.', ephemeral: true });
     }
 
     if (sub === 'imagen') {

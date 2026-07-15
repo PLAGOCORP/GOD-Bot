@@ -237,9 +237,8 @@ async function handleButton(interaction, client) {
   }
 
   if (id === 'verify_me') {
-    const s = await db.getGuildSettings(interaction.guild.id);
-    if (s.verifiedRole) await interaction.member.roles.add(s.verifiedRole).catch(() => {});
-    if (s.unverifiedRole) await interaction.member.roles.remove(s.unverifiedRole).catch(() => {});
+    const verification = require('../modules/verification');
+    await verification.applyVerification(interaction.member);
     return interaction.reply({
       embeds: [embeds.success('Verificado', '¡Bienvenido! Acceso concedido.')],
       ephemeral: true,
@@ -558,14 +557,8 @@ async function handleModal(interaction, client) {
         ephemeral: true,
       });
     }
-    if (s.verifiedRole) await interaction.member.roles.add(s.verifiedRole).catch(() => {});
-    if (s.unverifiedRole) await interaction.member.roles.remove(s.unverifiedRole).catch(() => {});
-    // apply autoroles after verify
-    const { config: wr } = await db.getModuleConfig(interaction.guild.id, 'welcome');
-    for (const rid of wr.autoroles || []) {
-      const role = interaction.guild.roles.cache.get(rid);
-      if (role) await interaction.member.roles.add(role).catch(() => {});
-    }
+    const verification = require('../modules/verification');
+    await verification.applyVerification(interaction.member);
     return interaction.reply({
       embeds: [embeds.success('Verificado', '¡Correcto! Acceso concedido.')],
       ephemeral: true,

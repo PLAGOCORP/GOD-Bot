@@ -5,6 +5,7 @@ const TYPE_META = {
   dashboard_modules: { category: 'module', label: 'Módulos' },
   dashboard_automod: { category: 'security', label: 'AutoMod' },
   dashboard_tags: { category: 'config', label: 'Tags' },
+  dashboard_verification: { category: 'config', label: 'Verificación' },
   dashboard_warn: { category: 'moderation', label: 'Warn' },
   dashboard_kick: { category: 'moderation', label: 'Kick' },
   dashboard_ban: { category: 'moderation', label: 'Ban' },

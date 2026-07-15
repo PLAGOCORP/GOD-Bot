@@ -1,6 +1,7 @@
 const { Events } = require('discord.js');
 const db = require('../database/db');
 const starboard = require('../modules/starboard');
+const verification = require('../modules/verification');
 
 function emojiKey(emoji) {
   return emoji.id ? `<:${emoji.name}:${emoji.id}>` : emoji.name;
@@ -21,6 +22,9 @@ module.exports = {
 
     // Starboard
     await starboard.handleReaction(reaction, user, true);
+
+    // Verificación por reacción
+    if (await verification.handleReaction(reaction, user)) return;
 
     // Reaction roles
     if (!await db.isModuleEnabled(reaction.message.guild.id, 'reaction_roles')) return;
