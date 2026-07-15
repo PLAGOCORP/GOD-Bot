@@ -1,44 +1,28 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Economía</h2>
-    <form id="economyForm" class="space-y-4">
-      <label class="flex items-center gap-3">
+<div class="space-y-6 max-w-4xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-emerald-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Recompensas</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">💰 Economía</h1>
+      <p class="text-slate-500 text-sm">Balance inicial, daily, work y cooldowns — aplicados por servidor.</p>
+    </div>
+  </div>
+
+  <div class="dash-card p-6">
+    <form id="economyForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="economy_enabled" <%= modules.find(m=>m.name==='economy')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Economía</span>
+        <span class="font-semibold text-slate-200">Activar Economía</span>
       </label>
-
-      <div class="grid sm:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Balance inicial</label>
-          <input type="number" name="startingBalance" value="<%= settings.startingBalance || 200 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Daily Mínimo</label>
-          <input type="number" name="dailyMin" value="<%= settings.dailyMin || 100 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Daily Máximo</label>
-          <input type="number" name="dailyMax" value="<%= settings.dailyMax || 500 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Work Mínimo</label>
-          <input type="number" name="workMin" value="<%= settings.workMin || 50 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Work Máximo</label>
-          <input type="number" name="workMax" value="<%= settings.workMax || 250 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Cooldown Daily (ms)</label>
-          <input type="number" name="dailyCooldown" value="<%= settings.dailyCooldown || 86400000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Cooldown Work (ms)</label>
-          <input type="number" name="workCooldown" value="<%= settings.workCooldown || 3600000 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div><label class="block text-xs text-slate-500 mb-1.5">Balance inicial</label><input type="number" name="startingBalance" value="<%= settings.startingBalance || 200 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Daily mín</label><input type="number" name="dailyMin" value="<%= settings.dailyMin || 100 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Daily máx</label><input type="number" name="dailyMax" value="<%= settings.dailyMax || 500 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Work mín</label><input type="number" name="workMin" value="<%= settings.workMin || 50 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Work máx</label><input type="number" name="workMax" value="<%= settings.workMax || 250 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Cooldown daily (ms)</label><input type="number" name="dailyCooldown" value="<%= settings.dailyCooldown || 86400000 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Cooldown work (ms)</label><input type="number" name="workCooldown" value="<%= settings.workCooldown || 3600000 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
       </div>
-
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
   </div>
 </div>
@@ -48,15 +32,14 @@ document.getElementById('economyForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
   await saveSettings('/api/guilds/<%= guild.id %>/settings', {
-    startingBalance: parseInt(fd.get('startingBalance')) || 200,
-    dailyMin: parseInt(fd.get('dailyMin')) || 100,
-    dailyMax: parseInt(fd.get('dailyMax')) || 500,
-    workMin: parseInt(fd.get('workMin')) || 50,
-    workMax: parseInt(fd.get('workMax')) || 250,
-    dailyCooldown: parseInt(fd.get('dailyCooldown')) || 86400000,
-    workCooldown: parseInt(fd.get('workCooldown')) || 3600000,
+    startingBalance: parseInt(fd.get('startingBalance'), 10) || 200,
+    dailyMin: parseInt(fd.get('dailyMin'), 10) || 100,
+    dailyMax: parseInt(fd.get('dailyMax'), 10) || 500,
+    workMin: parseInt(fd.get('workMin'), 10) || 50,
+    workMax: parseInt(fd.get('workMax'), 10) || 250,
+    dailyCooldown: parseInt(fd.get('dailyCooldown'), 10) || 86400000,
+    workCooldown: parseInt(fd.get('workCooldown'), 10) || 3600000,
   });
-  const mod = fd.get('economy_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { economy: mod } });
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { economy: fd.get('economy_enabled') === 'on' } });
 });
 </script>

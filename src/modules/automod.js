@@ -25,13 +25,15 @@ function addStrike(guildId, userId) {
   return n;
 }
 
-function checkSpam(guildId, userId) {
+function checkSpam(guildId, userId, am = {}) {
   const key = `${guildId}:${userId}`;
   const now = Date.now();
-  const list = (spamMap.get(key) || []).filter((t) => now - t < config.automod.spamWindowMs);
+  const windowMs = am.spamWindowMs ?? config.automod.spamWindowMs;
+  const maxMsgs = am.spamMaxMessages ?? config.automod.spamMaxMessages;
+  const list = (spamMap.get(key) || []).filter((t) => now - t < windowMs);
   list.push(now);
   spamMap.set(key, list);
-  return list.length > config.automod.spamMaxMessages;
+  return list.length > maxMsgs;
 }
 
 function countMentions(message) {
@@ -63,7 +65,7 @@ function analyze(message, am) {
   if (antiMentions && countMentions(message) > (am.maxMentions || config.automod.maxMentions)) {
     return { reason: 'Spam de menciones', severity: 2 };
   }
-  if (antiSpam && checkSpam(message.guild.id, message.author.id)) {
+  if (antiSpam && checkSpam(message.guild.id, message.author.id, am)) {
     return { reason: 'Spam de mensajes', severity: 3 };
   }
   if (am.antiAttachments && message.attachments.size > (am.maxAttachments || 5)) {

@@ -1,32 +1,26 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Stats</h2>
-    <form id="statsForm" class="space-y-4">
-      <label class="flex items-center gap-3">
+<div class="space-y-6 max-w-4xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-blue-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Contadores</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">📊 Estadísticas</h1>
+      <p class="text-slate-500 text-sm">Canales de voz con nombre dinámico (miembros, online, boosts).</p>
+    </div>
+  </div>
+  <div class="dash-card p-6">
+    <form id="statsForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="stats_enabled" <%= modules.find(m=>m.name==='stats')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Stats</span>
+        <span class="font-semibold text-slate-200">Activar Stats dinámicos</span>
       </label>
-
-      <div class="grid sm:grid-cols-3 gap-4 mt-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Miembros</label>
-          <%- channelSelect('statsChannels.members', settings.statsChannels?.members) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Canal En línea</label>
-          <%- channelSelect('statsChannels.online', settings.statsChannels?.online) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Boosts</label>
-          <%- channelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %>
-        </div>
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div><label class="block text-xs text-slate-500 mb-1.5">Canal miembros</label><%- channelSelect('statsChannels.members', settings.statsChannels?.members) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Canal en línea</label><%- channelSelect('statsChannels.online', settings.statsChannels?.online) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Canal boosts</label><%- channelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %></div>
       </div>
-
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
   </div>
 </div>
-
 <script>
 document.getElementById('statsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -38,7 +32,6 @@ document.getElementById('statsForm').addEventListener('submit', async (e) => {
       boosts: fd.get('statsChannels.boosts') || null,
     },
   });
-  const mod = fd.get('stats_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { stats: mod } });
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { stats: fd.get('stats_enabled') === 'on' } });
 });
 </script>

@@ -1,99 +1,51 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Canales del Servidor</h2>
-    <form id="channelsForm" class="space-y-4">
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Bienvenida</label>
-          <%- channelSelect('welcomeChannel', settings.welcomeChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Despedida</label>
-          <%- channelSelect('leaveChannel', settings.leaveChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Nivel Up</label>
-          <%- channelSelect('levelChannel', settings.levelChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Starboard</label>
-          <%- channelSelect('starboardChannel', settings.starboardChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Categoría Tickets</label>
-          <%- channelSelect('ticketCategory', settings.ticketCategory) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
-          <%- channelSelect('ticketLog', settings.ticketLog) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Confesiones</label>
-          <%- channelSelect('confessionChannel', settings.confessionChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Revisión Confesiones</label>
-          <%- channelSelect('confessionReviewChannel', settings.confessionReviewChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Sugerencias</label>
-          <%- channelSelect('suggestionChannel', settings.suggestionChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Cumpleaños</label>
-          <%- channelSelect('birthdayChannel', settings.birthdayChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Panel Temp VC</label>
-          <%- channelSelect('tempvcPanelChannel', settings.tempvcPanelChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Categoría Temp VC</label>
-          <%- channelSelect('tempvcCategory', settings.tempvcCategory) %>
-        </div>
+<div class="space-y-6 max-w-5xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-cyan-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Mapa</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">📢 Canales</h1>
+      <p class="text-slate-500 text-sm">Vista centralizada de todos los canales configurados del servidor.</p>
+    </div>
+  </div>
+
+  <div class="dash-card p-6">
+    <form id="channelsForm" class="space-y-2">
+      <p class="dash-section-title" style="margin-top:0;padding-top:0;border:0">Comunidad</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div><label class="block text-xs text-slate-500 mb-1.5">Bienvenida</label><%- channelSelect('welcomeChannel', settings.welcomeChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Despedida</label><%- channelSelect('leaveChannel', settings.leaveChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Nivel up</label><%- channelSelect('levelChannel', settings.levelChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Starboard</label><%- channelSelect('starboardChannel', settings.starboardChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Confesiones</label><%- channelSelect('confessionChannel', settings.confessionChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Revisión confesiones</label><%- channelSelect('confessionReviewChannel', settings.confessionReviewChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Sugerencias</label><%- channelSelect('suggestionChannel', settings.suggestionChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Cumpleaños</label><%- channelSelect('birthdayChannel', settings.birthdayChannel) %></div>
       </div>
 
-      <h3 class="text-lg font-semibold mt-6 pt-4 border-t border-dark-700">Canales de Log</h3>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Moderación</label>
-          <%- channelSelect('logChannels.mod', settings.logChannels?.mod) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Mensajes</label>
-          <%- channelSelect('logChannels.message', settings.logChannels?.message) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Miembros</label>
-          <%- channelSelect('logChannels.member', settings.logChannels?.member) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Servidor</label>
-          <%- channelSelect('logChannels.server', settings.logChannels?.server) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
-          <%- channelSelect('logChannels.ticket', settings.logChannels?.ticket) %>
-        </div>
+      <p class="dash-section-title">Tickets &amp; voz</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div><label class="block text-xs text-slate-500 mb-1.5">Categoría tickets</label><%- channelSelect('ticketCategory', settings.ticketCategory) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Log tickets</label><%- channelSelect('ticketLog', settings.ticketLog) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Panel Temp VC</label><%- channelSelect('tempvcPanelChannel', settings.tempvcPanelChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Categoría Temp VC</label><%- channelSelect('tempvcCategory', settings.tempvcCategory) %></div>
       </div>
 
-      <h3 class="text-lg font-semibold mt-6 pt-4 border-t border-dark-700">Canales de Stats Dinámicos</h3>
+      <p class="dash-section-title">Logs</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div><label class="block text-xs text-slate-500 mb-1.5">Mod</label><%- channelSelect('logChannels.mod', settings.logChannels?.mod) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Mensajes</label><%- channelSelect('logChannels.message', settings.logChannels?.message) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Miembros</label><%- channelSelect('logChannels.member', settings.logChannels?.member) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Servidor</label><%- channelSelect('logChannels.server', settings.logChannels?.server) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Tickets</label><%- channelSelect('logChannels.ticket', settings.logChannels?.ticket) %></div>
+      </div>
+
+      <p class="dash-section-title">Stats dinámicos</p>
       <div class="grid sm:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Miembros</label>
-          <%- channelSelect('statsChannels.members', settings.statsChannels?.members) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">En línea</label>
-          <%- channelSelect('statsChannels.online', settings.statsChannels?.online) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Boosts</label>
-          <%- channelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %>
-        </div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Miembros</label><%- channelSelect('statsChannels.members', settings.statsChannels?.members) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">En línea</label><%- channelSelect('statsChannels.online', settings.statsChannels?.online) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Boosts</label><%- channelSelect('statsChannels.boosts', settings.statsChannels?.boosts) %></div>
       </div>
 
-      <button type="submit" class="mt-6 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar canales</button>
+      <button type="submit" class="dash-btn-primary mt-6">Guardar canales</button>
     </form>
   </div>
 </div>
@@ -102,7 +54,7 @@
 document.getElementById('channelsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const data = {
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
     welcomeChannel: fd.get('welcomeChannel') || null,
     leaveChannel: fd.get('leaveChannel') || null,
     levelChannel: fd.get('levelChannel') || null,
@@ -127,7 +79,6 @@ document.getElementById('channelsForm').addEventListener('submit', async (e) => 
       online: fd.get('statsChannels.online') || null,
       boosts: fd.get('statsChannels.boosts') || null,
     },
-  };
-  await saveSettings('/api/guilds/<%= guild.id %>/settings', data);
+  });
 });
 </script>

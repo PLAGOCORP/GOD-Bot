@@ -660,6 +660,38 @@ main h2 { color: #f1f5f9; font-weight: 700; }
   box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.08);
 }
 
+.servers-search.w-full { max-width: none; }
+
+.dash-textarea {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  resize: vertical;
+  min-height: 5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dash-textarea:focus {
+  outline: none;
+  border-color: rgba(251, 191, 36, 0.4);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.08);
+}
+
+.dash-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #64748b;
+  margin: 1.25rem 0 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .servers-search-wrap {
   position: relative;
   margin-bottom: 1.5rem;

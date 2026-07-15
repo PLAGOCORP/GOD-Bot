@@ -1,45 +1,37 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Roles del Servidor</h2>
-    <form id="rolesForm" class="space-y-4">
+<div class="space-y-6 max-w-4xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-violet-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Permisos</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">🎭 Roles</h1>
+      <p class="text-slate-500 text-sm">Roles especiales del bot: moderación, verificación, música y sticky roles.</p>
+    </div>
+  </div>
+
+  <div class="dash-card p-6">
+    <form id="rolesForm" class="space-y-5">
       <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Rol Moderador</label>
-          <%- roleSelect('modRole', settings.modRole) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Rol Mute</label>
-          <%- roleSelect('muteRole', settings.muteRole) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Rol Verificado</label>
-          <%- roleSelect('verifiedRole', settings.verifiedRole) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Rol No Verificado</label>
-          <%- roleSelect('unverifiedRole', settings.unverifiedRole) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Rol Cumpleaños</label>
-          <%- roleSelect('birthdayRole', settings.birthdayRole) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Rol DJ (Música)</label>
-          <%- roleSelect('musicDjRole', settings.musicDjRole) %>
-        </div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Rol moderador</label><%- roleSelect('modRole', settings.modRole) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Rol mute</label><%- roleSelect('muteRole', settings.muteRole) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Rol verificado</label><%- roleSelect('verifiedRole', settings.verifiedRole) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Rol no verificado</label><%- roleSelect('unverifiedRole', settings.unverifiedRole) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Rol cumpleaños</label><%- roleSelect('birthdayRole', settings.birthdayRole) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Rol DJ (música)</label><%- roleSelect('musicDjRole', settings.musicDjRole) %></div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-slate-400 mb-1">Roles Staff (separados por coma, IDs)</label>
-        <input type="text" name="staffRoles" value="<%= (settings.staffRoles || []).join(',') %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full" placeholder="id1,id2,id3"/>
+        <label class="block text-xs text-slate-500 mb-2">Sticky roles (se reasignan al volver)</label>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
+          <% roles.forEach(function(r) { %>
+            <label class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-violet-500/20 transition cursor-pointer">
+              <input type="checkbox" name="sticky_<%= r.id %>" <%= (settings.stickyRoleIds || []).includes(r.id) ? 'checked' : '' %> class="rounded accent-amber-400"/>
+              <span class="text-xs text-slate-300 truncate">@<%= r.name %></span>
+            </label>
+          <% }) %>
+        </div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-slate-400 mb-1">Sticky Roles (separados por coma, IDs)</label>
-        <input type="text" name="stickyRoleIds" value="<%= (settings.stickyRoleIds || []).join(',') %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full" placeholder="id1,id2,id3"/>
-      </div>
-
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar roles</button>
+      <p class="text-xs text-slate-600">Los roles staff se configuran en <a href="/servers/<%= guild.id %>/panel/moderation" class="text-amber-400/80 hover:text-amber-300">Moderación</a>.</p>
+      <button type="submit" class="dash-btn-primary">Guardar roles</button>
     </form>
   </div>
 </div>
@@ -48,6 +40,10 @@
 document.getElementById('rolesForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
+  const stickyRoleIds = [];
+  <% roles.forEach(function(r) { %>
+  if (fd.get('sticky_<%= r.id %>') === 'on') stickyRoleIds.push('<%= r.id %>');
+  <% }) %>
   await saveSettings('/api/guilds/<%= guild.id %>/settings', {
     modRole: fd.get('modRole') || null,
     muteRole: fd.get('muteRole') || null,
@@ -55,8 +51,7 @@ document.getElementById('rolesForm').addEventListener('submit', async (e) => {
     unverifiedRole: fd.get('unverifiedRole') || null,
     birthdayRole: fd.get('birthdayRole') || null,
     musicDjRole: fd.get('musicDjRole') || null,
-    staffRoles: fd.get('staffRoles') ? fd.get('staffRoles').split(',').map(s => s.trim()).filter(Boolean) : [],
-    stickyRoleIds: fd.get('stickyRoleIds') ? fd.get('stickyRoleIds').split(',').map(s => s.trim()).filter(Boolean) : [],
+    stickyRoleIds,
   });
 });
 </script>

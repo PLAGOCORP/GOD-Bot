@@ -1,37 +1,31 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Canales de Log</h2>
-    <p class="text-sm text-slate-400 mb-4">Configura qué eventos se registran y en qué canal.</p>
-    <form id="loggingForm" class="space-y-4">
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Moderación</label>
-          <%- channelSelect('logMod', settings.logChannels?.mod) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Mensajes</label>
-          <%- channelSelect('logMessage', settings.logChannels?.message) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Miembros</label>
-          <%- channelSelect('logMember', settings.logChannels?.member) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Servidor</label>
-          <%- channelSelect('logServer', settings.logChannels?.server) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Log Tickets</label>
-          <%- channelSelect('logTicket', settings.logChannels?.ticket) %>
-        </div>
-      </div>
+<div class="space-y-6 max-w-4xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-slate-400 text-xs font-bold tracking-[0.2em] uppercase mb-2">Registros</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">📝 Logs</h1>
+      <p class="text-slate-500 text-sm">Canales donde el bot registra eventos del servidor.</p>
+    </div>
+  </div>
 
-      <label class="flex items-center gap-3">
+  <div class="dash-card p-6">
+    <form id="loggingForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="logging_enabled" <%= modules.find(m=>m.name==='logging')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Logging</span>
+        <div>
+          <span class="font-semibold text-slate-200">Activar Logging</span>
+          <p class="text-xs text-slate-600 mt-0.5">Joins, mensajes eliminados, cambios de canal, etc.</p>
+        </div>
       </label>
 
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar Logging</button>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div><label class="block text-xs text-slate-500 mb-1.5">Moderación</label><%- channelSelect('logMod', settings.logChannels?.mod) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Mensajes</label><%- channelSelect('logMessage', settings.logChannels?.message) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Miembros</label><%- channelSelect('logMember', settings.logChannels?.member) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Servidor</label><%- channelSelect('logServer', settings.logChannels?.server) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Tickets</label><%- channelSelect('logTicket', settings.logChannels?.ticket) %></div>
+      </div>
+
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
   </div>
 </div>

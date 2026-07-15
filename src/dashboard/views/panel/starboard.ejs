@@ -1,32 +1,26 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Starboard</h2>
-    <form id="starboardForm" class="space-y-4">
-      <label class="flex items-center gap-3">
+<div class="space-y-6 max-w-4xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-yellow-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Destacados</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">⭐ Starboard</h1>
+      <p class="text-slate-500 text-sm">Mensajes populares republicados al alcanzar el mínimo de reacciones.</p>
+    </div>
+  </div>
+  <div class="dash-card p-6">
+    <form id="starboardForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="starboard_enabled" <%= modules.find(m=>m.name==='starboard')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Starboard</span>
+        <span class="font-semibold text-slate-200">Activar Starboard</span>
       </label>
-
-      <div class="grid sm:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Canal Starboard</label>
-          <%- channelSelect('starboardChannel', settings.starboardChannel) %>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Emoji</label>
-          <input type="text" name="starboardEmoji" value="<%= settings.starboardEmoji || '⭐' %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Mínimo de stars</label>
-          <input type="number" name="starboardMin" value="<%= settings.starboardMin || 3 %>" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full"/>
-        </div>
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div class="sm:col-span-2"><label class="block text-xs text-slate-500 mb-1.5">Canal</label><%- channelSelect('starboardChannel', settings.starboardChannel) %></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Emoji</label><input type="text" name="starboardEmoji" value="<%= settings.starboardEmoji || '⭐' %>" class="servers-search w-full" style="padding-left:1rem"/></div>
+        <div><label class="block text-xs text-slate-500 mb-1.5">Mínimo stars</label><input type="number" name="starboardMin" value="<%= settings.starboardMin || 3 %>" class="servers-search w-full" style="padding-left:1rem"/></div>
       </div>
-
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
   </div>
 </div>
-
 <script>
 document.getElementById('starboardForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -34,9 +28,8 @@ document.getElementById('starboardForm').addEventListener('submit', async (e) =>
   await saveSettings('/api/guilds/<%= guild.id %>/settings', {
     starboardChannel: fd.get('starboardChannel') || null,
     starboardEmoji: fd.get('starboardEmoji') || '⭐',
-    starboardMin: parseInt(fd.get('starboardMin')) || 3,
+    starboardMin: parseInt(fd.get('starboardMin'), 10) || 3,
   });
-  const mod = fd.get('starboard_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { starboard: mod } });
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { starboard: fd.get('starboard_enabled') === 'on' } });
 });
 </script>

@@ -1,30 +1,59 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">AutoMod - Palabras prohibidas</h2>
-    <form id="automodWordsForm" class="space-y-4">
-      <label class="flex items-center gap-3">
+<div class="space-y-6 max-w-4xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-red-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Filtros</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">🤖 AutoMod</h1>
+      <p class="text-slate-500 text-sm">Palabras prohibidas, límites de spam y menciones por servidor.</p>
+    </div>
+  </div>
+
+  <div class="dash-card p-6">
+    <form id="automodForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="automod_enabled" <%= modules.find(m=>m.name==='automod')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar AutoMod</span>
+        <span class="font-semibold text-slate-200">Activar AutoMod</span>
       </label>
 
-      <div>
-        <label class="block text-sm font-medium text-slate-400 mb-1">Lista de palabras prohibidas (una por línea)</label>
-        <textarea name="badWords" rows="8" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 w-full font-mono text-sm"><%= (automodConfig.badWords || []).join('\n') %></textarea>
-        <p class="text-xs text-slate-500 mt-1">Escribe cada palabra prohibida en una línea separada</p>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Máx. menciones</label>
+          <input type="number" name="maxMentions" value="<%= automodConfig.maxMentions || 5 %>" class="servers-search w-full" style="padding-left:1rem"/>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Máx. emojis</label>
+          <input type="number" name="maxEmojis" value="<%= automodConfig.maxEmojis || 15 %>" class="servers-search w-full" style="padding-left:1rem"/>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Ventana spam (ms)</label>
+          <input type="number" name="spamWindowMs" value="<%= automodConfig.spamWindowMs || 5000 %>" class="servers-search w-full" style="padding-left:1rem"/>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1.5">Máx. msgs en ventana</label>
+          <input type="number" name="spamMaxMessages" value="<%= automodConfig.spamMaxMessages || 5 %>" class="servers-search w-full" style="padding-left:1rem"/>
+        </div>
       </div>
 
-      <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+      <div>
+        <label class="block text-xs text-slate-500 mb-1.5">Palabras prohibidas (una por línea)</label>
+        <textarea name="badWords" rows="8" class="dash-textarea font-mono text-xs"><%= (automodConfig.badWords || []).join('\n') %></textarea>
+      </div>
+
+      <button type="submit" class="dash-btn-primary">Guardar AutoMod</button>
     </form>
   </div>
 </div>
 
 <script>
-document.getElementById('automodWordsForm').addEventListener('submit', async (e) => {
+document.getElementById('automodForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const badWords = fd.get('badWords').split('\n').map(w => w.trim()).filter(Boolean);
+  const badWords = fd.get('badWords').split('\n').map((w) => w.trim()).filter(Boolean);
   await saveSettings('/api/guilds/<%= guild.id %>/automod', {
     enabled: fd.get('automod_enabled') === 'on',
+    maxMentions: parseInt(fd.get('maxMentions'), 10) || 5,
+    maxEmojis: parseInt(fd.get('maxEmojis'), 10) || 15,
+    spamWindowMs: parseInt(fd.get('spamWindowMs'), 10) || 5000,
+    spamMaxMessages: parseInt(fd.get('spamMaxMessages'), 10) || 5,
     badWords,
   });
 });

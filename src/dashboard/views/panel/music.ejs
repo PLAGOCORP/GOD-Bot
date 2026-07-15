@@ -1,30 +1,31 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Música</h2>
-    <form id="musicForm" class="space-y-4">
-      <label class="flex items-center gap-3">
+<div class="space-y-6 max-w-3xl">
+  <div class="dash-hero">
+    <div class="relative z-10">
+      <p class="text-purple-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Audio</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">🎵 Música</h1>
+      <p class="text-slate-500 text-sm">Reproducción vía Lavalink y control por rol DJ.</p>
+    </div>
+  </div>
+  <div class="dash-card p-6">
+    <form id="musicForm" class="space-y-5">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
         <input type="checkbox" name="music_enabled" <%= modules.find(m=>m.name==='music')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Música</span>
+        <span class="font-semibold text-slate-200">Activar Música</span>
       </label>
-
-      <div class="mt-4">
-        <label class="block text-sm font-medium text-slate-400 mb-1">Rol DJ</label>
+      <div>
+        <label class="block text-xs text-slate-500 mb-1.5">Rol DJ</label>
         <%- roleSelect('musicDjRole', settings.musicDjRole) %>
+        <p class="text-xs text-slate-600 mt-1">Usuarios con este rol pueden controlar la cola sin ser admin.</p>
       </div>
-
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
   </div>
 </div>
-
 <script>
 document.getElementById('musicForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  await saveSettings('/api/guilds/<%= guild.id %>/settings', {
-    musicDjRole: fd.get('musicDjRole') || null,
-  });
-  const mod = fd.get('music_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { music: mod } });
+  await saveSettings('/api/guilds/<%= guild.id %>/settings', { musicDjRole: fd.get('musicDjRole') || null });
+  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { music: fd.get('music_enabled') === 'on' } });
 });
 </script>
