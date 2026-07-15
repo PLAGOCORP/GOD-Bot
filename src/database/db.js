@@ -585,6 +585,13 @@ async function updateSuggestion(id, fields) {
   await ref('suggestions', String(id)).set(fields, { merge: true });
 }
 
+async function listSuggestions(guildId, status) {
+  let q = col('suggestions').where('guild_id', '==', guildId);
+  if (status) q = q.where('status', '==', status);
+  const snap = await q.get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
 // ─── POLLS ───────────────────────────────────────────────────
 async function getPoll(id) {
   const snap = await ref('polls', String(id)).get();
@@ -761,7 +768,7 @@ module.exports = {
   getTempChannel, saveTempChannel, deleteTempChannel, getAllTempChannels,
   getApplicationTypes, getApplication, createApplication, updateApplication,
   getConfession, createConfession, updateConfession, listConfessions,
-  getSuggestion, createSuggestion, updateSuggestion,
+  getSuggestion, createSuggestion, updateSuggestion, listSuggestions,
   getPoll, createPoll, updatePoll,
   addReminder, markReminderFired, getPendingReminders, getReminder,
   getEmotePacks, addEmotePack,

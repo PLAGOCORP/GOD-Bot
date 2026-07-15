@@ -1,22 +1,178 @@
-<div class="max-w-3xl space-y-6">
-  <div class="bg-dark-900 border border-dark-700 rounded-xl p-6">
-    <h2 class="text-xl font-semibold mb-4">Invites</h2>
-    <form id="invitesForm" class="space-y-4">
-      <label class="flex items-center gap-3">
-        <input type="checkbox" name="invites_enabled" <%= modules.find(m=>m.name==='invites')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
-        <span class="font-medium">Activar Invites</span>
-      </label>
+<div class="space-y-6 max-w-4xl" id="invitesPanel" data-guild-id="<%= guild.id %>">
+  <div class="dash-hero">
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <p class="text-emerald-400/80 text-xs font-bold tracking-[0.2em] uppercase mb-2">Crecimiento</p>
+        <h1 class="text-2xl sm:text-3xl font-black text-white mb-1">📨 Invitaciones</h1>
+        <p class="text-slate-500 text-sm">Tracker de invites, ranking y recompensas por rol.</p>
+      </div>
+      <div class="dash-stat-card stat-emerald self-start sm:self-center" style="padding:0.85rem 1.1rem">
+        <div class="text-slate-500 text-xs uppercase font-semibold">Invitadores</div>
+        <div class="text-2xl font-black text-emerald-400" id="stat-inviters">—</div>
+      </div>
+    </div>
+  </div>
 
-      <button type="submit" class="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2 rounded-lg">Guardar</button>
+  <div class="dash-card p-6">
+    <form id="invitesForm" class="space-y-4">
+      <label class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 cursor-pointer">
+        <input type="checkbox" name="invites_enabled" <%= modules.find(m=>m.name==='invites')?.enabled ? 'checked' : '' %> class="rounded accent-amber-400"/>
+        <div>
+          <span class="font-semibold text-slate-200">Activar tracker de Invites</span>
+          <p class="text-xs text-slate-600 mt-0.5">Rastrea quién invitó a cada miembro y detecta cuentas fake (leave &lt;10 min)</p>
+        </div>
+      </label>
+      <button type="submit" class="dash-btn-primary">Guardar</button>
     </form>
+  </div>
+
+  <div class="dash-card p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-bold text-slate-300">Recompensas por invites</h2>
+      <button type="button" id="btnAddReward" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition">+ Añadir</button>
+    </div>
+    <div id="rewardsList" class="space-y-2 mb-4"></div>
+    <button type="button" id="btnSaveRewards" class="dash-btn-primary text-sm">Guardar recompensas</button>
+    <p class="text-xs text-slate-600 mt-2">Ej: al llegar a 5 invites → rol @VIP. Se asigna automáticamente al unirse nuevos miembros.</p>
+  </div>
+
+  <div class="dash-card overflow-hidden">
+    <div class="p-5 border-b border-white/5 flex items-center justify-between">
+      <h2 class="text-sm font-bold text-slate-300">Top invitadores</h2>
+      <button type="button" id="btnRefresh" class="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition">↻ Actualizar</button>
+    </div>
+    <div id="leaderboard" class="divide-y divide-white/5">
+      <p class="px-5 py-10 text-center text-slate-500 text-sm">Cargando...</p>
+    </div>
   </div>
 </div>
 
 <script>
-document.getElementById('invitesForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const mod = fd.get('invites_enabled') === 'on';
-  await saveSettings('/api/guilds/<%= guild.id %>/modules', { modules: { invites: mod } });
-});
+(function () {
+  const guildId = document.getElementById('invitesPanel').dataset.guildId;
+  const roles = <%- JSON.stringify(roles.map(r => ({ id: r.id, name: r.name }))) %>;
+  let rewards = {};
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function roleOptions(selected) {
+    return roles.map((r) => `<option value="${r.id}"${r.id === selected ? ' selected' : ''}>@${escapeHtml(r.name)}</option>`).join('');
+  }
+
+  function renderRewards() {
+    const list = document.getElementById('rewardsList');
+    const entries = Object.entries(rewards).sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10));
+    if (!entries.length) {
+      list.innerHTML = '<p class="text-sm text-slate-600 py-2">Sin recompensas configuradas.</p>';
+      return;
+    }
+    list.innerHTML = entries.map(([need, roleId], i) => `
+      <div class="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-white/[0.02] border border-white/5 reward-row" data-idx="${i}">
+        <input type="number" min="1" class="reward-need servers-search w-24 text-sm" style="padding-left:0.75rem" value="${parseInt(need, 10)}" placeholder="5"/>
+        <span class="text-slate-600 text-sm">invites →</span>
+        <select class="reward-role servers-search flex-1 min-w-[140px] text-sm" style="padding-left:1rem">
+          <option value="">Seleccionar rol</option>
+          ${roleOptions(roleId)}
+        </select>
+        <button type="button" class="btn-remove-reward text-red-400/80 hover:text-red-300 text-sm px-2">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function collectRewards() {
+    const out = {};
+    document.querySelectorAll('.reward-row').forEach((row) => {
+      const need = parseInt(row.querySelector('.reward-need').value, 10);
+      const roleId = row.querySelector('.reward-role').value;
+      if (need > 0 && roleId) out[String(need)] = roleId;
+    });
+    return out;
+  }
+
+  async function loadData() {
+    const lb = document.getElementById('leaderboard');
+    lb.innerHTML = '<p class="px-5 py-10 text-center text-slate-500 text-sm">Cargando...</p>';
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/invites`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Error');
+
+      document.getElementById('stat-inviters').textContent = data.totalInviters ?? 0;
+      rewards = data.rewards || {};
+      renderRewards();
+
+      if (!data.leaderboard.length) {
+        lb.innerHTML = '<p class="px-5 py-10 text-center text-slate-500 text-sm">Aún no hay datos de invites</p>';
+        return;
+      }
+
+      lb.innerHTML = data.leaderboard.map((e, i) => {
+        const medal = ['🥇', '🥈', '🥉'][i] || `#${i + 1}`;
+        const avatar = e.avatar
+          ? `<img src="${e.avatar}" alt="" class="w-9 h-9 rounded-full border border-white/10"/>`
+          : `<div class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs text-slate-600">${medal}</div>`;
+        return `
+          <div class="px-5 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition">
+            ${avatar}
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-slate-200 truncate">${escapeHtml(e.name)}</div>
+              <div class="text-xs font-mono text-slate-600 truncate">${e.userId}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-lg font-black text-emerald-400">${e.invites}</div>
+              <div class="text-[10px] text-slate-600 uppercase">invites</div>
+            </div>
+            ${e.fakes > 0 ? `<div class="text-xs text-red-400/80" title="Invites fake detectados">${e.fakes} fake</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      lb.innerHTML = `<p class="px-5 py-10 text-center text-red-400 text-sm">${escapeHtml(e.message)}</p>`;
+    }
+  }
+
+  document.getElementById('invitesForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const mod = fd.get('invites_enabled') === 'on';
+    await saveSettings(`/api/guilds/${guildId}/modules`, { modules: { invites: mod } });
+  });
+
+  document.getElementById('btnAddReward').addEventListener('click', () => {
+    const next = String((Object.keys(rewards).map(Number).sort((a, b) => b - a)[0] || 0) + 5);
+    rewards[next] = roles[0]?.id || '';
+    renderRewards();
+  });
+
+  document.getElementById('rewardsList').addEventListener('click', (e) => {
+    if (!e.target.closest('.btn-remove-reward')) return;
+    rewards = collectRewards();
+    const row = e.target.closest('.reward-row');
+    const need = row.querySelector('.reward-need').value;
+    delete rewards[need];
+    renderRewards();
+  });
+
+  document.getElementById('btnSaveRewards').addEventListener('click', async () => {
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/invites/rewards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rewards: collectRewards() }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      rewards = data.rewards || {};
+      renderRewards();
+      showToast('Recompensas guardadas');
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  });
+
+  document.getElementById('btnRefresh').addEventListener('click', loadData);
+  loadData();
+})();
 </script>

@@ -15,6 +15,8 @@ const { handleRoleConnectionsVerification } = require('./roleConnections');
 const membersApi = require('./membersApi');
 const auditLog = require('./auditLog');
 const confessionsApi = require('./confessionsApi');
+const suggestionsApi = require('./suggestionsApi');
+const invitesApi = require('./invitesApi');
 
 const expressLayouts = require('express-ejs-layouts');
 
@@ -597,6 +599,10 @@ function createDashboard(client) {
         try {
           panelStats = { pending: await db.countPendingConfessions(guildId) };
         } catch { /* */ }
+      } else if (panel === 'suggestions') {
+        try {
+          panelStats = { pending: await db.countPendingSuggestions(guildId) };
+        } catch { /* */ }
       }
 
       res.render(`panel/${panel}`, {
@@ -789,6 +795,69 @@ function createDashboard(client) {
       res.json({ ok: true, message: result.message });
     } catch (e) {
       res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/guilds/:id/suggestions', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const data = await suggestionsApi.listSuggestions(client, guildId, {
+        status: req.query.status || 'pending',
+        page: parseInt(req.query.page || '1', 10),
+        limit: Math.min(parseInt(req.query.limit || '10', 10), 25),
+      });
+      res.json({ ok: true, ...data });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/suggestions/:sid/moderate', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    const { sid } = req.params;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    if (!client) return res.status(503).json({ error: 'Bot no conectado' });
+    try {
+      const { action } = req.body || {};
+      const result = await suggestionsApi.moderateSuggestion(
+        client,
+        guildId,
+        sid,
+        action,
+        req.session.user.id
+      );
+      res.json({ ok: true, message: result.message });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/guilds/:id/invites', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const data = await invitesApi.getInviteDashboard(client, guildId, {
+        limit: Math.min(parseInt(req.query.limit || '15', 10), 25),
+      });
+      res.json({ ok: true, ...data });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/guilds/:id/invites/rewards', requireAuth, async (req, res) => {
+    const guildId = req.params.id;
+    if (!requireGuildAdminApi(req, res, guildId)) return;
+    try {
+      const rewards = await invitesApi.setInviteRewards(guildId, req.body?.rewards || {});
+      await auditLog.recordAudit(guildId, req.session.user.id, 'dashboard_settings', {
+        summary: 'Recompensas de invites actualizadas',
+        details: { rewards },
+      });
+      res.json({ ok: true, rewards, message: 'Recompensas guardadas' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
     }
   });
 
